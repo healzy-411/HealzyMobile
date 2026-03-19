@@ -1,0 +1,485 @@
+import 'package:flutter/material.dart';
+import '../Models/pharmacy_model.dart';
+import '../Models/district_model.dart';
+import '../Models/insurance_model.dart';
+import '../Models/otcmedicine_model.dart';
+import '../services/api_service.dart';
+import '../widgets/pharmacy_map_view.dart';
+import 'categories_page.dart';
+import 'pharmacy_detail_page.dart';
+
+class PharmaciesPage extends StatefulWidget {
+  const PharmaciesPage({super.key});
+
+  @override
+  State<PharmaciesPage> createState() => _PharmaciesPageState();
+}
+
+class _PharmaciesPageState extends State<PharmaciesPage> {
+  final ApiService apiService = ApiService();
+
+  late Future<List<Pharmacy>> futurePharmacies;
+  late Future<List<District>> futureDistricts;
+  late Future<List<Insurance>> futureInsurances;
+  late Future<List<OtcMedicine>> futureMedicines;
+
+  // ================= VIEW MODE =================
+  bool _showMap = false;
+
+  // ================= SEARCH =================
+  String _searchText = "";
+
+  // ================= FILTER STATES =================
+  Map<String, bool> districtFilters = {};
+  Map<int, bool> insuranceFilters = {};
+  Map<int, bool> medicineFilters = {};
+
+  List<Insurance> _insurances = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    futurePharmacies = apiService.getPharmacies();
+    futureDistricts = apiService.getDistricts();
+    futureInsurances = apiService.getInsurances();
+    futureMedicines = apiService.getAllMedicines();
+
+    futureDistricts.then((districts) {
+      setState(() {
+        for (var d in districts) {
+          districtFilters[d.name] = false;
+        }
+      });
+    });
+
+    futureInsurances.then((insurances) {
+      setState(() {
+        _insurances = insurances;
+        for (var i in insurances) {
+          insuranceFilters[i.id] = false;
+        }
+      });
+    });
+
+    futureMedicines.then((medicines) {
+      setState(() {
+        for (var m in medicines) {
+          medicineFilters[m.id] = false;
+        }
+      });
+    });
+  }
+
+  // ================= APPLY FILTER =================
+  void _applyFilters() {
+    String? selectedDistrict;
+    List<int> selectedInsuranceIds = [];
+    List<int> selectedMedicineIds = [];
+
+    districtFilters.forEach((k, v) {
+      if (v) selectedDistrict = k;
+    });
+
+    insuranceFilters.forEach((k, v) {
+      if (v) selectedInsuranceIds.add(k);
+    });
+
+    medicineFilters.forEach((k, v) {
+      if (v) selectedMedicineIds.add(k);
+    });
+
+    setState(() {
+      futurePharmacies = apiService.filterPharmacies(
+        district: selectedDistrict,
+        insuranceCompanyIds:
+            selectedInsuranceIds.isEmpty ? null : selectedInsuranceIds,
+        medicineIds:
+            selectedMedicineIds.isEmpty ? null : selectedMedicineIds,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      // ================= FILTER DRAWER =================
+      endDrawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.75,
+        child: Column(
+          children: [
+            _buildFilterHeader(),
+
+            Expanded(
+              child: ListView(
+                children: [
+                  _buildDistrictFilterSection(),
+                  _buildInsuranceFilterSection(),
+                  _buildMedicineFilterSection(),
+                ],
+              ),
+            ),
+
+            _buildFilterActions(),
+          ],
+        ),
+      ),
+
+      // ================= APPBAR =================
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text("Eczaneler", style: TextStyle(color: Colors.black)),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showMap ? Icons.list : Icons.map,
+              color: Colors.black,
+            ),
+            tooltip: _showMap ? "Liste gorunumu" : "Harita gorunumu",
+            onPressed: () => setState(() => _showMap = !_showMap),
+          ),
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.tune, color: Colors.black),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          )
+        ],
+      ),
+
+      // ================= BODY =================
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Eczane ara...",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (v) => setState(() => _searchText = v.toLowerCase()),
+            ),
+          ),
+
+          Expanded(
+            child: FutureBuilder<List<Pharmacy>>(
+              future: futurePharmacies,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text("Hata: ${snapshot.error}"));
+                }
+
+                final pharmacies = snapshot.data!
+                    .where((p) =>
+                        p.name.toLowerCase().contains(_searchText))
+                    .toList();
+
+                if (pharmacies.isEmpty) {
+                  return const Center(child: Text("Eczane bulunamadı"));
+                }
+
+                // ===== HARITA GORUNUMU =====
+                if (_showMap) {
+                  return PharmacyMapView(
+                    pharmacies: pharmacies
+                        .map((p) => PharmacyMarkerData(
+                              name: p.name,
+                              address: "${p.district} / ${p.address}",
+                              phone: p.phone,
+                              latitude: p.latitude,
+                              longitude: p.longitude,
+                            ))
+                        .toList(),
+                  );
+                }
+
+                // ===== LISTE GORUNUMU =====
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: pharmacies.length,
+                  itemBuilder: (context, index) {
+                    final p = pharmacies[index];
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CategoriesPage(
+                              pharmacyId: p.id,
+                              pharmacyName: p.name,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 10,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16)),
+                              child: Image.asset(
+                                'assets/images/pharmacy.jpeg',
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          p.name,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.info_outline, color: Color(0xFF00A79D)),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => PharmacyDetailPage(pharmacyId: p.id),
+                                            ),
+                                          );
+                                        },
+                                        tooltip: "Eczane Detay",
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on,
+                                          size: 16, color: Colors.grey),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          "${p.district} / ${p.address}",
+                                          style: const TextStyle(
+                                              color: Colors.grey),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.access_time,
+                                          size: 16, color: Colors.red),
+                                      const SizedBox(width: 6),
+                                      Text(p.workingHours),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone,
+                                          size: 16, color: Colors.green),
+                                      const SizedBox(width: 6),
+                                      Text(p.phone),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= FILTER UI =================
+
+  Widget _buildFilterHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 50, 20, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: const [
+          Text("Filtrele",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Icon(Icons.filter_alt_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterCard({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
+        ],
+      ),
+      child: ExpansionTile(
+        leading: Icon(icon),
+        title:
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildDistrictFilterSection() {
+    return _filterCard(
+      icon: Icons.location_on,
+      title: "İlçe",
+      children: districtFilters.keys.map((key) {
+        return CheckboxListTile(
+          activeColor: Colors.green,
+          title: Text(key),
+          value: districtFilters[key],
+          onChanged: (val) {
+            setState(() {
+              districtFilters.updateAll((k, v) => false);
+              districtFilters[key] = val!;
+              _applyFilters();
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildInsuranceFilterSection() {
+    return _filterCard(
+      icon: Icons.shield,
+      title: "Sigorta",
+      children: _insurances.map((insurance) {
+        return CheckboxListTile(
+          activeColor: Colors.green,
+          title: Text(insurance.name),
+          value: insuranceFilters[insurance.id] ?? false,
+          onChanged: (val) {
+            setState(() {
+              insuranceFilters[insurance.id] = val ?? false;
+              _applyFilters();
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMedicineFilterSection() {
+    return FutureBuilder<List<OtcMedicine>>(
+      future: futureMedicines,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox();
+
+        final medicines = snapshot.data!;
+        return _filterCard(
+          icon: Icons.medication,
+          title: "İlaç",
+          children: medicines.map((m) {
+            return CheckboxListTile(
+              activeColor: Colors.green,
+              title: Text(m.name),
+              value: medicineFilters[m.id] ?? false,
+              onChanged: (val) {
+                setState(() {
+                  medicineFilters[m.id] = val ?? false;
+                  _applyFilters();
+                });
+              },
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  districtFilters.updateAll((k, v) => false);
+                  insuranceFilters.updateAll((k, v) => false);
+                  medicineFilters.updateAll((k, v) => false);
+
+                   futurePharmacies = apiService.getPharmacies();
+                });
+              },
+              child: const Text("Temizle"),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              onPressed: () {
+                _applyFilters();
+                Navigator.pop(context);
+              },
+              child: const Text("Uygula"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

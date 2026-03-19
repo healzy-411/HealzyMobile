@@ -1,0 +1,476 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/address_model.dart';
+import '../services/token_store.dart';
+
+// District model importunu projene göre düzelt:
+import '../Models/district_model.dart';
+
+import '../models/neighborhood_model.dart';
+import '../services/neighborhood_api_service.dart';
+import '../services/api_service.dart';
+import '../widgets/search_picker_sheet.dart';
+
+class EditAddressPage extends StatefulWidget {
+  final String baseUrl; // ör: http://localhost:5009
+  final AddressDto address;
+
+  const EditAddressPage({
+    super.key,
+    required this.baseUrl,
+    required this.address,
+  });
+
+  @override
+  State<EditAddressPage> createState() => _EditAddressPageState();
+}
+
+class _EditAddressPageState extends State<EditAddressPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _title;
+  late final TextEditingController _fullName;
+  late final TextEditingController _phone;
+  late final TextEditingController _city;
+  late final TextEditingController _district;
+  late final TextEditingController _neighborhood;
+  late final TextEditingController _addressLine;
+  late final TextEditingController _postalCode;
+
+  // ✅ yeni: Adres Tarifi
+  late final TextEditingController _addressDescription;
+
+  late bool _isDefault;
+
+  bool _loading = false;
+  String? _error;
+
+  // ✅ Yeni state
+  final _api = ApiService(); // districts buradan geliyor
+  late final _neighborhoodApi = NeighborhoodApiService(baseUrl: widget.baseUrl);
+
+  bool _loadingDistricts = false;
+  bool _loadingNeighborhoods = false;
+
+  List<District> _districts = [];
+  List<Neighborhood> _neighborhoods = [];
+
+  District? _selectedDistrict;
+  Neighborhood? _selectedNeighborhood;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final a = widget.address;
+    _title = TextEditingController(text: a.title);
+    _fullName = TextEditingController(text: a.fullName);
+    _phone = TextEditingController(text: a.phone);
+
+    // Ankara sabit dersen bunu kilitle:
+    _city = TextEditingController(text: a.city.isNotEmpty ? a.city : "Ankara");
+
+    _district = TextEditingController(text: a.district);
+    _neighborhood = TextEditingController(text: a.neighborhood);
+
+    _addressLine = TextEditingController(text: a.addressLine);
+    _postalCode = TextEditingController(text: a.postalCode ?? "");
+
+    // ✅ yeni alan init
+    _addressDescription = TextEditingController(text: a.addressDescription ?? "");
+
+    _isDefault = a.isDefault;
+
+    // dropdown verilerini yükle
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await _loadDistricts();
+
+    // mevcut district ismine göre seçili yap
+    final existingDistrictName = _district.text.trim();
+    if (existingDistrictName.isNotEmpty) {
+      _selectedDistrict = _districts.firstWhere(
+        (d) => d.name.trim().toLowerCase() == existingDistrictName.toLowerCase(),
+        orElse: () => _districts.isNotEmpty ? _districts.first : District(id: 0, name: ''),
+      );
+      if (_selectedDistrict != null && _selectedDistrict!.id != 0) {
+        await _loadNeighborhoods(_selectedDistrict!.id);
+
+        // mevcut neighborhood ismine göre seçili yap
+        final existingNeighborhoodName = _neighborhood.text.trim();
+        if (existingNeighborhoodName.isNotEmpty) {
+          _selectedNeighborhood = _neighborhoods.firstWhere(
+            (n) => n.name.trim().toLowerCase() == existingNeighborhoodName.toLowerCase(),
+            orElse: () => _neighborhoods.isNotEmpty ? _neighborhoods.first : Neighborhood(id: 0, name: ''),
+          );
+          if (_selectedNeighborhood != null && _selectedNeighborhood!.id != 0) {
+            _neighborhood.text = _selectedNeighborhood!.name;
+          }
+        }
+      }
+    }
+    setState(() {});
+  }
+
+  Future<void> _loadDistricts() async {
+    setState(() => _loadingDistricts = true);
+    try {
+      _districts = await _api.getDistricts();
+    } catch (e) {
+      _error = "İlçeler yüklenemedi: $e";
+    } finally {
+      if (mounted) setState(() => _loadingDistricts = false);
+    }
+  }
+
+  Future<void> _loadNeighborhoods(int districtId) async {
+    setState(() => _loadingNeighborhoods = true);
+    try {
+      _neighborhoods = await _neighborhoodApi.getByDistrictId(districtId);
+    } catch (e) {
+      _error = "Mahalleler yüklenemedi: $e";
+      _neighborhoods = [];
+    } finally {
+      if (mounted) setState(() => _loadingNeighborhoods = false);
+    }
+  }
+
+  Future<void> _pickDistrict() async {
+    if (_loadingDistricts) return;
+    if (_districts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("İlçe listesi boş.")),
+      );
+      return;
+    }
+
+    final picked = await showSearchPickerSheet<District>(
+      context: context,
+      title: "İlçe Seç",
+      items: _districts,
+      label: (d) => d.name,
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _selectedDistrict = picked;
+      _district.text = picked.name;
+
+      // ilçe değişince mahalle reset
+      _selectedNeighborhood = null;
+      _neighborhood.text = "";
+      _neighborhoods = [];
+    });
+
+    await _loadNeighborhoods(picked.id);
+  }
+
+  Future<void> _pickNeighborhood() async {
+    if (_selectedDistrict == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Önce ilçe seçmelisin.")),
+      );
+      return;
+    }
+    if (_loadingNeighborhoods) return;
+    if (_neighborhoods.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Bu ilçe için mahalle bulunamadı.")),
+      );
+      return;
+    }
+
+    final picked = await showSearchPickerSheet<Neighborhood>(
+      context: context,
+      title: "Mahalle Seç",
+      items: _neighborhoods,
+      label: (n) => n.name,
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _selectedNeighborhood = picked;
+      _neighborhood.text = picked.name;
+    });
+  }
+
+  Future<Map<String, String>> _headers() async {
+    final token = TokenStore.get();
+    if (token == null || token.isEmpty) throw Exception("Token yok.");
+    return {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+  }
+
+  Future<AddressDto> _updateAddress() async {
+    final uri = Uri.parse("${widget.baseUrl}/api/addresses/${widget.address.id}");
+
+    final body = {
+      "title": _title.text.trim(),
+      "fullName": _fullName.text.trim(),
+      "phone": _phone.text.trim(),
+
+      // Ankara sabit dersen:
+      "city": _city.text.trim().isEmpty ? "Ankara" : _city.text.trim(),
+
+      "district": _district.text.trim(),
+      "neighborhood": _neighborhood.text.trim(),
+
+      "addressLine": _addressLine.text.trim(),
+      "postalCode": _postalCode.text.trim().isEmpty ? null : _postalCode.text.trim(),
+      "latitude": null,
+      "longitude": null,
+      "isDefault": _isDefault,
+
+      // ✅ yeni alan
+      "addressDescription": _addressDescription.text.trim().isEmpty
+          ? null
+          : _addressDescription.text.trim(),
+    };
+
+    final res = await http.put(uri, headers: await _headers(), body: jsonEncode(body));
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+      return AddressDto.fromJson(decoded);
+    }
+
+    String msg = "Adres güncellenemedi (${res.statusCode})";
+    try {
+      final decoded = jsonDecode(res.body);
+      if (decoded is Map && decoded["message"] != null) msg = decoded["message"].toString();
+    } catch (_) {}
+
+    throw Exception(msg);
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _fullName.dispose();
+    _phone.dispose();
+    _city.dispose();
+    _district.dispose();
+    _neighborhood.dispose();
+    _addressLine.dispose();
+    _postalCode.dispose();
+
+    // ✅ yeni alan dispose
+    _addressDescription.dispose();
+
+    super.dispose();
+  }
+
+  String? _req(String? v) {
+    if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // district/neighborhood zorunlu kılalım
+    if (_district.text.trim().isEmpty) {
+      setState(() => _error = "İlçe seçmelisin.");
+      return;
+    }
+    if (_neighborhood.text.trim().isEmpty) {
+      setState(() => _error = "Mahalle seçmelisin.");
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final updated = await _updateAddress();
+      if (!mounted) return;
+      Navigator.pop(context, updated);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Widget _pickerField({
+    required String label,
+    required String valueText,
+    required VoidCallback onTap,
+    String? hint,
+    bool disabled = false,
+    bool loading = false,
+  }) {
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: loading
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              : const Icon(Icons.arrow_drop_down),
+        ),
+        child: Text(
+          valueText.isNotEmpty ? valueText : (hint ?? ""),
+          style: TextStyle(color: disabled ? Colors.grey : null),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final districtText = _district.text.trim();
+    final neighborhoodText = _neighborhood.text.trim();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Adresi Düzenle")),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  ),
+
+                TextFormField(
+                  controller: _title,
+                  decoration: const InputDecoration(labelText: "Başlık (Ev/İş)"),
+                  validator: _req,
+                ),
+                const SizedBox(height: 10),
+
+                TextFormField(
+                  controller: _fullName,
+                  decoration: const InputDecoration(labelText: "Ad Soyad"),
+                  maxLength: 100,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+                    if (v.trim().length < 3) return "En az 3 karakter";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                TextFormField(
+                  controller: _phone,
+                  decoration: const InputDecoration(labelText: "Telefon", hintText: "5xx xxx xx xx"),
+                  keyboardType: TextInputType.phone,
+                  maxLength: 15,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+                    final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
+                    if (!RegExp(r'^5\d{9}$').hasMatch(digits)) return "5 ile baslayan 10 haneli olmali";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                // Ankara sabit dersen readOnly yap:
+                TextFormField(
+                  controller: _city,
+                  decoration: const InputDecoration(labelText: "İl"),
+                  validator: _req,
+                  readOnly: true,
+                ),
+                const SizedBox(height: 10),
+
+                // ✅ İlçe picker
+                _pickerField(
+                  label: "İlçe",
+                  valueText: districtText,
+                  hint: _loadingDistricts ? "Yükleniyor..." : "İlçe seç",
+                  onTap: _pickDistrict,
+                  loading: _loadingDistricts,
+                ),
+                const SizedBox(height: 10),
+
+                // ✅ Mahalle picker
+                _pickerField(
+                  label: "Mahalle",
+                  valueText: neighborhoodText,
+                  hint: _selectedDistrict == null
+                      ? "Önce ilçe seç"
+                      : (_loadingNeighborhoods ? "Yükleniyor..." : "Mahalle seç"),
+                  onTap: _pickNeighborhood,
+                  disabled: _selectedDistrict == null,
+                  loading: _loadingNeighborhoods,
+                ),
+                const SizedBox(height: 10),
+
+                TextFormField(
+                  controller: _addressLine,
+                  decoration: const InputDecoration(labelText: "Açık Adres"),
+                  maxLines: 2,
+                  maxLength: 500,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+                    if (v.trim().length < 10) return "En az 10 karakter";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                // ✅ Adres Tarifi (opsiyonel)
+                TextFormField(
+                  controller: _addressDescription,
+                  decoration: const InputDecoration(labelText: "Adres Tarifi (opsiyonel)"),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 10),
+
+                TextFormField(
+                  controller: _postalCode,
+                  decoration: const InputDecoration(labelText: "Posta Kodu (opsiyon)"),
+                  keyboardType: TextInputType.number,
+                  maxLength: 5,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    if (!RegExp(r'^\d{5}$').hasMatch(v.trim())) return "5 haneli olmali";
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 10),
+                SwitchListTile(
+                  value: _isDefault,
+                  onChanged: (v) => setState(() => _isDefault = v),
+                  title: const Text("Varsayılan adres yap"),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _submit,
+                    child: Text(_loading ? "Kaydediliyor..." : "Kaydet"),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
