@@ -1,6 +1,6 @@
 # healzy_app
 
-A new Flutter project.
+Healzy Mobile Application Project
 
 ## Getting Started
 
