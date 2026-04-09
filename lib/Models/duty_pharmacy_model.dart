@@ -9,6 +9,8 @@ class DutyPharmacyModel {
   final double? latitude;
   final double? longitude;
   final String? dutyDate;
+  final bool isRegistered;
+  final int? registeredPharmacyId;
 
   DutyPharmacyModel({
     required this.id,
@@ -21,6 +23,8 @@ class DutyPharmacyModel {
     required this.latitude,
     required this.longitude,
     required this.dutyDate,
+    this.isRegistered = false,
+    this.registeredPharmacyId,
   });
 
   factory DutyPharmacyModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +44,8 @@ class DutyPharmacyModel {
       latitude: toDoubleOrNull(json['latitude'] ?? json['Latitude']),
       longitude: toDoubleOrNull(json['longitude'] ?? json['Longitude']),
       dutyDate: (json['dutyDate'] ?? json['DutyDate'])?.toString(),
+      isRegistered: (json['isRegistered'] ?? json['IsRegistered'] ?? false) as bool,
+      registeredPharmacyId: json['registeredPharmacyId'] ?? json['RegisteredPharmacyId'],
     );
   }
 }

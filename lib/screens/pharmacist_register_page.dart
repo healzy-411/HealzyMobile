@@ -30,8 +30,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
   final _pharmacyDistrict = TextEditingController();
   final _pharmacyAddress = TextEditingController();
   final _pharmacyPhone = TextEditingController();
-  final _latitude = TextEditingController();
-  final _longitude = TextEditingController();
+  final _licenseNumber = TextEditingController();
   final _workingHours = TextEditingController();
 
   @override
@@ -46,8 +45,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
     _pharmacyDistrict.dispose();
     _pharmacyAddress.dispose();
     _pharmacyPhone.dispose();
-    _latitude.dispose();
-    _longitude.dispose();
+    _licenseNumber.dispose();
     _workingHours.dispose();
     super.dispose();
   }
@@ -72,8 +70,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
         pharmacyDistrict: _pharmacyDistrict.text.trim(),
         pharmacyAddress: _pharmacyAddress.text.trim(),
         pharmacyPhone: _pharmacyPhone.text.trim(),
-        latitude: double.tryParse(_latitude.text.trim()) ?? 0,
-        longitude: double.tryParse(_longitude.text.trim()) ?? 0,
+        licenseNumber: _licenseNumber.text.trim(),
         workingHours: _workingHours.text.trim(),
       );
 
@@ -271,44 +268,17 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _latitude,
-                        decoration: const InputDecoration(
-                          labelText: "Enlem",
-                          prefixIcon: Icon(Icons.my_location),
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return null;
-                          final val = double.tryParse(v.trim());
-                          if (val == null) return "Gecersiz deger";
-                          if (val < 36 || val > 42) return "Turkiye sinirlari (36-42)";
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _longitude,
-                        decoration: const InputDecoration(
-                          labelText: "Boylam",
-                          prefixIcon: Icon(Icons.my_location),
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return null;
-                          final val = double.tryParse(v.trim());
-                          if (val == null) return "Gecersiz deger";
-                          if (val < 26 || val > 45) return "Turkiye sinirlari (26-45)";
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                TextFormField(
+                  controller: _licenseNumber,
+                  decoration: const InputDecoration(
+                    labelText: "Eczane Sicil Numarasi",
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Zorunlu";
+                    if (v.trim().length < 3) return "En az 3 karakter";
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

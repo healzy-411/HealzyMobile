@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/cart_model.dart';
+import '../Models/cart_model.dart';
 import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
-
-// ✅ NEW: Order api
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
   final List<int>? prescriptionItemIds;
@@ -132,134 +129,26 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // ================= ORDER CREATE (REAL API) =================
-  Future<void> _createOrder() async {
-    if (items.isEmpty) return;
+  Future<void> _goToCheckout() async {
+    if (items.isEmpty || cart == null) return;
 
-    setState(() {
-      loading = true;
-      error = null;
-    });
-
-    try {
-      final token = TokenStore.get();
-      if (token == null || token.isEmpty) {
-        throw Exception("Token bulunamadı. Lütfen tekrar giriş yapın.");
-      }
-
-      // ✅ POST /api/orders
-      final uri = Uri.parse("$baseUrl/api/orders");
-      final res = await http.post(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        // order başarılı
-        _orderCompleted = true;
-
-        // Reçete akışından geldiysek, reçeteyi Used yap
-        if (widget.prescriptionNumber != null &&
-            widget.prescriptionNumber!.trim().isNotEmpty) {
-          try {
-            final markUri = Uri.parse("$baseUrl/api/prescriptions/mark-used");
-            await http.post(
-              markUri,
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer $token",
-              },
-              body: jsonEncode({
-                "prescriptionNumber": widget.prescriptionNumber!.trim(),
-              }),
-            );
-          } catch (_) {
-            // sunum için sessiz geçilebilir
-          }
-        }
-
-        // istersen created order json burada: jsonDecode(res.body)
-        await _loadCart(); // sepet artık checked out -> boş görünsün
-        await _showSuccessDialog();
-        return;
-      }
-
-      // Controller: BadRequest(new { message = ex.Message })
-      String msg = "Sipariş oluşturulamadı (${res.statusCode})";
-      try {
-        final decoded = jsonDecode(res.body);
-        if (decoded is Map && decoded["message"] != null) {
-          msg = decoded["message"].toString();
-        }
-      } catch (_) {}
-
-      throw Exception(msg);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => error = e.toString().replaceFirst("Exception: ", ""));
-    } finally {
-      if (!mounted) return;
-      setState(() => loading = false);
-    }
-  }
-
-  // ================= BAŞARILI SİPARİŞ DIALOG (UI aynı) =================
-  Future<void> _showSuccessDialog() async {
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: Colors.orange[200],
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  radius: 30,
-                  child: Icon(Icons.celebration,
-                      color: Colors.orange, size: 30),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  "Siparişiniz Oluşturuldu",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                const Text("Teşekkür Ederiz!"),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context); // dialog kapat
-                    Navigator.pop(context); // önceki sayfaya dön (senin eski davranış)
-                  },
-                  child: const Text(
-                    "Tamam",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                )
-              ],
-            ),
-          ),
-        );
-      },
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CheckoutPage(
+          cart: cart!,
+          prescriptionItemIds: widget.prescriptionItemIds,
+          prescriptionNumber: widget.prescriptionNumber,
+        ),
+      ),
     );
+
+    // Checkout'tan sipariş tamamlandıysa
+    if (result == true) {
+      _orderCompleted = true;
+      await _loadCart();
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   @override
@@ -446,8 +335,7 @@ class _CartPageState extends State<CartPage> {
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        // ✅ sadece burası değişti: fake yerine real order
-                        onPressed: loading ? null : _createOrder,
+                        onPressed: loading ? null : _goToCheckout,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[700],
                           shape: RoundedRectangleBorder(
@@ -455,7 +343,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         child: const Text(
-                          "Sipariş Ver",
+                          "Odemeye Devam Et",
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,

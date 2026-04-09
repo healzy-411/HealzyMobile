@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/cart_api_service.dart';
+import '../services/token_store.dart';
 import 'products_page.dart';
+import 'cart_page.dart';
 
-class CategoriesPage extends StatelessWidget {
+class CategoriesPage extends StatefulWidget {
   final int pharmacyId;
   final String pharmacyName;
 
-  CategoriesPage({
+  const CategoriesPage({
     super.key,
     required this.pharmacyId,
     required this.pharmacyName,
   });
 
-  final ApiService apiService = ApiService();
+  @override
+  State<CategoriesPage> createState() => _CategoriesPageState();
+}
 
-  // 🎯 Sabit ikon listesi (UI bozulmasın diye)
+class _CategoriesPageState extends State<CategoriesPage> {
+  final ApiService apiService = ApiService();
+  late final CartApiService cartApi = CartApiService(
+    baseUrl: 'http://localhost:5009',
+    getToken: () async => TokenStore.get(),
+  );
+
+  int cartCount = 0;
+
   final List<IconData> categoryIcons = [
     Icons.medication_liquid,
     Icons.face_retouching_natural,
@@ -25,39 +38,65 @@ class CategoriesPage extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _refreshCartCount();
+  }
+
+  Future<void> _refreshCartCount() async {
+    try {
+      final c = await cartApi.getMyCart();
+      if (!mounted) return;
+      setState(() => cartCount = c.items.length);
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // ================= ÜST BAŞLIK =================
+            // ================= UST BASLIK =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
               color: Colors.grey[300],
-              child: Text(
-                pharmacyName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2,
-                      color: Colors.black26,
-                      offset: Offset(1, 1),
-                    )
-                  ],
-                ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  Text(
+                    widget.pharmacyName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 2,
+                          color: Colors.black26,
+                          offset: Offset(1, 1),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // ================= KATEGORİLER =================
+            // ================= KATEGORILER =================
             Expanded(
               child: FutureBuilder<List<String>>(
-                future: apiService.getPharmacyCategories(pharmacyId),
+                future: apiService.getPharmacyCategories(widget.pharmacyId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -73,7 +112,7 @@ class CategoriesPage extends StatelessWidget {
 
                   if (categories.isEmpty) {
                     return const Center(
-                      child: Text("Bu eczanede kategori bulunamadı"),
+                      child: Text("Bu eczanede kategori bulunamadi"),
                     );
                   }
 
@@ -96,11 +135,12 @@ class CategoriesPage extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => ProductsPage(
-                                pharmacyId: pharmacyId,
+                                pharmacyId: widget.pharmacyId,
+                                pharmacyName: widget.pharmacyName,
                                 categoryName: categoryName,
                               ),
                             ),
-                          );
+                          ).then((_) => _refreshCartCount());
                         },
                         child: _buildCategoryCard(
                           categoryName,
@@ -116,21 +156,40 @@ class CategoriesPage extends StatelessWidget {
         ),
       ),
 
-      // ================= GERİ BUTONU =================
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: FloatingActionButton.small(
-          backgroundColor: Colors.white,
-          elevation: 2,
-          onPressed: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back, color: Colors.black),
+      // ================= SEPET BUTONU =================
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CartPage()),
+          ).then((_) => _refreshCartCount());
+        },
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.shopping_basket_outlined,
+                color: Colors.black, size: 30),
+            if (cartCount > 0)
+              Positioned(
+                right: -8,
+                top: -8,
+                child: CircleAvatar(
+                  radius: 10,
+                  backgroundColor: Colors.red,
+                  child: Text(
+                    '$cartCount',
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  // ================= KATEGORİ KARTI =================
+  // ================= KATEGORI KARTI =================
   Widget _buildCategoryCard(String title, IconData icon) {
     return Container(
       decoration: BoxDecoration(

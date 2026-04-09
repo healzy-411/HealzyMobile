@@ -94,6 +94,30 @@ class LocalNotificationService {
     );
   }
 
+  /// Anında bildirim göster (sipariş/talep durum güncellemeleri için)
+  Future<void> showNow({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'healzy_status',
+      'Healzy Durum Bildirimleri',
+      channelDescription: 'Sipariş ve talep durum bildirimleri',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const iosDetails = DarwinNotificationDetails();
+
+    await _plugin.show(
+      id,
+      title,
+      body,
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+    );
+  }
+
   Future<void> cancel(int id) => _plugin.cancel(id);
 
   Future<void> cancelAll() => _plugin.cancelAll();

@@ -8,6 +8,10 @@ class Pharmacy {
   final double latitude;      // C#'taki Latitude
   final double longitude;     // C#'taki Longitude
   final String imageUrl;      // C#'taki ImageUrl
+  final double averageRating;
+  final int reviewCount;
+  final bool isOpen;
+  final bool isOnDuty;
 
   Pharmacy({
     required this.id,
@@ -19,6 +23,10 @@ class Pharmacy {
     required this.latitude,
     required this.longitude,
     required this.imageUrl,
+    this.averageRating = 0,
+    this.reviewCount = 0,
+    this.isOpen = true,
+    this.isOnDuty = false,
   });
 
   // JSON verisini Flutter nesnesine çeviren fabrika
@@ -39,6 +47,10 @@ class Pharmacy {
       
       // Eğer backend resim yollamazsa varsayılan bir eczane resmi koyuyoruz
       imageUrl: json['imageUrl'] ?? json['ImageUrl'] ?? 'https://img.freepik.com/free-photo/pharmacy-store-interior-blur-background_1484-1596.jpg',
+      averageRating: (json['averageRating'] ?? json['AverageRating'] ?? 0).toDouble(),
+      reviewCount: (json['reviewCount'] ?? json['ReviewCount'] ?? 0) as int,
+      isOpen: (json['isOpen'] ?? json['IsOpen'] ?? true) as bool,
+      isOnDuty: (json['isOnDuty'] ?? json['IsOnDuty'] ?? false) as bool,
     );
   }
 }

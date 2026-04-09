@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../services/token_store.dart';
-import '../models/me_model.dart';
+import '../Models/me_model.dart';
 
 class AuthService {
   final String baseUrl;
@@ -49,8 +49,7 @@ class AuthService {
     required String pharmacyDistrict,
     required String pharmacyAddress,
     required String pharmacyPhone,
-    required double latitude,
-    required double longitude,
+    required String licenseNumber,
     required String workingHours,
   }) async {
     final url = Uri.parse('$baseUrl/api/auth/register/pharmacist');
@@ -68,8 +67,7 @@ class AuthService {
         "pharmacyDistrict": pharmacyDistrict,
         "pharmacyAddress": pharmacyAddress,
         "pharmacyPhone": pharmacyPhone,
-        "latitude": latitude,
-        "longitude": longitude,
+        "licenseNumber": licenseNumber,
         "workingHours": workingHours,
       }),
     );
@@ -92,6 +90,7 @@ class AuthService {
     required String city,
     required String district,
     required String address,
+    required String licenseNumber,
     String? description,
   }) async {
     final url = Uri.parse('$baseUrl/api/auth/register/home-care-provider');
@@ -110,6 +109,7 @@ class AuthService {
         "city": city,
         "district": district,
         "address": address,
+        "licenseNumber": licenseNumber,
         "description": description,
       }),
     );

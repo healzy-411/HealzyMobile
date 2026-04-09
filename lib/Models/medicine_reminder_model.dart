@@ -14,6 +14,10 @@ class MedicineReminderDto {
   /// "HH:mm" formatında saat listesi
   final List<String> timesOfDay;
   final bool isActive;
+  /// 0: Aç karnına, 1: Tok karnına
+  final int intakeType;
+  /// Yemek saatleri ("HH:mm" formatında)
+  final List<String> mealTimes;
 
   MedicineReminderDto({
     required this.id,
@@ -25,12 +29,19 @@ class MedicineReminderDto {
     required this.startDateUtc,
     required this.timesOfDay,
     required this.isActive,
+    required this.intakeType,
+    required this.mealTimes,
   });
 
   factory MedicineReminderDto.fromJson(Map<String, dynamic> json) {
     final rawTimes = json['timesOfDay'] ?? json['TimesOfDay'] ?? [];
     final times = (rawTimes is List)
         ? rawTimes.map((e) => e.toString()).toList()
+        : <String>[];
+
+    final rawMealTimes = json['mealTimesOfDay'] ?? json['MealTimesOfDay'] ?? [];
+    final mealTimes = (rawMealTimes is List)
+        ? rawMealTimes.map((e) => e.toString()).toList()
         : <String>[];
 
     return MedicineReminderDto(
@@ -48,6 +59,8 @@ class MedicineReminderDto {
       ),
       timesOfDay: times,
       isActive: (json['isActive'] ?? json['IsActive'] ?? true) as bool,
+      intakeType: (json['intakeType'] ?? json['IntakeType'] ?? 0) as int,
+      mealTimes: mealTimes,
     );
   }
 
@@ -62,4 +75,3 @@ class MedicineReminderDto {
     return [];
   }
 }
-

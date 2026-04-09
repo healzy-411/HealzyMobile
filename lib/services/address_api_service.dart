@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../models/address_model.dart';
+import '../Models/address_model.dart';
 import 'token_store.dart';
 
 class AddressApiService {

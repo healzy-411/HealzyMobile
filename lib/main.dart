@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 import 'services/auth_service.dart';
@@ -23,12 +21,7 @@ Future<void> main() async {
   // Load persisted token
   await TokenStore.load();
 
-  runApp(
-    DevicePreview(
-      enabled: !kReleaseMode,
-      builder: (context) => const HealzyApp(),
-    ),
-  );
+  runApp(const HealzyApp());
 }
 
 class HealzyApp extends StatelessWidget {
@@ -68,9 +61,6 @@ class HealzyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Healzy',
-      useInheritedMediaQuery: true,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,

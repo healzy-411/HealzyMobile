@@ -29,6 +29,57 @@ class MedicineSearchResult {
   }
 }
 
+class PharmacyCompareResult {
+  final int pharmacyId;
+  final String pharmacyName;
+  final String district;
+  final List<MedicineLine> lines;
+  final double totalPrice;
+
+  PharmacyCompareResult({
+    required this.pharmacyId,
+    required this.pharmacyName,
+    required this.district,
+    required this.lines,
+    required this.totalPrice,
+  });
+
+  factory PharmacyCompareResult.fromJson(Map<String, dynamic> json) {
+    return PharmacyCompareResult(
+      pharmacyId: json['pharmacyId'] ?? 0,
+      pharmacyName: json['pharmacyName'] ?? '',
+      district: json['district'] ?? '',
+      lines: (json['lines'] as List? ?? [])
+          .map((e) => MedicineLine.fromJson(e))
+          .toList(),
+      totalPrice: (json['totalPrice'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class MedicineLine {
+  final int medicineId;
+  final String medicineName;
+  final double unitPrice;
+  final int stockQuantity;
+
+  MedicineLine({
+    required this.medicineId,
+    required this.medicineName,
+    required this.unitPrice,
+    required this.stockQuantity,
+  });
+
+  factory MedicineLine.fromJson(Map<String, dynamic> json) {
+    return MedicineLine(
+      medicineId: json['medicineId'] ?? 0,
+      medicineName: json['medicineName'] ?? '',
+      unitPrice: (json['unitPrice'] ?? 0).toDouble(),
+      stockQuantity: json['stockQuantity'] ?? 0,
+    );
+  }
+}
+
 class PharmacyPrice {
   final int pharmacyId;
   final String pharmacyName;

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -5,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
 import '../services/local_notification_service.dart';
+import 'all_reminders_page.dart';
 
 class MedicineReminderPage extends StatefulWidget {
   final String baseUrl;
@@ -28,10 +30,10 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
   late final MedicineReminderApiService _api =
       MedicineReminderApiService(baseUrl: widget.baseUrl);
 
-  // ✅ Takvim marker + scheduling için tüm reminder’lar
+  // ✅ Takvim marker + scheduling için tüm reminder'lar
   List<MedicineReminderDto> _allReminders = [];
 
-  // ✅ Liste için seçilen gün reminder’ları (UI ListView bunu kullanacak)
+  // ✅ Liste için seçilen gün reminder'ları (UI ListView bunu kullanacak)
   List<MedicineReminderDto> _reminders = [];
 
   bool _loading = false;
@@ -42,7 +44,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
 
   // ===== Notification scheduling ayarları (sunum güvenli) =====
   static const int _scheduleWindowDays = 30; // ileriye dönük kaç gün schedule
-  static const int _maxSchedulesTotal = 60; // maksimum kaç bildirim planlansın
+  static const int _maxSchedulesTotal = 120; // maksimum kaç bildirim planlansın
 
   Color _colorFor(MedicineReminderDto r, int index) {
     return _colorsById[r.id] ??=
@@ -87,11 +89,11 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     initializeDateFormatting('tr_TR', null);
     _selectedDay = _focusedDay;
 
-    // İlk açılış: tüm verileri çek + selected day’i de doldur
+    // İlk açılış: tüm verileri çek + selected day'i de doldur
     _loadAllAndSelectedDay();
   }
 
-  // ✅ Sunum güvenli: önce tüm reminder’lar, sonra seçilen gün reminder’ları
+  // ✅ Sunum güvenli: önce tüm reminder'lar, sonra seçilen gün reminder'ları
   Future<void> _loadAllAndSelectedDay() async {
     setState(() {
       _loading = true;
@@ -129,7 +131,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     }
   }
 
-  // ✅ Sadece seçilen gün listesini backend’den çek
+  // ✅ Sadece seçilen gün listesini backend'den çek
   Future<void> _loadSelectedDayOnly(DateTime selectedDay) async {
     setState(() {
       _loading = true;
@@ -160,6 +162,10 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     return "Haftada $x gün";
   }
 
+  String _getIntakeTypeText(int intakeType) {
+    return intakeType == 1 ? 'Tok' : 'Aç';
+  }
+
   // ============================================================
   // =================== LOCAL NOTIFICATION =====================
   // ============================================================
@@ -179,6 +185,14 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     final mm = when.minute.toString().padLeft(2, '0');
     final key = int.parse('$y$m$d$hh$mm'); // 202603021530
     return reminderId * 100000 + (key % 100000);
+  }
+
+  int _mealNotifId(int reminderId, DateTime when) {
+    return _notifId(reminderId, when) + 50000;
+  }
+
+  int _preNotifId(int reminderId, DateTime when) {
+    return _notifId(reminderId, when) + 70000;
   }
 
   bool _isMedicineDayFor(DateTime day, MedicineReminderDto r) {
@@ -227,6 +241,20 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     return out;
   }
 
+  /// Her ilaç saati için en yakın önceki yemek saatini bulur
+  DateTime? _findClosestMealTimeBefore(DateTime medicineTime, List<String> mealTimes, DateTime day) {
+    DateTime? closest;
+    for (final mt in mealTimes) {
+      final mealDt = _combineDateAndTime(day, mt);
+      if (mealDt.isBefore(medicineTime)) {
+        if (closest == null || mealDt.isAfter(closest)) {
+          closest = mealDt;
+        }
+      }
+    }
+    return closest;
+  }
+
   Future<void> _rescheduleAllNotifications() async {
     try {
       await LocalNotificationService.I.cancelAll();
@@ -237,6 +265,8 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     final list = List<MedicineReminderDto>.from(_allReminders)
       ..sort((a, b) => a.id.compareTo(b.id));
 
+    final now = DateTime.now();
+
     for (final r in list) {
       if (scheduledCount >= _maxSchedulesTotal) break;
 
@@ -244,17 +274,79 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
       for (final when in times) {
         if (scheduledCount >= _maxSchedulesTotal) break;
 
-        final id = _notifId(r.id, when);
+        final day = DateTime(when.year, when.month, when.day);
 
-        try {
-          await LocalNotificationService.I.scheduleOneTime(
-            id: id,
-            title: 'İlaç Zamanı',
-            body: '${r.name} ilacını almayı unutma.',
-            whenLocal: when,
-          );
-          scheduledCount++;
-        } catch (_) {}
+        if (r.intakeType == 0) {
+          // Aç karnına
+          final id = _notifId(r.id, when);
+          try {
+            await LocalNotificationService.I.scheduleOneTime(
+              id: id,
+              title: 'İlaç Zamanı',
+              body: '${r.name} ilacınızı aç karnına içmeyi unutmayın.',
+              whenLocal: when,
+            );
+            scheduledCount++;
+          } catch (_) {}
+        } else if (r.intakeType == 1 && r.mealTimes.isNotEmpty) {
+          // Tok karnına + yemek saatleri var → 3 aşamalı bildirim
+          final mealTime = _findClosestMealTimeBefore(when, r.mealTimes, day);
+
+          // 3. İlaç saatinde bildirim (her zaman)
+          final medId = _notifId(r.id, when);
+          try {
+            await LocalNotificationService.I.scheduleOneTime(
+              id: medId,
+              title: 'İlaç Zamanı',
+              body: '${r.name} ilacınızı içmeyi unutmayın.',
+              whenLocal: when,
+            );
+            scheduledCount++;
+          } catch (_) {}
+
+          if (mealTime != null) {
+            // 1. Yemek saatinde bildirim
+            if (mealTime.isAfter(now) && scheduledCount < _maxSchedulesTotal) {
+              final mealId = _mealNotifId(r.id, when);
+              try {
+                await LocalNotificationService.I.scheduleOneTime(
+                  id: mealId,
+                  title: 'Yemek Zamanı',
+                  body: 'Yemeğinizi yemeyi unutmayın.',
+                  whenLocal: mealTime,
+                );
+                scheduledCount++;
+              } catch (_) {}
+            }
+
+            // 2. İlaç saatinden 30dk önce bildirim
+            final preTime = when.subtract(const Duration(minutes: 30));
+            if (preTime.isAfter(now) && scheduledCount < _maxSchedulesTotal) {
+              final preId = _preNotifId(r.id, when);
+              try {
+                await LocalNotificationService.I.scheduleOneTime(
+                  id: preId,
+                  title: 'Yemek Hatırlatma',
+                  body: 'İlacınız var, yemeğinizi yemeyi unutmayın.',
+                  whenLocal: preTime,
+                );
+                scheduledCount++;
+              } catch (_) {}
+            }
+          }
+        } else {
+          // Tok karnına ama yemek saati yok → mevcut davranış
+          final id = _notifId(r.id, when);
+          try {
+            await LocalNotificationService.I.scheduleOneTime(
+              id: id,
+              title: 'İlaç Zamanı',
+              body: '${r.name} ilacınızı içmeyi unutmayın.',
+              whenLocal: when,
+            );
+            scheduledCount++;
+          } catch (_) {}
+        }
       }
     }
   }
@@ -323,6 +415,107 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
   }
 
   // ============================================================
+  // =============== WHEEL TIME PICKER (alarm tarzı) ============
+  // ============================================================
+
+  Future<String?> _showWheelTimePicker(BuildContext ctx, {int initialHour = 12, int initialMinute = 0}) async {
+    int selectedHour = initialHour;
+    int selectedMinute = initialMinute;
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: ctx,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: 300,
+            child: Column(
+              children: [
+                // Başlık + butonlar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text('Vazgeç', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                      ),
+                      Text(
+                        'Saat Seçin',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: healzyDarkGreen,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text('Tamam', style: TextStyle(color: healzyTurquoise, fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                // Saat : Dakika wheel picker
+                Expanded(
+                  child: Row(
+                    children: [
+                      // Saat
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: initialHour),
+                          itemExtent: 40,
+                          onSelectedItemChanged: (i) => selectedHour = i,
+                          children: List.generate(24, (i) {
+                            return Center(
+                              child: Text(
+                                i.toString().padLeft(2, '0'),
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                      const Text(':', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                      // Dakika
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: initialMinute),
+                          itemExtent: 40,
+                          onSelectedItemChanged: (i) => selectedMinute = i,
+                          children: List.generate(60, (i) {
+                            return Center(
+                              child: Text(
+                                i.toString().padLeft(2, '0'),
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      final hh = selectedHour.toString().padLeft(2, '0');
+      final mm = selectedMinute.toString().padLeft(2, '0');
+      return '$hh:$mm';
+    }
+    return null;
+  }
+
+  // ============================================================
   // =================== ADD/EDIT DIALOG =========================
   // ============================================================
 
@@ -340,6 +533,8 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
 
     int frequency = editing?.timesPerDay ?? 1;
     int frequencyType = editing?.frequencyType ?? 0;
+    int intakeType = editing?.intakeType ?? 0; // 0=Aç, 1=Tok
+    List<String> mealTimes = List<String>.from(editing?.mealTimes ?? []);
     String? popupError;
 
     showDialog(
@@ -401,6 +596,128 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                     prefixIcon: Icon(Icons.medication, color: healzyTurquoise),
                   ),
                 ),
+                const SizedBox(height: 15),
+
+                // ── Aç / Tok Seçimi ──
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Kullanım Şekli *',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() {
+                          intakeType = 0;
+                          mealTimes.clear();
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: intakeType == 0
+                                ? healzyTurquoise
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Aç Karnına',
+                            style: TextStyle(
+                              color: intakeType == 0 ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => intakeType = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: intakeType == 1
+                                ? healzyTurquoise
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Tok Karnına',
+                            style: TextStyle(
+                              color: intakeType == 1 ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Yemek Saatleri (sadece Tok seçiliyse) ──
+                if (intakeType == 1) ...[
+                  const SizedBox(height: 15),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Yemek Saatleri (isteğe bağlı)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ...mealTimes.asMap().entries.map((entry) {
+                        return Chip(
+                          label: Text(entry.value),
+                          deleteIcon: const Icon(Icons.close, size: 18),
+                          onDeleted: () {
+                            setDialogState(() {
+                              mealTimes.removeAt(entry.key);
+                            });
+                          },
+                          backgroundColor: healzyTurquoise.withOpacity(0.1),
+                        );
+                      }),
+                      if (mealTimes.length < 5)
+                        ActionChip(
+                          avatar: Icon(Icons.add, size: 18, color: healzyTurquoise),
+                          label: const Text('Yemek Saati Ekle'),
+                          onPressed: () async {
+                            final result = await _showWheelTimePicker(context);
+                            if (result != null) {
+                              setDialogState(() {
+                                mealTimes.add(result);
+                              });
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                  if (mealTimes.length >= 5)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'En fazla 5 yemek saati ekleyebilirsiniz.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ),
+                ],
+
                 const SizedBox(height: 15),
                 DropdownButtonFormField<int>(
                   value: frequencyType,
@@ -507,6 +824,10 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                       timesPerDay: frequency,
                       durationDays: durationDays,
                       firstTimeOfDay: firstTime,
+                      intakeType: intakeType,
+                      mealTimes: intakeType == 1 && mealTimes.isNotEmpty
+                          ? mealTimes
+                          : null,
                     );
                   } else {
                     saved = await _api.updateReminder(
@@ -517,6 +838,10 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                       timesPerDay: frequency,
                       durationDays: durationDays,
                       firstTimeOfDay: firstTime,
+                      intakeType: intakeType,
+                      mealTimes: intakeType == 1 && mealTimes.isNotEmpty
+                          ? mealTimes
+                          : null,
                     );
                   }
 
@@ -532,11 +857,11 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                     }
                   });
 
-                  // ✅ seçili gün listesi de backend’den tazelenir (garanti)
+                  // ✅ seçili gün listesi de backend'den tazelenir (garanti)
                   final day = (_selectedDay ?? DateTime.now());
                   await _loadSelectedDayOnly(day);
 
-                  // ✅ notification’ları yeniden kur
+                  // ✅ notification'ları yeniden kur
                   await _rescheduleAllNotifications();
 
                   if (!mounted) return;
@@ -579,6 +904,24 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
             tooltip: "Yenile",
             icon: const Icon(Icons.refresh),
             onPressed: _loadAllAndSelectedDay,
+          ),
+          IconButton(
+            tooltip: "Tüm Hatırlatıcılar",
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AllRemindersPage(
+                    api: _api,
+                    healzyTurquoise: healzyTurquoise,
+                    healzyDarkGreen: healzyDarkGreen,
+                    onEdit: (item) => _showAddReminderDialog(editing: item),
+                    onChanged: () => _loadAllAndSelectedDay(),
+                  ),
+                ),
+              ).then((_) => _loadAllAndSelectedDay());
+            },
           ),
         ],
       ),
@@ -640,7 +983,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                 _focusedDay = focusedDay;
               });
 
-              // ✅ seçilen gün değişince backend’den o günün reminder’larını çek
+              // ✅ seçilen gün değişince backend'den o günün reminder'larını çek
               await _loadSelectedDayOnly(day);
             },
           ),
@@ -692,6 +1035,29 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                   ),
                                 ),
                               ),
+                              // Aç/Tok badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: item.intakeType == 0
+                                      ? Colors.orange.withOpacity(0.15)
+                                      : Colors.green.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _getIntakeTypeText(item.intakeType),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: item.intakeType == 0
+                                        ? Colors.orange[800]
+                                        : Colors.green[800],
+                                  ),
+                                ),
+                              ),
                               IconButton(
                                 icon: Icon(Icons.edit,
                                     color: healzyTurquoise, size: 22),
@@ -699,7 +1065,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                     _showAddReminderDialog(editing: item),
                               ),
 
-                              // ✅ Sağ üst “delete” butonu
+                              // ✅ Sağ üst "delete" butonu
                               IconButton(
                                 icon: const Icon(Icons.delete_outline),
                                 color: Colors.redAccent,
@@ -747,6 +1113,36 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                 )
                                 .toList(),
                           ),
+                          // Yemek saatleri gösterimi
+                          if (item.intakeType == 1 && item.mealTimes.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              children: [
+                                Icon(Icons.restaurant, size: 14, color: Colors.grey[500]),
+                                ...item.mealTimes.map(
+                                  (t) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      t,
+                                      style: TextStyle(
+                                        color: Colors.green[700],
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

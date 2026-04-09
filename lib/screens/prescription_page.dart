@@ -99,6 +99,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
                       } else {
                         _selectedItemIds.remove(it.itemId);
                       }
+                      _result = null;
                     });
                   },
                   title: Text(it.medicineName),

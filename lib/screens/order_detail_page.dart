@@ -207,19 +207,72 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "Durum: ${o.status}",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+                  _infoRow(Icons.access_time, "Durum", _statusText(o.status)),
                   const SizedBox(height: 4),
-                  Text(
-                    "Teslimat: ${o.deliveryAddressSnapshot}",
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  _infoRow(Icons.calendar_today, "Tarih",
+                      "${o.createdAtUtc.day.toString().padLeft(2, '0')}."
+                      "${o.createdAtUtc.month.toString().padLeft(2, '0')}."
+                      "${o.createdAtUtc.year} "
+                      "${o.createdAtUtc.hour.toString().padLeft(2, '0')}:"
+                      "${o.createdAtUtc.minute.toString().padLeft(2, '0')}"),
+                  if (o.statusNote != null && o.statusNote!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _infoRow(Icons.note, "Eczane Notu", o.statusNote!),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 12),
+
+            // Teslimat bilgileri
+            _card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Teslimat Bilgileri",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  _infoRow(Icons.location_on, "Adres", o.deliveryAddressSnapshot),
+                  if (o.deliveryNote != null && o.deliveryNote!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _infoRow(Icons.info_outline, "Teslimat Notu", o.deliveryNote!),
+                  ],
+                  if (o.orderNote != null && o.orderNote!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _infoRow(Icons.message, "Siparis Notu", o.orderNote!),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Ödeme bilgileri
+            _card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Odeme Bilgileri",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  _infoRow(
+                    Icons.payment,
+                    "Odeme Yontemi",
+                    o.paymentMethod == "CreditCard" ? "Kredi Karti" : "Kapida Odeme",
+                  ),
+                  if (o.paymentMethod == "CreditCard" && o.cardNameSnapshot != null) ...[
+                    const SizedBox(height: 4),
+                    _infoRow(Icons.credit_card, "Kart", "${o.cardNameSnapshot} (**** ${o.maskedCardNumberSnapshot ?? ''})"),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Ürünler
             _card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,6 +391,37 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         ),
       ),
     );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 6),
+        Text("$label: ", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Expanded(
+          child: Text(value, style: const TextStyle(fontSize: 13)),
+        ),
+      ],
+    );
+  }
+
+  String _statusText(String status) {
+    switch (status) {
+      case "Pending":
+        return "Bekliyor";
+      case "Preparing":
+        return "Hazirlaniyor";
+      case "Ready":
+        return "Hazir";
+      case "Delivered":
+        return "Teslim Edildi";
+      case "Cancelled":
+        return "Iptal Edildi";
+      default:
+        return status;
+    }
   }
 
   Widget _card({required Widget child}) {

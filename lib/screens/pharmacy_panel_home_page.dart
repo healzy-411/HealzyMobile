@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../services/token_store.dart';
 import '../services/notification_api_service.dart';
+import '../services/local_notification_service.dart';
 import 'pharmacy_dashboard_page.dart';
 import 'pharmacy_orders_page.dart';
 import 'pharmacy_profile_page.dart';
@@ -48,8 +49,35 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     try {
       final count = await _notifApi.getUnreadCount();
       if (!mounted) return;
+
+      if (count > _unreadCount && _unreadCount >= 0) {
+        final notifications = await _notifApi.getMyNotifications(page: 1, pageSize: count - _unreadCount);
+        for (final n in notifications.where((n) => !n.isRead)) {
+          await LocalNotificationService.I.showNow(
+            id: n.id,
+            title: n.title,
+            body: n.body,
+          );
+        }
+      }
+
       setState(() => _unreadCount = count);
     } catch (_) {}
+  }
+
+  Future<void> _toggleOpenStatus() async {
+    try {
+      final result = await _api.toggleStatus();
+      if (!mounted) return;
+      setState(() {
+        _profile = result;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+      );
+    }
   }
 
   Future<void> _loadData() async {
@@ -75,8 +103,9 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     }
   }
 
-  void _logout() {
-    TokenStore.clear();
+  Future<void> _logout() async {
+    await TokenStore.clear();
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
@@ -156,6 +185,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
   Widget _buildContent() {
     final name = _profile?["name"] ?? "Eczane";
     final isApproved = _profile?["isApproved"] ?? false;
+    final isOpen = _profile?["isOpen"] ?? true;
 
     final pendingOrders = (_summary?["pendingOrderCount"] ?? 0) as int;
     final todayRevenue = (_summary?["todayRevenue"] ?? 0).toDouble();
@@ -168,27 +198,77 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Eczane adı + onay
+          // Eczane adı + onay + acik/kapali toggle
           Card(
-            child: ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF00A79D),
-                child: Icon(Icons.local_pharmacy, color: Colors.white),
-              ),
-              title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              subtitle: Row(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Icon(
-                    isApproved ? Icons.check_circle : Icons.hourglass_top,
-                    size: 16,
-                    color: isApproved ? Colors.green : Colors.orange,
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: isOpen ? const Color(0xFF00A79D) : Colors.grey,
+                        child: const Icon(Icons.local_pharmacy, color: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  isApproved ? Icons.check_circle : Icons.hourglass_top,
+                                  size: 14,
+                                  color: isApproved ? Colors.green : Colors.orange,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isApproved ? "Onayli" : "Onay Bekliyor",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isApproved ? Colors.green : Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isApproved ? "Onayli" : "Onay Bekliyor",
-                    style: TextStyle(
-                      color: isApproved ? Colors.green : Colors.orange,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isOpen ? Colors.green.shade50 : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isOpen ? Icons.store : Icons.store_outlined,
+                          size: 20,
+                          color: isOpen ? Colors.green : Colors.red,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isOpen ? "Eczane Acik" : "Eczane Kapali",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isOpen ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: isOpen,
+                          activeColor: Colors.green,
+                          onChanged: (_) => _toggleOpenStatus(),
+                        ),
+                      ],
                     ),
                   ),
                 ],

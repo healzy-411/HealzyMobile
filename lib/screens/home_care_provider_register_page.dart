@@ -31,6 +31,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
   final _city = TextEditingController();
   final _district = TextEditingController();
   final _address = TextEditingController();
+  final _licenseNumber = TextEditingController();
   final _description = TextEditingController();
 
   @override
@@ -46,6 +47,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     _city.dispose();
     _district.dispose();
     _address.dispose();
+    _licenseNumber.dispose();
     _description.dispose();
     super.dispose();
   }
@@ -71,6 +73,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
         city: _city.text.trim(),
         district: _district.text.trim(),
         address: _address.text.trim(),
+        licenseNumber: _licenseNumber.text.trim(),
         description: _description.text.trim().isEmpty ? null : _description.text.trim(),
       );
 
@@ -283,6 +286,19 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return "Zorunlu";
                     if (v.trim().length < 10) return "En az 10 karakter";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _licenseNumber,
+                  decoration: const InputDecoration(
+                    labelText: "Sicil Numarasi",
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Zorunlu";
+                    if (v.trim().length < 3) return "En az 3 karakter";
                     return null;
                   },
                 ),

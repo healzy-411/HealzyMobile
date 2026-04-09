@@ -39,7 +39,7 @@ class MedicineReminderApiService {
     }
   }
 
-  /// Tüm reminder’lar (kullanıcının tüm planları)
+  /// Tüm reminder'lar (kullanıcının tüm planları)
   Future<List<MedicineReminderDto>> getMyReminders() async {
     final uri = Uri.parse('$baseUrl/api/medicine-reminders/me');
     final res = await http.get(uri, headers: _authHeaders());
@@ -55,7 +55,22 @@ class MedicineReminderApiService {
     );
   }
 
-  /// ✅ Seçilen gün için reminder’lar (backend filtreli döndürür)
+  Future<List<MedicineReminderDto>> getAllReminders() async {
+    final uri = Uri.parse('$baseUrl/api/medicine-reminders/all');
+    final res = await http.get(uri, headers: _authHeaders());
+
+    await _check401(res);
+
+    if (_ok(res.statusCode)) {
+      return MedicineReminderDto.listFromJson(res.body);
+    }
+
+    throw Exception(
+      _extractMessage(res, 'Ilac planlari yuklenemedi (${res.statusCode})'),
+    );
+  }
+
+  /// ✅ Seçilen gün için reminder'lar (backend filtreli döndürür)
   /// dateUtc: UTC gönderiyoruz (controller zaten dateUtc bekliyor)
   Future<List<MedicineReminderDto>> getMyRemindersForDay(DateTime dateUtc) async {
     final isoUtc = dateUtc.toUtc().toIso8601String();
@@ -86,6 +101,8 @@ class MedicineReminderApiService {
     required int timesPerDay,
     required int durationDays,
     required String firstTimeOfDay,
+    required int intakeType,
+    List<String>? mealTimes,
   }) async {
     final uri = Uri.parse('$baseUrl/api/medicine-reminders');
     final body = jsonEncode({
@@ -95,6 +112,8 @@ class MedicineReminderApiService {
       'timesPerDay': timesPerDay,
       'durationDays': durationDays,
       'firstTimeOfDay': firstTimeOfDay,
+      'intakeType': intakeType,
+      if (mealTimes != null && mealTimes.isNotEmpty) 'mealTimes': mealTimes,
     });
 
     final res = await http.post(uri, headers: _authHeaders(), body: body);
@@ -120,6 +139,8 @@ class MedicineReminderApiService {
     required int timesPerDay,
     required int durationDays,
     required String firstTimeOfDay,
+    required int intakeType,
+    List<String>? mealTimes,
   }) async {
     final uri = Uri.parse('$baseUrl/api/medicine-reminders/$id');
     final body = jsonEncode({
@@ -129,6 +150,8 @@ class MedicineReminderApiService {
       'timesPerDay': timesPerDay,
       'durationDays': durationDays,
       'firstTimeOfDay': firstTimeOfDay,
+      'intakeType': intakeType,
+      if (mealTimes != null && mealTimes.isNotEmpty) 'mealTimes': mealTimes,
     });
 
     final res = await http.put(uri, headers: _authHeaders(), body: body);
@@ -156,6 +179,19 @@ class MedicineReminderApiService {
 
     throw Exception(
       _extractMessage(res, 'İlaç planı silinemedi (${res.statusCode})'),
+    );
+  }
+
+  Future<void> hardDeleteReminder(int id) async {
+    final uri = Uri.parse('$baseUrl/api/medicine-reminders/$id/permanent');
+    final res = await http.delete(uri, headers: _authHeaders());
+
+    await _check401(res);
+
+    if (_ok(res.statusCode)) return;
+
+    throw Exception(
+      _extractMessage(res, 'Kalici silme basarisiz (${res.statusCode})'),
     );
   }
 }

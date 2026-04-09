@@ -6,6 +6,9 @@ class HomeMapFullscreenPage extends StatefulWidget {
   final List<PharmacyMarkerData> dutyMarkers;
   final double? userLat;
   final double? userLng;
+  final ActiveOrderRoute? activeRoute;
+  final bool simpleStyle;
+  final ValueChanged<bool>? onStyleChanged;
 
   const HomeMapFullscreenPage({
     super.key,
@@ -13,6 +16,9 @@ class HomeMapFullscreenPage extends StatefulWidget {
     required this.dutyMarkers,
     this.userLat,
     this.userLng,
+    this.activeRoute,
+    this.simpleStyle = true,
+    this.onStyleChanged,
   });
 
   @override
@@ -24,11 +30,14 @@ class _HomeMapFullscreenPageState extends State<HomeMapFullscreenPage> {
 
   List<PharmacyMarkerData> get _filtered {
     switch (_filter) {
-      case 1:
-        return widget.dutyMarkers;
-      case 2:
+      case 1: // Nobetci: saf nobetciler + kayitli+nobetci olanlar
+        final both = widget.registeredMarkers
+            .where((m) => m.distanceBadge?.contains("Nobetci") == true)
+            .toList();
+        return [...widget.dutyMarkers, ...both];
+      case 2: // Kayitli: tum kayitlilar
         return widget.registeredMarkers;
-      default:
+      default: // Tumu
         return [...widget.dutyMarkers, ...widget.registeredMarkers];
     }
   }
@@ -85,6 +94,9 @@ class _HomeMapFullscreenPageState extends State<HomeMapFullscreenPage> {
               pharmacies: _filtered,
               userLat: widget.userLat,
               userLng: widget.userLng,
+              activeRoute: widget.activeRoute,
+              simpleStyle: widget.simpleStyle,
+              onStyleChanged: widget.onStyleChanged,
             ),
     );
   }

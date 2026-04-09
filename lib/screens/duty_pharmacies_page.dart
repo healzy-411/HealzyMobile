@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../Models/duty_pharmacy_model.dart';
 import '../widgets/pharmacy_map_view.dart';
+import 'pharmacy_detail_page.dart';
 
 class DutyPharmaciesPage extends StatefulWidget {
   const DutyPharmaciesPage({super.key});
@@ -25,6 +26,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
 
   // ===== View Mode =====
   bool _showMap = false;
+  final ScrollController _listScrollController = ScrollController();
 
   // ===== Location State =====
   bool _locLoading = false;
@@ -38,6 +40,12 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
 
     // Sayfa açılınca izin + konum al
     _initLocationFlow();
+  }
+
+  @override
+  void dispose() {
+    _listScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _initLocationFlow() async {
@@ -133,8 +141,13 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
   }
 
   void _sortByDistance(List<DutyPharmacyModel> list) {
-    if (_currentPos == null) return;
     list.sort((a, b) {
+      // Kayitli eczaneler her zaman en ustte
+      if (a.isRegistered && !b.isRegistered) return -1;
+      if (!a.isRegistered && b.isRegistered) return 1;
+
+      // Sonra mesafeye gore
+      if (_currentPos == null) return 0;
       final da = _distanceKm(a);
       final db = _distanceKm(b);
       if (da == null && db == null) return 0;
@@ -313,6 +326,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                                   : "${distKm.toStringAsFixed(1)} km";
                               badgeColor = _distanceBadgeColor(distKm);
                             }
+                            final pharmacyIndex = filteredPharmacies.indexOf(p);
                             return PharmacyMarkerData(
                               name: p.pharmacyName,
                               address: "${p.district} / ${p.address}",
@@ -321,12 +335,26 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                               longitude: p.longitude!,
                               distanceBadge: badge,
                               badgeColor: badgeColor,
+                              markerColor: p.isRegistered ? Colors.purple : Colors.red,
+                              onTap: () {
+                                setState(() => _showMap = false);
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (_listScrollController.hasClients) {
+                                    _listScrollController.animateTo(
+                                      pharmacyIndex * 140.0,
+                                      duration: const Duration(milliseconds: 400),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
+                                });
+                              },
                             );
                           }).toList(),
                           userLat: _currentPos?.latitude,
                           userLng: _currentPos?.longitude,
                         )
                       : ListView.builder(
+                          controller: _listScrollController,
                           padding: const EdgeInsets.all(16),
                           itemCount: filteredPharmacies.length,
                           itemBuilder: (context, index) {
@@ -457,6 +485,55 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
               ),
             ],
           ),
+
+          // Kayitli Eczane badge + Eczaneye Git button
+          if (p.isRegistered) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B1FA2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        "Kayitli Eczane",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                if (p.registeredPharmacyId != null)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PharmacyDetailPage(
+                              pharmacyId: p.registeredPharmacyId!,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.store, size: 16),
+                      label: const Text("Eczaneye Git"),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );

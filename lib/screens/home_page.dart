@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../services/token_store.dart';
 import '../services/api_service.dart';
-import '../models/address_model.dart';
+import '../Models/address_model.dart';
 import '../Models/pharmacy_model.dart';
 import '../Models/duty_pharmacy_model.dart';
 import '../widgets/pharmacy_map_view.dart';
@@ -16,6 +16,7 @@ import 'add_address_page.dart';
 import 'edit_address_page.dart';
 import '../services/address_api_service.dart';
 import 'profile_page.dart';
+import 'pharmacy_detail_page.dart';
 import 'prescription_page.dart';
 import 'medicine_reminder_page.dart';
 import 'home_care_page.dart';
@@ -24,6 +25,10 @@ import 'notifications_page.dart';
 import 'home_map_fullscreen_page.dart';
 import '../services/notification_api_service.dart';
 import 'dart:async';
+import '../services/local_notification_service.dart';
+import '../services/order_api_service.dart';
+import '../Models/order_model.dart';
+import '../widgets/active_order_tracker.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,6 +48,16 @@ class _HomePageState extends State<HomePage> {
   final _notifApi = NotificationApiService(baseUrl: "http://localhost:5009");
   int _unreadCount = 0;
   Timer? _notifTimer;
+
+  // Aktif siparis
+  final _orderApi = OrderApiService(baseUrl: "http://localhost:5009");
+  List<OrderDto> _activeOrders = [];
+  Timer? _activeOrderTimer;
+  bool _trackerDismissed = false;
+  Timer? _autoHideTimer;
+
+  // Harita stili
+  bool _mapSimpleStyle = true;
 
   // Harita
   final _apiService = ApiService();
@@ -118,25 +133,98 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  @override
   void dispose() {
     _notifTimer?.cancel();
+    _activeOrderTimer?.cancel();
+    _autoHideTimer?.cancel();
     _prescriptionController.dispose();
     super.dispose();
   }
 
+  @override
   void initState() {
     super.initState();
     _loadAddresses();
     _loadUnreadCount();
     _loadMapData();
+    _loadActiveOrders();
     _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
+    _activeOrderTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadActiveOrders());
+  }
+
+  ActiveOrderRoute? _buildActiveRoute() {
+    if (_activeOrders.isEmpty || _trackerDismissed) return null;
+    final order = _activeOrders.first;
+    if (order.pharmacyLatitude == null || order.pharmacyLongitude == null) return null;
+
+    // Teslimat noktasi: GPS konumu veya adres koordinatlari
+    final destLat = _userLat ?? order.deliveryLatitude;
+    final destLng = _userLng ?? order.deliveryLongitude;
+    if (destLat == null || destLng == null) return null;
+
+    return ActiveOrderRoute(
+      pharmacyLat: order.pharmacyLatitude!,
+      pharmacyLng: order.pharmacyLongitude!,
+      deliveryLat: destLat,
+      deliveryLng: destLng,
+      status: order.status,
+    );
+  }
+
+  void _dismissTracker() {
+    _autoHideTimer?.cancel();
+    setState(() => _trackerDismissed = true);
+  }
+
+  Future<void> _loadActiveOrders() async {
+    try {
+      final orders = await _orderApi.getActiveOrders();
+      if (!mounted) return;
+
+      // Yeni aktif (non-delivered) siparis gelirse dismiss sifirla
+      final hasActive = orders.any((o) => o.status != "Delivered");
+      if (hasActive && _trackerDismissed) {
+        _trackerDismissed = false;
+        _autoHideTimer?.cancel();
+      }
+
+      // Delivered olunca 3 dk auto-hide timer baslat
+      final allDelivered = orders.isNotEmpty && orders.every((o) => o.status == "Delivered");
+      if (allDelivered && _autoHideTimer == null && !_trackerDismissed) {
+        _autoHideTimer = Timer(const Duration(minutes: 3), () {
+          if (!mounted) return;
+          _dismissTracker();
+        });
+      }
+
+      // Siparis kalmadiysa temizle
+      if (orders.isEmpty) {
+        _trackerDismissed = false;
+        _autoHideTimer?.cancel();
+        _autoHideTimer = null;
+      }
+
+      setState(() => _activeOrders = orders);
+    } catch (_) {}
   }
 
   Future<void> _loadUnreadCount() async {
     try {
       final count = await _notifApi.getUnreadCount();
       if (!mounted) return;
+
+      // Yeni bildirim varsa local push notification göster
+      if (count > _unreadCount && _unreadCount >= 0) {
+        final notifications = await _notifApi.getMyNotifications(page: 1, pageSize: count - _unreadCount);
+        for (final n in notifications.where((n) => !n.isRead)) {
+          await LocalNotificationService.I.showNow(
+            id: n.id,
+            title: n.title,
+            body: n.body,
+          );
+        }
+      }
+
       setState(() => _unreadCount = count);
     } catch (_) {}
   }
@@ -166,23 +254,43 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
 
+      // Kayitli eczane isimlerini set'e al (nobetci filtrelemesi icin)
+      final registeredNames = pharmacies
+          .map((p) => p.name.trim().toLowerCase())
+          .toSet();
+
       setState(() {
         _registeredMarkers = pharmacies
             .where((p) => p.latitude != 0 || p.longitude != 0)
-            .map((p) => PharmacyMarkerData(
+            .map((p) {
+              final isBoth = p.isOnDuty;
+              return PharmacyMarkerData(
                   name: p.name,
                   address: "${p.district} / ${p.address}",
                   phone: p.phone,
                   latitude: p.latitude,
                   longitude: p.longitude,
-                  distanceBadge: "Kayitli",
-                  badgeColor: const Color(0xFF00A79D),
-                  markerColor: const Color(0xFF00A79D),
-                ))
+                  distanceBadge: isBoth ? "Kayitli + Nobetci" : "Kayitli",
+                  badgeColor: isBoth ? Colors.purple : const Color(0xFF00A79D),
+                  markerColor: isBoth ? Colors.purple : const Color(0xFF00A79D),
+                  rating: p.averageRating > 0 ? p.averageRating : null,
+                  reviewCount: p.reviewCount > 0 ? p.reviewCount : null,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PharmacyDetailPage(pharmacyId: p.id),
+                      ),
+                    );
+                  },
+                );
+            })
             .toList();
 
+        // Nobetci markerlar: sadece kayitli olmayanlari goster (cift marker onleme)
         _dutyMarkers = dutyPharmacies
             .where((d) => d.latitude != null && d.longitude != null && (d.latitude != 0 || d.longitude != 0))
+            .where((d) => !registeredNames.contains(d.pharmacyName.trim().toLowerCase()))
             .map((d) => PharmacyMarkerData(
                   name: d.pharmacyName,
                   address: "${d.district} / ${d.address}",
@@ -192,6 +300,14 @@ class _HomePageState extends State<HomePage> {
                   distanceBadge: "Nobetci",
                   badgeColor: Colors.red,
                   markerColor: Colors.red,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DutyPharmaciesPage(),
+                      ),
+                    );
+                  },
                 ))
             .toList();
       });
@@ -211,6 +327,11 @@ class _HomePageState extends State<HomePage> {
           dutyMarkers: _dutyMarkers,
           userLat: _userLat,
           userLng: _userLng,
+          activeRoute: _buildActiveRoute(),
+          simpleStyle: _mapSimpleStyle,
+          onStyleChanged: (val) {
+            setState(() => _mapSimpleStyle = val);
+          },
         ),
       ),
     );
@@ -850,7 +971,8 @@ class _HomePageState extends State<HomePage> {
                 }
               },
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.15,
+                height: MediaQuery.of(context).size.height *
+                    (_activeOrders.isNotEmpty && !_trackerDismissed ? 0.28 : 0.15),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -861,12 +983,16 @@ class _HomePageState extends State<HomePage> {
                     // Harita (dokunma devre disi - sadece gorsel)
                     Positioned.fill(
                       child: IgnorePointer(
-                        child: _filteredMarkers.isEmpty
+                        child: _filteredMarkers.isEmpty && _activeOrders.isEmpty
                             ? const SizedBox()
                             : PharmacyMapView(
+                                key: ValueKey('map_${_userLat}_${_userLng}'),
                                 pharmacies: _filteredMarkers,
                                 userLat: _userLat,
                                 userLng: _userLng,
+                                activeRoute: _buildActiveRoute(),
+                                showControls: false,
+                                simpleStyle: _mapSimpleStyle,
                               ),
                       ),
                     ),
@@ -911,6 +1037,15 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    // Aktif siparis tracker
+                    if (_activeOrders.isNotEmpty && !_trackerDismissed)
+                      ActiveOrderTracker(
+                        activeOrders: _activeOrders,
+                        userLat: _userLat,
+                        userLng: _userLng,
+                        onRefresh: _loadActiveOrders,
+                        onDismiss: _dismissTracker,
+                      ),
                   ],
                 ),
               ),

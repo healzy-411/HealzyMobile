@@ -32,6 +32,18 @@ class PharmacyPanelApiService {
     throw Exception(body["message"] ?? "Profile failed (${res.statusCode})");
   }
 
+  // PUT /api/pharmacy-panel/toggle-status
+  Future<Map<String, dynamic>> toggleStatus() async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/api/pharmacy-panel/toggle-status'),
+      headers: _headers,
+    );
+    await _check401(res);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) return body;
+    throw Exception(body["message"] ?? "Toggle failed (${res.statusCode})");
+  }
+
   // GET /api/pharmacy-panel/orders
   Future<List<OrderDto>> getOrders() async {
     final res = await http.get(

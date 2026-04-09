@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/token_store.dart';
-import '../models/me_model.dart';
+import '../Models/me_model.dart';
 import 'orders_history_page.dart';
+import 'saved_cards_page.dart';
 import 'auth_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -157,6 +158,37 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
 
+                          const SizedBox(height: 12),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[700],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: const Icon(Icons.credit_card, color: Colors.white),
+                              label: const Text(
+                                "Kayitli Kartlarim",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SavedCardsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
                           const SizedBox(height: 20),
 
                           SizedBox(
@@ -177,8 +209,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              onPressed: () {
-                                TokenStore.clear();
+                              onPressed: () async {
+                                await TokenStore.clear();
+                                if (!context.mounted) return;
                                 Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(

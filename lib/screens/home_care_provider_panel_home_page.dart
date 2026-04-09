@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/home_care_panel_api_service.dart';
 import '../services/token_store.dart';
 import '../services/notification_api_service.dart';
+import '../services/local_notification_service.dart';
 import 'home_care_provider_requests_page.dart';
 import 'home_care_provider_profile_page.dart';
 import 'notifications_page.dart';
@@ -45,6 +46,18 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     try {
       final count = await _notifApi.getUnreadCount();
       if (!mounted) return;
+
+      if (count > _unreadCount && _unreadCount >= 0) {
+        final notifications = await _notifApi.getMyNotifications(page: 1, pageSize: count - _unreadCount);
+        for (final n in notifications.where((n) => !n.isRead)) {
+          await LocalNotificationService.I.showNow(
+            id: n.id,
+            title: n.title,
+            body: n.body,
+          );
+        }
+      }
+
       setState(() => _unreadCount = count);
     } catch (_) {}
   }
@@ -72,8 +85,9 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     }
   }
 
-  void _logout() {
-    TokenStore.clear();
+  Future<void> _logout() async {
+    await TokenStore.clear();
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(

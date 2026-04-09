@@ -229,7 +229,23 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
+
+            // Müşteri adı
+            if (order.customerName != null && order.customerName!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      order.customerName!,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
 
             // Tarih
             Text(
@@ -278,6 +294,61 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                 ),
               ),
 
+            // Ödeme bilgisi
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.payment, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    order.paymentMethod == "CreditCard"
+                        ? "Kredi Karti${order.cardNameSnapshot != null ? ' - ${order.cardNameSnapshot} (**** ${order.maskedCardNumberSnapshot ?? ''})' : ''}"
+                        : "Kapida Odeme",
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sipariş notu
+            if (order.orderNote != null && order.orderNote!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.message, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        "Siparis Notu: ${order.orderNote!}",
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // Teslimat notu
+            if (order.deliveryNote != null && order.deliveryNote!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.doorbell, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        "Teslimat: ${order.deliveryNote!}",
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Toplam
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -290,7 +361,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
               ],
             ),
 
-            // Not
+            // Durum notu
             if (order.statusNote != null && order.statusNote!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),

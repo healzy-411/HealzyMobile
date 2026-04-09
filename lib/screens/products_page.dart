@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import '../Models/otcmedicine_model.dart';
 import '../services/api_service.dart';
 import '../services/cart_api_service.dart';
+import '../services/cart_helper.dart';
 import '../services/token_store.dart';
 import 'cart_page.dart';
 
 class ProductsPage extends StatefulWidget {
   final int pharmacyId;
+  final String pharmacyName;
   final String categoryName;
 
   const ProductsPage({
     super.key,
     required this.pharmacyId,
+    required this.pharmacyName,
     required this.categoryName,
   });
 
@@ -97,11 +100,16 @@ class _ProductsPageState extends State<ProductsPage> {
     setState(() => adding = true);
 
     try {
-      final token = TokenStore.get();
-      debugPrint(
-          "ADD CLICK -> name=${product.name} id=${product.id} pharmacyId=${widget.pharmacyId}");
-      debugPrint(
-          "TOKEN -> ${token == null ? "NULL" : "OK (len=${token.length})"}");
+      final canAdd = await checkCartPharmacyConflict(
+        context: context,
+        cartApi: cartApi,
+        pharmacyId: widget.pharmacyId,
+        pharmacyName: widget.pharmacyName,
+      );
+      if (!canAdd) {
+        if (mounted) setState(() => adding = false);
+        return;
+      }
 
       final updated = await cartApi.addToCart(
         pharmacyId: widget.pharmacyId,

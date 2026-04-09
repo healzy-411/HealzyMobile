@@ -201,6 +201,15 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                               phone: p.phone,
                               latitude: p.latitude,
                               longitude: p.longitude,
+                              markerColor: p.isOnDuty ? Colors.purple : const Color(0xFF00A79D),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PharmacyDetailPage(pharmacyId: p.id),
+                                  ),
+                                );
+                              },
                             ))
                         .toList(),
                   );
@@ -213,45 +222,96 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                   itemBuilder: (context, index) {
                     final p = pharmacies[index];
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CategoriesPage(
-                              pharmacyId: p.id,
-                              pharmacyName: p.name,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(16)),
-                              child: Image.asset(
-                                'assets/images/pharmacy.jpeg',
-                                height: 160,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
+                    final isClosed = !p.isOpen;
+
+                    return Opacity(
+                      opacity: isClosed ? 0.5 : 1.0,
+                      child: GestureDetector(
+                        onTap: isClosed ? null : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CategoriesPage(
+                                pharmacyId: p.id,
+                                pharmacyName: p.name,
                               ),
                             ),
-                            Padding(
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: isClosed ? null : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 10,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(16)),
+                                    child: ColorFiltered(
+                                      colorFilter: isClosed
+                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                                      child: Image.asset(
+                                        'assets/images/pharmacy.jpeg',
+                                        height: 160,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isClosed)
+                                    Positioned(
+                                      top: 10, left: 10,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.lock_outline, size: 14, color: Colors.white),
+                                            SizedBox(width: 4),
+                                            Text("Kapali", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  if (p.isOnDuty)
+                                    Positioned(
+                                      top: isClosed ? 45 : 10, left: 10,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purple,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.access_time_filled, size: 14, color: Colors.white),
+                                            SizedBox(width: 4),
+                                            Text("Nobetci", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Padding(
                               padding: const EdgeInsets.all(14),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,6 +383,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                           ],
                         ),
                       ),
+                    ),
                     );
                   },
                 );

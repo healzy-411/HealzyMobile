@@ -286,4 +286,33 @@ Future<List<MedicineSearchResult>> searchOtcMedicines(String query) async {
   throw Exception("Ilac arama basarisiz: ${response.statusCode}");
 }
 
+// =========================================================
+// 🔍 MEDICINE COMPARE (MULTIPLE)
+// =========================================================
+
+Future<List<PharmacyCompareResult>> compareMedicines(List<int> medicineIds) async {
+  final url = Uri.parse('$baseUrl/medicines/compare');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: jsonEncode(medicineIds),
+  );
+
+  if (response.statusCode == 401) {
+    await TokenStore.clear();
+    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
+  }
+
+  if (response.statusCode == 200) {
+    final List<dynamic> jsonList = jsonDecode(response.body);
+    return jsonList.map((e) => PharmacyCompareResult.fromJson(e)).toList();
+  }
+
+  throw Exception("Karsilastirma basarisiz: ${response.statusCode}");
+}
+
 }

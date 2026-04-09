@@ -10,6 +10,9 @@ class AddressDto {
   final String? postalCode;
   final String? addressDescription;
 
+  final double? latitude;
+  final double? longitude;
+
   final bool isDefault;
   final bool isSelected;
 
@@ -23,7 +26,9 @@ class AddressDto {
     required this.neighborhood,
     required this.addressLine,
     required this.postalCode,
-    required this.addressDescription, // ✅ eklendi
+    required this.addressDescription,
+    this.latitude,
+    this.longitude,
     required this.isDefault,
     required this.isSelected,
   });
@@ -40,8 +45,10 @@ class AddressDto {
       addressLine: (j['addressLine'] ?? '') as String,
       postalCode: j['postalCode']?.toString(),
 
-      // ✅ eklendi
       addressDescription: j['addressDescription']?.toString(),
+
+      latitude: (j['latitude'] as num?)?.toDouble(),
+      longitude: (j['longitude'] as num?)?.toDouble(),
 
       isDefault: (j['isDefault'] ?? false) as bool,
       isSelected: (j['isSelected'] ?? false) as bool,
@@ -60,6 +67,8 @@ class AddressDto {
     String? addressLine,
     String? postalCode,
     String? addressDescription,
+    double? latitude,
+    double? longitude,
     bool? isDefault,
     bool? isSelected,
   }) {
@@ -74,6 +83,8 @@ class AddressDto {
       addressLine: addressLine ?? this.addressLine,
       postalCode: postalCode ?? this.postalCode,
       addressDescription: addressDescription ?? this.addressDescription,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
 
       isDefault: isDefault ?? this.isDefault,
       isSelected: isSelected ?? this.isSelected,

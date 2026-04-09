@@ -11,6 +11,14 @@ class PrescriptionApiService {
 
   PrescriptionApiService({required this.baseUrl});
 
+  String _extractErrorMessage(http.Response res) {
+    try {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (data.containsKey('message')) return data['message'];
+    } catch (_) {}
+    return 'Bir hata oluştu (${res.statusCode})';
+  }
+
   Future<Map<String, String>> _headers() async {
     final token = TokenStore.get();
     if (token == null || token.isEmpty) {
@@ -43,7 +51,7 @@ class PrescriptionApiService {
       return PrescriptionDetailDto.fromJson(data);
     }
 
-    throw Exception('Load prescription failed: ${res.statusCode} ${res.body}');
+    throw Exception(_extractErrorMessage(res));
   }
 
   Future<PrescriptionPriceResultDto> simulate({
@@ -77,7 +85,7 @@ class PrescriptionApiService {
       return PrescriptionPriceResultDto.fromJson(data);
     }
 
-    throw Exception('Simulate failed: ${res.statusCode} ${res.body}');
+    throw Exception(_extractErrorMessage(res));
   }
 
   Future<CartResponse> addPrescriptionToCart({
@@ -109,9 +117,7 @@ class PrescriptionApiService {
       return CartResponse.fromJson(data);
     }
 
-    throw Exception(
-      'Add-to-cart failed: ${res.statusCode} ${res.body}',
-    );
+    throw Exception(_extractErrorMessage(res));
   }
 }
 

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../models/neighborhood_model.dart';
+import '../Models/neighborhood_model.dart';
 
 class NeighborhoodApiService {
   final String baseUrl; // ör: http://localhost:5009
