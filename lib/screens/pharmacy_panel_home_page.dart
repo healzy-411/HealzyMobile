@@ -14,6 +14,7 @@ import 'pharmacy_insurance_page.dart';
 import 'notifications_page.dart';
 import 'auth_page.dart';
 import '../services/auth_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyPanelHomePage extends StatefulWidget {
   const PharmacyPanelHomePage({super.key});
@@ -23,8 +24,8 @@ class PharmacyPanelHomePage extends StatefulWidget {
 }
 
 class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
-  final _api = PharmacyPanelApiService(baseUrl: "http://localhost:5009");
-  final _notifApi = NotificationApiService(baseUrl: "http://localhost:5009");
+  final _api = PharmacyPanelApiService(baseUrl: ApiConfig.baseUrl);
+  final _notifApi = NotificationApiService(baseUrl: ApiConfig.baseUrl);
 
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _summary;
@@ -66,7 +67,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       final token = TokenStore.get();
       if (token == null) return;
       await http.post(
-        Uri.parse("http://localhost:5009/api/auth/heartbeat"),
+        Uri.parse("${ApiConfig.baseUrl}/api/auth/heartbeat"),
         headers: {"Authorization": "Bearer $token"},
       );
     } catch (_) {}
@@ -77,7 +78,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       final token = TokenStore.get();
       if (token == null) return;
       final resp = await http.get(
-        Uri.parse("http://localhost:5009/api/pharmacy-panel/rejection-status"),
+        Uri.parse("${ApiConfig.baseUrl}/api/pharmacy-panel/rejection-status"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (resp.statusCode == 200) {
@@ -100,7 +101,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     try {
       final token = TokenStore.get();
       final resp = await http.post(
-        Uri.parse("http://localhost:5009/api/pharmacy-panel/feedback"),
+        Uri.parse("${ApiConfig.baseUrl}/api/pharmacy-panel/feedback"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
@@ -193,7 +194,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       final token = TokenStore.get();
       if (token != null) {
         await http.post(
-          Uri.parse("http://localhost:5009/api/auth/logout"),
+          Uri.parse("${ApiConfig.baseUrl}/api/auth/logout"),
           headers: {"Authorization": "Bearer $token"},
         );
       }
@@ -204,7 +205,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       context,
       MaterialPageRoute(
         builder: (_) => AuthPage(
-          authService: AuthService(baseUrl: "http://localhost:5009"),
+          authService: AuthService(baseUrl: ApiConfig.baseUrl),
           customerHome: const SizedBox(),
         ),
       ),
@@ -682,7 +683,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       final token = TokenStore.get();
       if (token == null) return;
       final resp = await http.get(
-        Uri.parse("http://localhost:5009/api/pharmacy-panel/registration-info"),
+        Uri.parse("${ApiConfig.baseUrl}/api/pharmacy-panel/registration-info"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (resp.statusCode != 200) return;
@@ -791,7 +792,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                                       'workingHours': controllers['workingHours']!.text.trim(),
                                     };
                                     final resp = await http.put(
-                                      Uri.parse("http://localhost:5009/api/pharmacy-panel/update-info"),
+                                      Uri.parse("${ApiConfig.baseUrl}/api/pharmacy-panel/update-info"),
                                       headers: {"Authorization": "Bearer $token", "Content-Type": "application/json"},
                                       body: jsonEncode(body),
                                     );

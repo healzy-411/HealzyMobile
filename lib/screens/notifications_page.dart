@@ -8,6 +8,7 @@ import '../services/token_store.dart';
 import 'order_detail_page.dart';
 import 'pharmacy_orders_page.dart';
 import 'home_care_provider_requests_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -17,8 +18,8 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final _api = NotificationApiService(baseUrl: "http://localhost:5009");
-  final _orderApi = OrderApiService(baseUrl: "http://localhost:5009");
+  final _api = NotificationApiService(baseUrl: ApiConfig.baseUrl);
+  final _orderApi = OrderApiService(baseUrl: ApiConfig.baseUrl);
 
   List<NotificationModel> _notifications = [];
   bool _loading = true;

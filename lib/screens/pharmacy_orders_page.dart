@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../Models/order_model.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyOrdersPage extends StatefulWidget {
   const PharmacyOrdersPage({super.key});
@@ -11,7 +12,7 @@ class PharmacyOrdersPage extends StatefulWidget {
 
 class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
     with SingleTickerProviderStateMixin {
-  final _api = PharmacyPanelApiService(baseUrl: "http://localhost:5009");
+  final _api = PharmacyPanelApiService(baseUrl: ApiConfig.baseUrl);
 
   late TabController _tabController;
   List<OrderDto> _orders = [];

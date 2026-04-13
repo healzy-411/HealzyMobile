@@ -13,7 +13,7 @@ import '../services/api_service.dart';
 import '../widgets/search_picker_sheet.dart';
 
 class EditAddressPage extends StatefulWidget {
-  final String baseUrl; // ör: http://localhost:5009
+  final String baseUrl; // ör: https://api.apphealzy.com
   final AddressDto address;
 
   const EditAddressPage({

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../Models/neighborhood_model.dart';
 
 class NeighborhoodApiService {
-  final String baseUrl; // ör: http://localhost:5009
+  final String baseUrl; // ör: https://api.apphealzy.com
 
   NeighborhoodApiService({required this.baseUrl});
 

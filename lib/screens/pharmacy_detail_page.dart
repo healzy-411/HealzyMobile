@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../Models/review_model.dart';
 import '../services/review_api_service.dart';
 import 'categories_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyDetailPage extends StatefulWidget {
   final int pharmacyId;
@@ -15,7 +16,7 @@ class PharmacyDetailPage extends StatefulWidget {
 }
 
 class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
-  final _api = ReviewApiService(baseUrl: "http://localhost:5009");
+  final _api = ReviewApiService(baseUrl: ApiConfig.baseUrl);
 
   PharmacyDetailModel? _detail;
   bool _loading = true;
@@ -97,7 +98,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
     }
 
     final d = _detail!;
-    const baseUrl = "http://localhost:5009";
+    final baseUrl = ApiConfig.baseUrl;
 
     return Scaffold(
       appBar: AppBar(

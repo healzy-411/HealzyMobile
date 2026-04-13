@@ -13,7 +13,7 @@ import '../services/api_service.dart';
 import '../widgets/search_picker_sheet.dart';
 
 class AddAddressPage extends StatefulWidget {
-  final String baseUrl; // ör: http://localhost:5009
+  final String baseUrl; // ör: https://api.apphealzy.com
   const AddAddressPage({super.key, required this.baseUrl});
 
   @override

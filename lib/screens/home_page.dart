@@ -29,6 +29,7 @@ import '../services/local_notification_service.dart';
 import '../services/order_api_service.dart';
 import '../Models/order_model.dart';
 import '../widgets/active_order_tracker.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -39,18 +40,18 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // Flutter Web
-  final String baseUrl = "http://localhost:5009";
+  final String baseUrl = ApiConfig.baseUrl;
 
   bool _addrLoading = false;
   String? _addrError;
 
   // Bildirim
-  final _notifApi = NotificationApiService(baseUrl: "http://localhost:5009");
+  final _notifApi = NotificationApiService(baseUrl: ApiConfig.baseUrl);
   int _unreadCount = 0;
   Timer? _notifTimer;
 
   // Aktif siparis
-  final _orderApi = OrderApiService(baseUrl: "http://localhost:5009");
+  final _orderApi = OrderApiService(baseUrl: ApiConfig.baseUrl);
   List<OrderDto> _activeOrders = [];
   Timer? _activeOrderTimer;
   bool _trackerDismissed = false;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/home_care_panel_api_service.dart';
 import '../Models/home_care_models.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class HomeCareProviderRequestsPage extends StatefulWidget {
   const HomeCareProviderRequestsPage({super.key});
@@ -11,7 +12,7 @@ class HomeCareProviderRequestsPage extends StatefulWidget {
 
 class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsPage>
     with SingleTickerProviderStateMixin {
-  final _api = HomeCarePanelApiService(baseUrl: "http://localhost:5009");
+  final _api = HomeCarePanelApiService(baseUrl: ApiConfig.baseUrl);
 
   late TabController _tabController;
   List<HomeCareProviderRequestModel> _requests = [];

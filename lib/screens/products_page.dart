@@ -6,6 +6,7 @@ import '../services/cart_api_service.dart';
 import '../services/cart_helper.dart';
 import '../services/token_store.dart';
 import 'cart_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class ProductsPage extends StatefulWidget {
   final int pharmacyId;
@@ -30,7 +31,7 @@ class _ProductsPageState extends State<ProductsPage> {
   String? _productError;
 
   late final CartApiService cartApi = CartApiService(
-    baseUrl: 'http://localhost:5009', // Flutter Web
+    baseUrl: ApiConfig.baseUrl, // Flutter Web
     getToken: () async => TokenStore.get(),
   );
 

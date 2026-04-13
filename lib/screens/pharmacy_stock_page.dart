@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyStockPage extends StatefulWidget {
   const PharmacyStockPage({super.key});
@@ -9,7 +10,7 @@ class PharmacyStockPage extends StatefulWidget {
 }
 
 class _PharmacyStockPageState extends State<PharmacyStockPage> {
-  final _api = PharmacyPanelApiService(baseUrl: "http://localhost:5009");
+  final _api = PharmacyPanelApiService(baseUrl: ApiConfig.baseUrl);
 
   List<Map<String, dynamic>> _stocks = [];
   bool _loading = true;

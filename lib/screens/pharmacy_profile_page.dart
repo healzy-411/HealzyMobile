@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../services/upload_api_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyProfilePage extends StatefulWidget {
   final Map<String, dynamic> profile;
@@ -14,8 +15,8 @@ class PharmacyProfilePage extends StatefulWidget {
 }
 
 class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
-  final _api = PharmacyPanelApiService(baseUrl: "http://localhost:5009");
-  final _uploadApi = UploadApiService(baseUrl: "http://localhost:5009");
+  final _api = PharmacyPanelApiService(baseUrl: ApiConfig.baseUrl);
+  final _uploadApi = UploadApiService(baseUrl: ApiConfig.baseUrl);
   bool _editing = false;
   bool _saving = false;
   String? _imageUrl;
@@ -103,7 +104,7 @@ class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
   }
 
   Widget _buildAvatar() {
-    const baseUrl = "http://localhost:5009";
+    final baseUrl = ApiConfig.baseUrl;
     if (_pickedImage != null) {
       return CircleAvatar(
         radius: 48,

@@ -5,14 +5,15 @@ import '../services/order_api_service.dart';
 import '../services/review_api_service.dart';
 import 'cart_page.dart';
 import 'pharmacy_detail_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class OrderDetailPage extends StatefulWidget {
-  final String baseUrl;
+  final String? baseUrl;
   final OrderDto order;
 
   const OrderDetailPage({
     super.key,
-    this.baseUrl = "http://localhost:5009",
+    this.baseUrl,
     required this.order,
   });
 
@@ -30,8 +31,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   @override
   void initState() {
     super.initState();
-    _api = OrderApiService(baseUrl: widget.baseUrl);
-    _reviewApi = ReviewApiService(baseUrl: widget.baseUrl);
+    _api = OrderApiService(baseUrl: widget.baseUrl ?? ApiConfig.baseUrl);
+    _reviewApi = ReviewApiService(baseUrl: widget.baseUrl ?? ApiConfig.baseUrl);
     _checkReview();
   }
 

@@ -12,6 +12,7 @@ import '../services/order_api_service.dart';
 import '../services/saved_card_api_service.dart';
 import '../services/token_store.dart';
 import '../utils/distance_utils.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class CheckoutPage extends StatefulWidget {
   final CartResponse cart;
@@ -30,7 +31,7 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  final String baseUrl = "http://localhost:5009";
+  final String baseUrl = ApiConfig.baseUrl;
 
   late final AddressApiService _addressApi = AddressApiService(baseUrl: baseUrl);
   late final OrderApiService _orderApi = OrderApiService(baseUrl: baseUrl);

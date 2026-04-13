@@ -6,6 +6,7 @@ import '../services/cart_api_service.dart';
 import '../services/cart_helper.dart';
 import '../services/token_store.dart';
 import 'categories_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class MedicineSearchPage extends StatefulWidget {
   const MedicineSearchPage({super.key});
@@ -18,7 +19,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
   final _api = ApiService();
   final _searchController = TextEditingController();
   late final CartApiService _cartApi = CartApiService(
-    baseUrl: 'http://localhost:5009',
+    baseUrl: ApiConfig.baseUrl,
     getToken: () async => TokenStore.get(),
   );
 

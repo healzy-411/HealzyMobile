@@ -9,6 +9,7 @@ import '../Models/otcmedicine_model.dart';
 import '../Models/duty_pharmacy_model.dart';
 import '../Models/medicine_search_model.dart';
 import 'token_store.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 
 class ApiService {
@@ -18,14 +19,14 @@ class ApiService {
 
   String get baseUrl {
     if (kIsWeb) {
-      return 'http://localhost:5009/api';
+      return '${ApiConfig.baseUrl}/api';
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5009/api';
+      return '${ApiConfig.baseUrl}/api';
     }
 
-    return 'http://127.0.0.1:5009/api';
+    return '${ApiConfig.baseUrl}/api';
   }
 
   // =========================================================

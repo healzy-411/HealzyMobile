@@ -4,6 +4,7 @@ import '../Models/cart_model.dart';
 import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
 import 'checkout_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class CartPage extends StatefulWidget {
   final List<int>? prescriptionItemIds;
@@ -21,7 +22,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   // Flutter Web
-  final String baseUrl = 'http://localhost:5009';
+  final String baseUrl = ApiConfig.baseUrl;
 
   late final CartApiService cartApi = CartApiService(
     baseUrl: baseUrl,

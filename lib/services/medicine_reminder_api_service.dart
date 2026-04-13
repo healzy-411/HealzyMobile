@@ -5,7 +5,7 @@ import '../Models/medicine_reminder_model.dart';
 import 'token_store.dart';
 
 class MedicineReminderApiService {
-  final String baseUrl; // örn: http://localhost:5009
+  final String baseUrl; // örn: https://api.apphealzy.com
 
   MedicineReminderApiService({required this.baseUrl});
 

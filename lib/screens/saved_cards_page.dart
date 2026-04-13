@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../Models/saved_card_model.dart';
 import '../services/saved_card_api_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -11,7 +12,7 @@ class SavedCardsPage extends StatefulWidget {
 }
 
 class _SavedCardsPageState extends State<SavedCardsPage> {
-  final _api = SavedCardApiService(baseUrl: "http://localhost:5009");
+  final _api = SavedCardApiService(baseUrl: ApiConfig.baseUrl);
 
   List<SavedCardDto> _cards = [];
   bool _loading = true;

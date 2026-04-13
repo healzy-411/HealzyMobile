@@ -4,6 +4,7 @@ import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
 import 'products_page.dart';
 import 'cart_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class CategoriesPage extends StatefulWidget {
   final int pharmacyId;
@@ -22,7 +23,7 @@ class CategoriesPage extends StatefulWidget {
 class _CategoriesPageState extends State<CategoriesPage> {
   final ApiService apiService = ApiService();
   late final CartApiService cartApi = CartApiService(
-    baseUrl: 'http://localhost:5009',
+    baseUrl: ApiConfig.baseUrl,
     getToken: () async => TokenStore.get(),
   );
 

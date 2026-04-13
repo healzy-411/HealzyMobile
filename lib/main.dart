@@ -8,6 +8,7 @@ import 'screens/auth_page.dart';
 import 'screens/home_page.dart';
 import 'screens/pharmacy_panel_home_page.dart';
 import 'screens/home_care_provider_panel_home_page.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -54,7 +55,7 @@ class HealzyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseUrl = "http://localhost:5009";
+    final baseUrl = ApiConfig.baseUrl;
     final authService = AuthService(baseUrl: baseUrl);
 
     return MaterialApp(

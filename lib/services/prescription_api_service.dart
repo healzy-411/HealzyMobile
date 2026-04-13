@@ -7,7 +7,7 @@ import '../Models/cart_model.dart';
 import 'token_store.dart';
 
 class PrescriptionApiService {
-  final String baseUrl; // örn: http://localhost:5009
+  final String baseUrl; // örn: https://api.apphealzy.com
 
   PrescriptionApiService({required this.baseUrl});
 

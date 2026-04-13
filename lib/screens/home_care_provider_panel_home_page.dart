@@ -11,6 +11,7 @@ import 'home_care_provider_profile_page.dart';
 import 'notifications_page.dart';
 import 'auth_page.dart';
 import '../services/auth_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 
 class HomeCareProviderPanelHomePage extends StatefulWidget {
   const HomeCareProviderPanelHomePage({super.key});
@@ -20,8 +21,8 @@ class HomeCareProviderPanelHomePage extends StatefulWidget {
 }
 
 class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHomePage> {
-  final _api = HomeCarePanelApiService(baseUrl: "http://localhost:5009");
-  final _notifApi = NotificationApiService(baseUrl: "http://localhost:5009");
+  final _api = HomeCarePanelApiService(baseUrl: ApiConfig.baseUrl);
+  final _notifApi = NotificationApiService(baseUrl: ApiConfig.baseUrl);
 
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _summary;
@@ -63,7 +64,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       final token = TokenStore.get();
       if (token == null) return;
       await http.post(
-        Uri.parse("http://localhost:5009/api/auth/heartbeat"),
+        Uri.parse("${ApiConfig.baseUrl}/api/auth/heartbeat"),
         headers: {"Authorization": "Bearer $token"},
       );
     } catch (_) {}
@@ -74,7 +75,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       final token = TokenStore.get();
       if (token == null) return;
       final resp = await http.get(
-        Uri.parse("http://localhost:5009/api/home-care-panel/rejection-status"),
+        Uri.parse("${ApiConfig.baseUrl}/api/home-care-panel/rejection-status"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (resp.statusCode == 200) {
@@ -97,7 +98,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     try {
       final token = TokenStore.get();
       final resp = await http.post(
-        Uri.parse("http://localhost:5009/api/home-care-panel/feedback"),
+        Uri.parse("${ApiConfig.baseUrl}/api/home-care-panel/feedback"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
@@ -175,7 +176,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       final token = TokenStore.get();
       if (token != null) {
         await http.post(
-          Uri.parse("http://localhost:5009/api/auth/logout"),
+          Uri.parse("${ApiConfig.baseUrl}/api/auth/logout"),
           headers: {"Authorization": "Bearer $token"},
         );
       }
@@ -186,7 +187,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       context,
       MaterialPageRoute(
         builder: (_) => AuthPage(
-          authService: AuthService(baseUrl: "http://localhost:5009"),
+          authService: AuthService(baseUrl: ApiConfig.baseUrl),
           customerHome: const SizedBox(),
         ),
       ),
@@ -629,7 +630,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       final token = TokenStore.get();
       if (token == null) return;
       final resp = await http.get(
-        Uri.parse("http://localhost:5009/api/home-care-panel/registration-info"),
+        Uri.parse("${ApiConfig.baseUrl}/api/home-care-panel/registration-info"),
         headers: {"Authorization": "Bearer $token"},
       );
       if (resp.statusCode != 200) return;
@@ -719,7 +720,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                                   final body = {};
                                   controllers.forEach((k, v) => body[k] = v.text.trim());
                                   final resp = await http.put(
-                                    Uri.parse("http://localhost:5009/api/home-care-panel/update-info"),
+                                    Uri.parse("${ApiConfig.baseUrl}/api/home-care-panel/update-info"),
                                     headers: {"Authorization": "Bearer $token", "Content-Type": "application/json"},
                                     body: jsonEncode(body),
                                   );
