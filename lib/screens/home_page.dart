@@ -137,8 +137,23 @@ class _HomePageState extends State<HomePage> {
     _notifTimer?.cancel();
     _activeOrderTimer?.cancel();
     _autoHideTimer?.cancel();
+    _heartbeatTimer?.cancel();
     _prescriptionController.dispose();
     super.dispose();
+  }
+
+  // Heartbeat
+  Timer? _heartbeatTimer;
+
+  Future<void> _sendHeartbeat() async {
+    try {
+      final token = TokenStore.get();
+      if (token == null) return;
+      await http.post(
+        Uri.parse("$baseUrl/api/auth/heartbeat"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    } catch (_) {}
   }
 
   @override
@@ -148,8 +163,10 @@ class _HomePageState extends State<HomePage> {
     _loadUnreadCount();
     _loadMapData();
     _loadActiveOrders();
+    _sendHeartbeat();
     _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
     _activeOrderTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadActiveOrders());
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) => _sendHeartbeat());
   }
 
   ActiveOrderRoute? _buildActiveRoute() {

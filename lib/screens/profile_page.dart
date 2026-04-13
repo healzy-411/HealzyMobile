@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import '../services/token_store.dart';
 import '../Models/me_model.dart';
@@ -210,6 +211,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                               onPressed: () async {
+                                try {
+                                  final token = TokenStore.get();
+                                  if (token != null) {
+                                    await http.post(
+                                      Uri.parse("${widget.baseUrl}/api/auth/logout"),
+                                      headers: {"Authorization": "Bearer $token"},
+                                    );
+                                  }
+                                } catch (_) {}
                                 await TokenStore.clear();
                                 if (!context.mounted) return;
                                 Navigator.pushAndRemoveUntil(

@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/home_care_panel_api_service.dart';
 import '../services/token_store.dart';
 import '../services/notification_api_service.dart';
@@ -27,19 +29,102 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
   String? _error;
   int _unreadCount = 0;
   Timer? _notifTimer;
+  Timer? _heartbeatTimer;
+
+  // Rejection state
+  bool _isRejected = false;
+  String? _rejectionNote;
+  int _rejectionCount = 0;
+  bool _canSubmitFeedback = false;
+  final _feedbackController = TextEditingController();
+  bool _sendingFeedback = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _loadUnreadCount();
+    _loadRejectionStatus();
+    _sendHeartbeat();
     _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) => _sendHeartbeat());
   }
 
   @override
   void dispose() {
     _notifTimer?.cancel();
+    _heartbeatTimer?.cancel();
+    _feedbackController.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendHeartbeat() async {
+    try {
+      final token = TokenStore.get();
+      if (token == null) return;
+      await http.post(
+        Uri.parse("http://localhost:5009/api/auth/heartbeat"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _loadRejectionStatus() async {
+    try {
+      final token = TokenStore.get();
+      if (token == null) return;
+      final resp = await http.get(
+        Uri.parse("http://localhost:5009/api/home-care-panel/rejection-status"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        if (!mounted) return;
+        setState(() {
+          _isRejected = data["isRejected"] ?? false;
+          _rejectionNote = data["rejectionNote"] as String?;
+          _rejectionCount = (data["rejectionCount"] ?? 0) as int;
+          _canSubmitFeedback = data["canSubmitFeedback"] ?? false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _submitFeedback() async {
+    final message = _feedbackController.text.trim();
+    if (message.isEmpty) return;
+    setState(() => _sendingFeedback = true);
+    try {
+      final token = TokenStore.get();
+      final resp = await http.post(
+        Uri.parse("http://localhost:5009/api/home-care-panel/feedback"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"message": message}),
+      );
+      if (!mounted) return;
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        _feedbackController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Geri bildirim gonderildi")),
+        );
+        _loadRejectionStatus();
+      } else {
+        final body = jsonDecode(resp.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(body["message"] ?? "Geri bildirim gonderilemedi")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingFeedback = false);
+    }
   }
 
   Future<void> _loadUnreadCount() async {
@@ -86,6 +171,15 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
   }
 
   Future<void> _logout() async {
+    try {
+      final token = TokenStore.get();
+      if (token != null) {
+        await http.post(
+          Uri.parse("http://localhost:5009/api/auth/logout"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+      }
+    } catch (_) {}
     await TokenStore.clear();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -167,6 +261,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
   Widget _buildContent() {
     final name = _profile?["name"] ?? "Saglayici";
     final isActive = _profile?["isActive"] ?? true;
+    final isApproved = _profile?["isApproved"] ?? false;
 
     final pendingRequests = (_summary?["pendingRequestCount"] ?? 0) as int;
     final todayRequests = (_summary?["todayRequestCount"] ?? 0) as int;
@@ -178,6 +273,9 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Rejection banner
+          if (_isRejected) _buildRejectionBanner(),
+
           // Saglayici adi + durum
           Card(
             child: ListTile(
@@ -247,8 +345,12 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
 
           const SizedBox(height: 20),
 
-          // Menu kartlari
-          GridView.count(
+          // Menu kartlari - onaysizsa devre disi
+          if (!isApproved)
+            IgnorePointer(
+              child: Opacity(
+                opacity: 0.5,
+                child: GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -278,6 +380,177 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
               ),
             ],
           ),
+            ),
+          )
+          else
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                _menuCard(
+                  icon: Icons.receipt_long,
+                  label: "Talepler",
+                  color: const Color(0xFF00A79D),
+                  badge: pendingRequests > 0 ? "$pendingRequests" : null,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeCareProviderRequestsPage())),
+                ),
+                _menuCard(
+                  icon: Icons.store,
+                  label: "Profil",
+                  color: const Color(0xFF004D40),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HomeCareProviderProfilePage(profile: _profile!))),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRejectionBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.cancel, color: Colors.red.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Basvurunuz reddedildi",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "${_rejectionCount > 3 ? 3 : _rejectionCount}/3",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_rejectionNote != null && _rejectionNote!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _rejectionNote!,
+                style: TextStyle(fontSize: 13, color: Colors.red.shade900),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (_canSubmitFeedback) ...[
+            TextField(
+              controller: _feedbackController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: "Geri bildiriminizi yazin...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.all(12),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _sendingFeedback ? null : _submitFeedback,
+                    icon: _sendingFeedback
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.send, size: 18),
+                    label: Text(_sendingFeedback ? "Gonderiliyor..." : "Gonder", style: const TextStyle(fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _openEditInfoDialog,
+                icon: const Icon(Icons.edit, size: 18),
+                label: const Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ],
+            ),
+          ] else if (_rejectionCount >= 3) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade900,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.lock, color: Colors.white, size: 24),
+                  SizedBox(height: 6),
+                  Text(
+                    "Hesabiniz kalici olarak reddedilmistir",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Bir sonraki oturum aciliminizda sisteme giris yapamayacaksiniz. Lutfen yonetici ile iletisime gecin.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -349,5 +622,142 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
         ),
       ),
     );
+  }
+
+  Future<void> _openEditInfoDialog() async {
+    try {
+      final token = TokenStore.get();
+      if (token == null) return;
+      final resp = await http.get(
+        Uri.parse("http://localhost:5009/api/home-care-panel/registration-info"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (resp.statusCode != 200) return;
+      final info = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (!mounted) return;
+
+      final controllers = {
+        'firstName': TextEditingController(text: info['firstName'] ?? ''),
+        'lastName': TextEditingController(text: info['lastName'] ?? ''),
+        'phone': TextEditingController(text: (info['phone'] ?? '').toString().length > 11 ? (info['phone'] ?? '').toString().substring(0, 11) : (info['phone'] ?? '')),
+        'providerName': TextEditingController(text: info['providerName'] ?? ''),
+        'providerPhone': TextEditingController(text: info['providerPhone'] ?? ''),
+        'city': TextEditingController(text: info['city'] ?? ''),
+        'district': TextEditingController(text: info['district'] ?? ''),
+        'address': TextEditingController(text: info['address'] ?? ''),
+        'licenseNumber': TextEditingController(text: info['licenseNumber'] ?? ''),
+        'description': TextEditingController(text: info['description'] ?? ''),
+      };
+      final labels = {
+        'firstName': 'Ad', 'lastName': 'Soyad', 'phone': 'Telefon',
+        'providerName': 'Kurum Adi', 'providerPhone': 'Kurum Telefon',
+        'city': 'Il', 'district': 'Ilce', 'address': 'Adres',
+        'licenseNumber': 'Sicil Numarasi', 'description': 'Aciklama',
+      };
+      final maxLengths = {'phone': 11, 'providerPhone': 15};
+
+      await showDialog(
+        context: context,
+        builder: (ctx) {
+          bool saving = false;
+          return StatefulBuilder(builder: (ctx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Container(
+                width: double.maxFinite,
+                constraints: const BoxConstraints(maxHeight: 600),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit, color: Colors.blue),
+                          const SizedBox(width: 8),
+                          const Expanded(child: Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: controllers.entries.map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: TextField(
+                              controller: e.value,
+                              maxLength: maxLengths[e.key] as int?,
+                              maxLines: e.key == 'description' ? 3 : 1,
+                              keyboardType: (e.key == 'phone' || e.key == 'providerPhone') ? TextInputType.phone : TextInputType.text,
+                              decoration: InputDecoration(
+                                labelText: labels[e.key] ?? e.key,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                filled: true, fillColor: Colors.grey.shade50,
+                                counterText: maxLengths.containsKey(e.key) ? null : '',
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text("Iptal"))),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: saving ? null : () async {
+                                setDialogState(() => saving = true);
+                                try {
+                                  final body = {};
+                                  controllers.forEach((k, v) => body[k] = v.text.trim());
+                                  final resp = await http.put(
+                                    Uri.parse("http://localhost:5009/api/home-care-panel/update-info"),
+                                    headers: {"Authorization": "Bearer $token", "Content-Type": "application/json"},
+                                    body: jsonEncode(body),
+                                  );
+                                  final success = resp.statusCode == 200;
+                                  final msg = success ? "Bilgileriniz kaydedildi" : ((jsonDecode(resp.body) as Map<String, dynamic>)["message"] ?? "Hata").toString();
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(msg)));
+                                  if (success) { _loadRejectionStatus(); _loadData(); }
+                                } catch (e) {
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                              child: saving
+                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Text("Kaydet", style: TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          });
+        },
+      );
+
+      Future.delayed(const Duration(milliseconds: 100), () {
+        for (final c in controllers.values) { try { c.dispose(); } catch (_) {} }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Bilgiler yuklenemedi: $e")));
+    }
   }
 }
