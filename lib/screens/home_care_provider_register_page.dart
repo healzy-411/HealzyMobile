@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/token_store.dart';
@@ -13,52 +14,46 @@ class HomeCareProviderRegisterPage extends StatefulWidget {
 }
 
 class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterPage> {
+  // --- TEMA RENKLERİ ---
+  static const Color pearl = Color.fromARGB(255, 255, 255, 255);
+  static const Color midnight = Color(0xFF102E4A);
+
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   String? _error;
 
-  // Kisisel bilgiler
+  // Controllers (Arkadaşının eklediği licenseNumber dahil güncel liste)
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _email = TextEditingController();
   final _nationalId = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-
-  // Saglayici bilgileri
+  final _passwordConfirm = TextEditingController();
   final _providerName = TextEditingController();
   final _providerPhone = TextEditingController();
   final _city = TextEditingController();
   final _district = TextEditingController();
   final _address = TextEditingController();
-  final _licenseNumber = TextEditingController();
+  final _licenseNumber = TextEditingController(); // ✅ Yeni eklenen alan
   final _description = TextEditingController();
 
   @override
   void dispose() {
-    _firstName.dispose();
-    _lastName.dispose();
-    _email.dispose();
-    _nationalId.dispose();
-    _phone.dispose();
-    _password.dispose();
-    _providerName.dispose();
-    _providerPhone.dispose();
-    _city.dispose();
-    _district.dispose();
-    _address.dispose();
-    _licenseNumber.dispose();
-    _description.dispose();
+    _firstName.dispose(); _lastName.dispose(); _email.dispose();
+    _nationalId.dispose(); _phone.dispose(); _password.dispose();
+    _providerName.dispose(); _providerPhone.dispose();
+    _city.dispose(); _district.dispose(); _address.dispose();
+    _licenseNumber.dispose(); _description.dispose();
+    _passwordConfirm.dispose();
     super.dispose();
   }
 
+  String? _req(String? v) => (v == null || v.trim().isEmpty) ? "Zorunlu alan" : null;
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() { _loading = true; _error = null; });
 
     try {
       final result = await widget.authService.registerHomeCareProvider(
@@ -73,23 +68,15 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
         city: _city.text.trim(),
         district: _district.text.trim(),
         address: _address.text.trim(),
-        licenseNumber: _licenseNumber.text.trim(),
+        licenseNumber: _licenseNumber.text.trim(), // ✅ Yeni alan servise eklendi
         description: _description.text.trim().isEmpty ? null : _description.text.trim(),
       );
 
       final token = (result["accessToken"] ?? result["token"])?.toString();
-      if (token == null || token.isEmpty) {
-        throw Exception("Token alinamadi.");
-      }
-
+      if (token == null || token.isEmpty) throw Exception("Kayıt tamamlanamadı. Lütfen tekrar deneyin.");
       await TokenStore.set(token);
-
       if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeCareProviderPanelHomePage()),
-      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeCareProviderPanelHomePage()));
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
     } finally {
@@ -97,247 +84,203 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     }
   }
 
-  String? _req(String? v) => (v == null || v.trim().isEmpty) ? "Zorunlu" : null;
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Serum Saglayici Kayit"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        scrollbarTheme: ScrollbarThemeData(
+          thumbColor: WidgetStateProperty.all(midnight),
+          mainAxisMargin: 40,
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const Text(
-                  "Kisisel Bilgiler",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      child: Scaffold(
+        backgroundColor: pearl,
+        body: Column(
+          children: [
+            // Üst Midnight Alanı (Kavisli Header)
+            Container(
+              height: MediaQuery.of(context).size.height * 0.18,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [midnight, Color(0xFF1B4965)],
                 ),
-                const SizedBox(height: 12),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(60)),
+              ),
+              child: SafeArea(
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, color: pearl),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const Center(
+                      child: Text("SERUM SAĞLAYICI", 
+                        style: TextStyle(color: pearl, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Alt Form Alanı
+            Expanded(
+              child: Container(
+                color: const Color(0xFF1B4965),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [pearl, Color.fromARGB(255, 255, 248, 232)],
+                    ),
+                    borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, -5)),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
+                    child: Scrollbar(
+                      thumbVisibility: true,
+                      thickness: 6,
+                      child: Form(
+                        key: _formKey,
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                          children: [
+                            _sectionHeader("Kişisel Bilgiler"),
+                            _buildInput(_firstName, "Ad", Icons.person, validator: (v) => (v == null || v.trim().length < 2) ? "En az 2 karakter" : null),
+                            const SizedBox(height: 12),
+                            _buildInput(_lastName, "Soyad", Icons.person_outline, validator: (v) => (v == null || v.trim().length < 2) ? "En az 2 karakter" : null),
+                            const SizedBox(height: 12),
+                            _buildInput(_email, "Email", Icons.email, validator: (v) {
+                              if (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) return "Geçersiz email";
+                              return null;
+                            }),
+                            const SizedBox(height: 12),
+                            _buildInput(_nationalId, "TC Kimlik No", Icons.badge, isNum: true, validator: (v) => (v?.length != 11) ? "11 haneli olmalı" : null),
+                            const SizedBox(height: 12),
+                            _buildInput(_phone, "Telefon (5xx...)", Icons.phone, isNum: true, validator: _req),
+                            const SizedBox(height: 12),
+                            _buildInput(_password, "Şifre", Icons.lock, obscure: true, validator: (v) {
+                              if (v == null || v.length < 7) return "En az 7 karakter";
+                              if (!v.contains(RegExp(r'[A-Z]'))) return "En az 1 büyük harf";
+                              return null;
+                            }),
+                            const SizedBox(height: 12),
+                            _buildInput(_passwordConfirm, "Şifre (Tekrar)", Icons.lock_outline, obscure: true, validator: (v) {
+                              if (v != _password.text) return "Şifreler eşleşmiyor";
+                              return null;
+                            }),
 
-                TextFormField(
-                  controller: _firstName,
-                  decoration: const InputDecoration(
-                    labelText: "Ad",
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  maxLength: 100,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 2) return "En az 2 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _lastName,
-                  decoration: const InputDecoration(
-                    labelText: "Soyad",
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  maxLength: 100,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 2) return "En az 2 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _email,
-                  decoration: const InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  maxLength: 200,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) return "Gecersiz email";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _nationalId,
-                  decoration: const InputDecoration(
-                    labelText: "TC Kimlik No",
-                    prefixIcon: Icon(Icons.badge),
-                  ),
-                  maxLength: 11,
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (!RegExp(r'^\d{11}$').hasMatch(v.trim())) return "TC Kimlik 11 haneli olmali";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _phone,
-                  decoration: const InputDecoration(
-                    labelText: "Telefon",
-                    hintText: "05xx xxx xx xx",
-                    prefixIcon: Icon(Icons.phone),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  maxLength: 15,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
-                    if (!RegExp(r'^5\d{9}$').hasMatch(digits)) return "5 ile baslayan 10 haneli olmali";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _password,
-                  decoration: const InputDecoration(
-                    labelText: "Sifre",
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return "Zorunlu";
-                    if (v.length < 7) return "En az 7 karakter";
-                    if (!v.contains(RegExp(r'[A-Z]'))) return "En az 1 buyuk harf";
-                    if (!v.contains(RegExp(r'[0-9]'))) return "En az 1 rakam";
-                    if (!v.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) return "En az 1 ozel karakter";
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 12),
-
-                const Text(
-                  "Saglayici Bilgileri",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-
-                TextFormField(
-                  controller: _providerName,
-                  decoration: const InputDecoration(
-                    labelText: "Saglayici Adi",
-                    prefixIcon: Icon(Icons.medical_services),
-                  ),
-                  validator: _req,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _providerPhone,
-                  decoration: const InputDecoration(
-                    labelText: "Saglayici Telefon",
-                    prefixIcon: Icon(Icons.phone_in_talk),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  maxLength: 15,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
-                    if (!RegExp(r'^5\d{9}$').hasMatch(digits)) return "5 ile baslayan 10 haneli olmali";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _city,
-                  decoration: const InputDecoration(
-                    labelText: "Il",
-                    prefixIcon: Icon(Icons.location_city),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 2) return "En az 2 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _district,
-                  decoration: const InputDecoration(
-                    labelText: "Ilce",
-                    prefixIcon: Icon(Icons.location_city),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 2) return "En az 2 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _address,
-                  decoration: const InputDecoration(
-                    labelText: "Adres",
-                    prefixIcon: Icon(Icons.home),
-                  ),
-                  maxLines: 2,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 10) return "En az 10 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _licenseNumber,
-                  decoration: const InputDecoration(
-                    labelText: "Sicil Numarasi",
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return "Zorunlu";
-                    if (v.trim().length < 3) return "En az 3 karakter";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _description,
-                  decoration: const InputDecoration(
-                    labelText: "Aciklama (opsiyonel)",
-                    prefixIcon: Icon(Icons.description),
-                  ),
-                  maxLines: 3,
-                ),
-
-                const SizedBox(height: 24),
-
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                  ),
-
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: _loading ? null : _handleRegister,
-                    icon: const Icon(Icons.medical_services),
-                    label: Text(_loading ? "Kaydediliyor..." : "Serum Saglayici Kayit Ol"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A79D),
-                      foregroundColor: Colors.white,
+                            const SizedBox(height: 30),
+                            const Divider(color: midnight, thickness: 0.5),
+                            const SizedBox(height: 20),
+                            
+                            _sectionHeader("Sağlayıcı Bilgileri"),
+                            _buildInput(_providerName, "Sağlayıcı / Kurum Adı", Icons.medical_services, validator: _req),
+                            const SizedBox(height: 12),
+                            _buildInput(_providerPhone, "Kurum Telefon", Icons.phone_in_talk, isNum: true, validator: _req),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(child: _buildInput(_city, "İl", Icons.location_city, validator: _req)),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildInput(_district, "İlçe", Icons.map, validator: _req)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildInput(_address, "Tam Adres", Icons.home, validator: (v) => (v == null || v.trim().length < 10) ? "En az 10 karakter" : null),
+                            const SizedBox(height: 12),
+                            // ✅ Arkadaşının eklediği Sicil No alanı
+                            _buildInput(_licenseNumber, "Sicil Numarası", Icons.badge_outlined, validator: (v) => (v == null || v.trim().length < 3) ? "En az 3 karakter" : null),
+                            const SizedBox(height: 12),
+                            _buildInput(_description, "Açıklama (Hizmetler vb.)", Icons.description),
+                            
+                            const SizedBox(height: 30),
+                            if (_error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                              ),
+                            _buildMainButton(_loading ? "KAYDEDİLİYOR..." : "KAYDI TAMAMLA", _handleRegister),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                const SizedBox(height: 16),
-              ],
+  Widget _sectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15, left: 5),
+      child: Text(title, style: const TextStyle(color: midnight, fontSize: 18, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildInput(TextEditingController controller, String label, IconData icon, {bool obscure = false, bool isNum = false, String? Function(String?)? validator}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: midnight.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+            ),
+            child: TextFormField(
+              controller: controller,
+              obscureText: obscure,
+              style: const TextStyle(fontSize: 15, color: midnight),
+              keyboardType: isNum ? TextInputType.number : TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: label,
+                hintStyle: TextStyle(color: midnight.withOpacity(0.4), fontSize: 14),
+                prefixIcon: Icon(icon, color: midnight.withOpacity(0.7), size: 22),
+                contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+              ),
+              validator: validator,
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMainButton(String text, VoidCallback onPressed) {
+    return Container(
+      width: double.infinity,
+      height: 55,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [midnight, Color(0xFF1B4965)]),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: midnight.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+        onPressed: _loading ? null : onPressed,
+        child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: pearl)),
       ),
     );
   }

@@ -9,6 +9,8 @@ import 'screens/home_page.dart';
 import 'screens/pharmacy_panel_home_page.dart';
 import 'screens/home_care_provider_panel_home_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -21,6 +23,9 @@ Future<void> main() async {
 
   // Load persisted token
   await TokenStore.load();
+
+  // Load theme preference
+  await ThemeController.I.load();
 
   runApp(const HealzyApp());
 }
@@ -58,15 +63,17 @@ class HealzyApp extends StatelessWidget {
     final baseUrl = ApiConfig.baseUrl;
     final authService = AuthService(baseUrl: baseUrl);
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'Healzy',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return AnimatedBuilder(
+      animation: ThemeController.I,
+      builder: (context, _) => MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'Healzy',
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeController.I.mode,
+        home: _getInitialPage(authService),
       ),
-      home: _getInitialPage(authService),
     );
   }
 }

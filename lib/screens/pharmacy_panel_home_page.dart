@@ -34,6 +34,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
   int _unreadCount = 0;
   Timer? _notifTimer;
   Timer? _heartbeatTimer;
+  Timer? _openCloseTimer;
 
   // Rejection state
   bool _isRejected = false;
@@ -52,12 +53,14 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     _sendHeartbeat();
     _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) => _sendHeartbeat());
+    _openCloseTimer = Timer.periodic(const Duration(minutes: 1), (_) => _autoSyncOpenStatus());
   }
 
   @override
   void dispose() {
     _notifTimer?.cancel();
     _heartbeatTimer?.cancel();
+    _openCloseTimer?.cancel();
     _feedbackController.dispose();
     super.dispose();
   }
@@ -181,12 +184,37 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
         _summary = results[1];
         _loading = false;
       });
+      _autoSyncOpenStatus();
     } catch (e) {
       setState(() {
         _error = e.toString().replaceFirst("Exception: ", "");
         _loading = false;
       });
     }
+  }
+
+  bool _computeShouldBeOpen({bool isOnDuty = false}) {
+    if (isOnDuty) return true;
+    final now = DateTime.now();
+    final weekday = now.weekday; // 1=Mon .. 7=Sun
+    if (weekday == DateTime.sunday) return false;
+    final mins = now.hour * 60 + now.minute;
+    const openAt = 8 * 60 + 30;
+    const closeAt = 19 * 60;
+    return mins >= openAt && mins < closeAt;
+  }
+
+  Future<void> _autoSyncOpenStatus() async {
+    if (_profile == null) return;
+    final isOnDuty = (_profile!['isOnDuty'] ?? false) as bool;
+    final isOpen = (_profile!['isOpen'] ?? true) as bool;
+    final shouldOpen = _computeShouldBeOpen(isOnDuty: isOnDuty);
+    if (isOpen == shouldOpen) return;
+    try {
+      final result = await _api.toggleStatus();
+      if (!mounted) return;
+      setState(() => _profile = result);
+    } catch (_) {}
   }
 
   Future<void> _logout() async {
@@ -281,6 +309,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     final name = _profile?["name"] ?? "Eczane";
     final isApproved = _profile?["isApproved"] ?? false;
     final isOpen = _profile?["isOpen"] ?? true;
+    final isOnDuty = (_profile?["isOnDuty"] ?? false) as bool;
 
     final pendingOrders = (_summary?["pendingOrderCount"] ?? 0) as int;
     final todayRevenue = (_summary?["todayRevenue"] ?? 0).toDouble();
@@ -313,7 +342,33 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                ),
+                                if (isOnDuty) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.amber.shade300),
+                                    ),
+                                    child: Text("NÖBETÇİ",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.amber.shade800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                             const SizedBox(height: 2),
                             Row(
                               children: [
@@ -364,7 +419,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                         Switch.adaptive(
                           value: isOpen,
                           activeColor: Colors.green,
-                          onChanged: (_) => _toggleOpenStatus(),
+                          onChanged: isOnDuty ? null : (_) => _toggleOpenStatus(),
                         ),
                       ],
                     ),
@@ -434,7 +489,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           children: [
             _summaryBadge("$pendingOrders", "Bekleyen", Icons.hourglass_top, pendingOrders > 0 ? Colors.orange : Colors.grey),
             const SizedBox(width: 8),
-            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.attach_money, const Color(0xFF00A79D)),
+            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.currency_lira, const Color(0xFF00A79D)),
             const SizedBox(width: 8),
             _summaryBadge("$todayOrders", "Siparis", Icons.receipt, Colors.blue),
           ],

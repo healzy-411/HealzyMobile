@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../Models/home_care_models.dart';
 import '../Models/address_model.dart';
 import '../services/address_api_service.dart';
 import '../services/home_care_api_service.dart';
 import '../services/local_notification_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_shadows.dart';
 
 class HomeCarePage extends StatefulWidget {
   final String baseUrl;
@@ -151,13 +155,19 @@ class _HomeCarePageState extends State<HomeCarePage>
     // ✅ Dolu slot'ları disable etmek için
     final disabledSlots = <String>{};
 
-    final timeSlots = <String>[
-      '10:00',
-      '12:00',
-      '14:00',
-      '16:00',
-      '18:00',
-    ];
+    // ✅ Sağlayıcının admin panelinden tanımladığı zaman slotları (fallback yok)
+    List<String> timeSlots = [];
+    try {
+      timeSlots = await _api.getProviderTimeSlots(provider.id);
+    } catch (_) {}
+
+    if (!mounted) return;
+    if (timeSlots.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bu sağlayıcı henüz zaman slotu tanımlamamış.')),
+      );
+      return;
+    }
 
     await showModalBottomSheet(
       context: context,
@@ -444,6 +454,8 @@ class _HomeCarePageState extends State<HomeCarePage>
         return Colors.red;
       case HomeCareRequestStatusModel.cancelled:
         return Colors.grey;
+      case HomeCareRequestStatusModel.completed:
+        return Colors.indigo;
     }
   }
 
@@ -457,7 +469,105 @@ class _HomeCarePageState extends State<HomeCarePage>
         return 'Reddedildi';
       case HomeCareRequestStatusModel.cancelled:
         return 'İptal edildi';
+      case HomeCareRequestStatusModel.completed:
+        return 'Tamamlandı';
     }
+  }
+
+  void _showRequestDetail(HomeCareRequestModel r) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        Widget row(String label, String? value, {Color? valueColor}) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: Text(label,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500)),
+                ),
+                Expanded(
+                  child: Text(
+                    value == null || value.isEmpty ? '—' : value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: valueColor ?? Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16, right: 16, top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Talep #${r.id}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _statusColor(r.status).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(_statusText(r.status),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                          color: _statusColor(r.status))),
+                    ),
+                    const Spacer(),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  ],
+                ),
+                const Divider(),
+                row('Sağlayıcı', r.providerName),
+                row('Hizmet Tarihi',
+                  '${r.serviceDateUtc.day.toString().padLeft(2, '0')}.${r.serviceDateUtc.month.toString().padLeft(2, '0')}.${r.serviceDateUtc.year} • ${r.timeSlot}'),
+                row('Adres', r.addressSnapshot),
+                row('Notunuz', r.note),
+                row('Oluşturulma',
+                  '${r.createdAtUtc.day.toString().padLeft(2, '0')}.${r.createdAtUtc.month.toString().padLeft(2, '0')}.${r.createdAtUtc.year} ${r.createdAtUtc.hour.toString().padLeft(2, '0')}:${r.createdAtUtc.minute.toString().padLeft(2, '0')}'),
+                row('Atanan Çalışan', r.assignedEmployeeName),
+                if (r.status == HomeCareRequestStatusModel.completed) ...[
+                  row('Kazanç',
+                    r.earningAmount != null
+                      ? '${r.earningAmount!.toStringAsFixed(2)} TL'
+                      : null,
+                    valueColor: Colors.green.shade700),
+                  row('Tamamlanma',
+                    r.completedAtUtc != null
+                      ? '${r.completedAtUtc!.day.toString().padLeft(2, '0')}.${r.completedAtUtc!.month.toString().padLeft(2, '0')}.${r.completedAtUtc!.year} ${r.completedAtUtc!.hour.toString().padLeft(2, '0')}:${r.completedAtUtc!.minute.toString().padLeft(2, '0')}'
+                      : null),
+                  row('Çalışan Notu', r.completionNote, valueColor: Colors.indigo.shade700),
+                ],
+                if (r.status == HomeCareRequestStatusModel.cancelled ||
+                    r.status == HomeCareRequestStatusModel.rejected)
+                  row('İptal / Red Nedeni', r.statusNote, valueColor: Colors.red.shade700),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -468,25 +578,47 @@ class _HomeCarePageState extends State<HomeCarePage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? AppColors.darkGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.pearlWarm, AppColors.pearl],
+          );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eve Serum Hizmeti'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor:
+              isDark ? AppColors.pearl : AppColors.midnight,
+          labelColor:
+              isDark ? AppColors.pearl : AppColors.midnight,
+          unselectedLabelColor:
+              isDark ? AppColors.darkTextTertiary : AppColors.textTertiary,
+          labelStyle:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           tabs: const [
             Tab(text: 'Sağlayıcılar'),
             Tab(text: 'Taleplerim'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildProvidersTab(),
-          _buildRequestsTab(),
-        ],
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildProvidersTab(),
+              _buildRequestsTab(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -580,18 +712,25 @@ class _HomeCarePageState extends State<HomeCarePage>
   }
 
   Widget _buildProviderCard(HomeCareProviderModel p) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final bodyColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder
+              : AppColors.border.withValues(alpha: 0.6),
+        ),
+        boxShadow: AppShadows.soft(isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,7 +738,7 @@ class _HomeCarePageState extends State<HomeCarePage>
           if (p.imageUrl != null && p.imageUrl!.isNotEmpty)
             ClipRRect(
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+                  const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
               child: Image.network(
                 p.imageUrl!,
                 height: 140,
@@ -607,55 +746,55 @@ class _HomeCarePageState extends State<HomeCarePage>
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   height: 80,
-                  color: Colors.grey[200],
+                  color: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : AppColors.surface,
                   alignment: Alignment.center,
-                  child: const Icon(Icons.medical_services_outlined),
+                  child: Icon(Icons.medical_services_outlined, color: subColor),
                 ),
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   p.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${p.city} / ${p.district}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
+                  style: TextStyle(fontSize: 13, color: subColor),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   p.address,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
-                  ),
+                  style: TextStyle(fontSize: 12, color: bodyColor),
                 ),
                 if (p.description != null && p.description!.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
                     p.description!,
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, color: bodyColor),
                   ),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: Row(
+                      child: InkWell(
+                        onTap: () => launchUrl(Uri.parse('tel:${p.phone}')),
+                        child: Row(
                         children: [
-                          const Icon(Icons.phone,
-                              size: 16, color: Colors.blue),
+                          const Icon(Icons.phone_rounded,
+                              size: 16, color: AppColors.accent),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -664,28 +803,44 @@ class _HomeCarePageState extends State<HomeCarePage>
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.w500,
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
                         ],
                       ),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey[800],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: isDark
+                            ? AppColors.pearlGradient
+                            : AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
-                      onPressed: () => _openCreateRequestSheet(p),
-                      child: const Text(
-                        'Talep Oluştur',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
+                          onTap: () => _openCreateRequestSheet(p),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            child: Text(
+                              'Talep Oluştur',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.midnight
+                                    : AppColors.pearl,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -740,19 +895,30 @@ class _HomeCarePageState extends State<HomeCarePage>
           final dateText =
               '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
 
-          return Container(
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+          final titleColor =
+              isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+          final subColor =
+              isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+          final bodyColor =
+              isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+          return InkWell(
+            onTap: () => _showRequestDetail(r),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Container(
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: cardBg,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.darkBorder
+                    : AppColors.border.withValues(alpha: 0.6),
+              ),
+              boxShadow: AppShadows.soft(isDark),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,104 +930,108 @@ class _HomeCarePageState extends State<HomeCarePage>
                         r.providerName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
                           fontSize: 15,
+                          color: titleColor,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: _statusColor(r.status).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: _statusColor(r.status)
+                            .withValues(alpha: isDark ? 0.25 : 0.14),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                       child: Text(
                         _statusText(r.status),
                         style: TextStyle(
                           fontSize: 11,
                           color: _statusColor(r.status),
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today,
-                        size: 14, color: Colors.black54),
+                    Icon(Icons.calendar_today_rounded,
+                        size: 14, color: subColor),
                     const SizedBox(width: 4),
                     Text(
                       '$dateText • ${r.timeSlot}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
+                      style: TextStyle(fontSize: 12, color: subColor),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   r.addressSnapshot,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
-                  ),
+                  style: TextStyle(fontSize: 12, color: bodyColor),
                 ),
                 if (r.note != null && r.note!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Not: ${r.note}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 12, color: bodyColor),
                   ),
                 ],
-                if (r.status == HomeCareRequestStatusModel.pending) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        try {
-                          await _api.cancelRequest(r.id);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Talep iptal edildi.'),
-                            ),
-                          );
-                          await _loadRequests();
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                e
-                                    .toString()
-                                    .replaceFirst('Exception: ', ''),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
-                      label: const Text('Talebi İptal Et'),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _showRequestDetail(r),
+                      icon: const Icon(Icons.info_outline, size: 18),
+                      label: const Text('Detay'),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
+                        foregroundColor: _statusColor(r.status),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     ),
-                  ),
-                ],
+                    if (r.status == HomeCareRequestStatusModel.pending)
+                      TextButton.icon(
+                        onPressed: () async {
+                          try {
+                            await _api.cancelRequest(r.id);
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Talep iptal edildi.'),
+                              ),
+                            );
+                            await _loadRequests();
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e
+                                      .toString()
+                                      .replaceFirst('Exception: ', ''),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.cancel_outlined, size: 18),
+                        label: const Text('Talebi İptal Et'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
+          ),
           );
         },
       ),

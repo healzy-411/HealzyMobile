@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import '../services/token_store.dart';
@@ -304,6 +305,9 @@ class _AddAddressPageState extends State<AddAddressPage> {
                   controller: _fullName,
                   decoration: const InputDecoration(labelText: "Ad Soyad"),
                   maxLength: 100,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-zÇĞİÖŞÜçğıöşü ]')),
+                  ],
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return "Zorunlu alan";
                     if (v.trim().length < 3) return "En az 3 karakter";
@@ -314,13 +318,17 @@ class _AddAddressPageState extends State<AddAddressPage> {
 
                 TextFormField(
                   controller: _phone,
-                  decoration: const InputDecoration(labelText: "Telefon", hintText: "5xx xxx xx xx"),
+                  decoration: const InputDecoration(labelText: "Telefon", hintText: "(5xx) xxx xx xx"),
                   keyboardType: TextInputType.phone,
                   maxLength: 15,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _TrPhoneFormatter(),
+                  ],
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return "Zorunlu alan";
                     final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
-                    if (!RegExp(r'^5\d{9}$').hasMatch(digits)) return "5 ile baslayan 10 haneli olmali";
+                    if (!RegExp(r'^(0?5)\d{9}$').hasMatch(digits)) return "5 ile başlayan 10 haneli numara girin";
                     return null;
                   },
                 ),
@@ -408,6 +416,29 @@ class _AddAddressPageState extends State<AddAddressPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TrPhoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    var digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    if (digits.length > 10) digits = digits.substring(0, 10);
+
+    final b = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i == 0) b.write('(');
+      b.write(digits[i]);
+      if (i == 2) b.write(') ');
+      else if (i == 5) b.write(' ');
+      else if (i == 7) b.write(' ');
+    }
+    final formatted = b.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

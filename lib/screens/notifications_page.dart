@@ -5,6 +5,9 @@ import '../Models/notification_model.dart';
 import '../services/notification_api_service.dart';
 import '../services/order_api_service.dart';
 import '../services/token_store.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_shadows.dart';
 import 'order_detail_page.dart';
 import 'pharmacy_orders_page.dart';
 import 'home_care_provider_requests_page.dart';
@@ -175,78 +178,170 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? AppColors.darkGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.pearlWarm, AppColors.pearl],
+          );
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final unreadBg = isDark
+        ? AppColors.midnightSoft.withValues(alpha: 0.35)
+        : AppColors.pearlWarm;
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text("Bildirimler"),
-        backgroundColor: const Color(0xFF00A79D),
-        foregroundColor: Colors.white,
         actions: [
           if (_notifications.any((n) => !n.isRead))
             TextButton(
               onPressed: _markAllRead,
-              child: const Text(
-                "Tumunu Oku",
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                "Tümünü Oku",
+                style: TextStyle(
+                  color: titleColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A79D)))
-          : _notifications.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.notifications_none, size: 64, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text(
-                        "Henuz bildiriminiz yok",
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: _loading
+            ? Center(
+                child: CircularProgressIndicator(color: titleColor),
+              )
+            : _notifications.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.notifications_none,
+                            size: 64, color: subColor),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Henüz bildiriminiz yok",
+                          style: TextStyle(color: subColor, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView.separated(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+                        left: 16,
+                        right: 16,
+                        bottom: 24,
                       ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 4),
-                    itemBuilder: (context, index) {
-                      final n = _notifications[index];
-                      return Card(
-                        color: n.isRead ? Colors.white : Colors.blue.shade50,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _getIconColor(n.type).withValues(alpha: 0.15),
-                            child: Icon(_getIcon(n.type), color: _getIconColor(n.type)),
-                          ),
-                          title: Text(
-                            n.title,
-                            style: TextStyle(
-                              fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold,
-                              fontSize: 14,
+                      itemCount: _notifications.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final n = _notifications[index];
+                        final iconColor = _getIconColor(n.type);
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.lg),
+                            onTap: () => _onTapNotification(n),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: n.isRead ? cardBg : unreadBg,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.lg),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppColors.darkBorder
+                                      : AppColors.border
+                                          .withValues(alpha: 0.6),
+                                ),
+                                boxShadow: AppShadows.soft(isDark),
+                              ),
+                              child: Row(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: iconColor.withValues(
+                                          alpha: isDark ? 0.22 : 0.14),
+                                      borderRadius: BorderRadius.circular(
+                                          AppRadius.sm),
+                                    ),
+                                    child: Icon(_getIcon(n.type),
+                                        color: iconColor, size: 20),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          n.title,
+                                          style: TextStyle(
+                                            fontWeight: n.isRead
+                                                ? FontWeight.w600
+                                                : FontWeight.w700,
+                                            fontSize: 14,
+                                            color: titleColor,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          n.body,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: subColor,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _formatTime(n.createdAtUtc),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: isDark
+                                                ? AppColors.darkTextTertiary
+                                                : AppColors.textTertiary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!n.isRead)
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin:
+                                          const EdgeInsets.only(left: 6, top: 4),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.error,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 2),
-                              Text(n.body, style: const TextStyle(fontSize: 13)),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatTime(n.createdAtUtc),
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                              ),
-                            ],
-                          ),
-                          onTap: () => _onTapNotification(n),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
+      ),
     );
   }
 }

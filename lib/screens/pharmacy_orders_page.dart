@@ -129,11 +129,11 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: "Bekleyen"),
-            Tab(text: "Hazirlanan"),
-            Tab(text: "Hazir"),
-            Tab(text: "Tamamlanan"),
+          tabs: [
+            Tab(text: "Bekleyen (${_filterByStatus(["Pending"]).length})"),
+            Tab(text: "Hazırlanan (${_filterByStatus(["Preparing"]).length})"),
+            Tab(text: "Hazır (${_filterByStatus(["Ready"]).length})"),
+            Tab(text: "Tamamlanan (${_filterByStatus(["Dispatched","Delivered"]).length})"),
           ],
         ),
       ),

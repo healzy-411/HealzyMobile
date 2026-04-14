@@ -6,6 +6,7 @@ import '../services/cart_api_service.dart';
 import '../services/cart_helper.dart';
 import '../services/token_store.dart';
 import 'cart_page.dart';
+import 'product_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -265,52 +266,88 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  Widget _buildProductCard(OtcMedicine product) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+  Widget _buildProductImage(OtcMedicine product) {
+    final url = product.imageUrl;
+    if (url == null || url.isEmpty) {
+      return Icon(
+        _getCategoryIcon(widget.categoryName),
+        size: 60,
+        color: Colors.black87,
+      );
+    }
+    final full = url.startsWith('http')
+        ? url
+        : '${ApiConfig.baseUrl}$url';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        full,
+        width: 90,
+        height: 90,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Icon(
+          _getCategoryIcon(widget.categoryName),
+          size: 60,
+          color: Colors.black87,
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(
-            _getCategoryIcon(widget.categoryName),
-            size: 60,
-            color: Colors.black87,
+    );
+  }
+
+  Widget _buildProductCard(OtcMedicine product) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductDetailPage(
+            product: product,
+            categoryName: widget.categoryName,
+            onAddToCart: adding ? null : () => _addToCart(product),
           ),
-          Text(
-            product.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          Text(
-            "${product.price.toStringAsFixed(0)} TL",
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
-          GestureDetector(
-            onTap: adding ? null : () => _addToCart(product),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: adding ? Colors.grey.shade400 : Colors.green,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: Colors.white, size: 22),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildProductImage(product),
+            Text(
+              product.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            Text(
+              "${product.price.toStringAsFixed(0)} TL",
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+            GestureDetector(
+              onTap: adding ? null : () => _addToCart(product),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: adding ? Colors.grey.shade400 : Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 22),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

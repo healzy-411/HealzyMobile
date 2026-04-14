@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/order_api_service.dart';
 import '../services/saved_card_api_service.dart';
 import '../services/token_store.dart';
+import 'saved_cards_page.dart';
 import '../utils/distance_utils.dart';
 import 'package:healzy_app/config/api_config.dart';
 
@@ -446,11 +447,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
         controller: _orderNoteController,
         maxLength: 500,
         maxLines: 2,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => FocusScope.of(context).unfocus(),
         decoration: InputDecoration(
-          hintText: "Siparisle ilgili notunuz varsa yazin...",
+          hintText: "Siparişle ilgili notunuz varsa yazın...",
           hintStyle: TextStyle(color: Colors.grey[400]),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.keyboard_hide),
+            tooltip: "Klavyeyi Kapat",
+            onPressed: () => FocusScope.of(context).unfocus(),
+          ),
         ),
       ),
     );
@@ -582,9 +590,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
             if (_savedCards.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: Text(
-                  "Kayitli kart bulunamadi. Profil sayfasindan kart ekleyebilirsiniz.",
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Kayıtlı kart bulunamadı.",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SavedCardsPage()),
+                        );
+                        _loadData();
+                      },
+                      icon: const Icon(Icons.add_card),
+                      label: const Text("Kart Ekle"),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange,
+                        side: const BorderSide(color: Colors.orange),
+                      ),
+                    ),
+                  ],
                 ),
               )
             else

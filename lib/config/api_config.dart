@@ -1,6 +1,21 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ApiConfig {
+  // Lokal backend test için false yap.
   static const bool useProd = true;
 
-  static String get baseUrl =>
-      useProd ? 'https://api.apphealzy.com' : 'http://localhost:5009';
+  // Lokal makinenin LAN IP'si (telefon fiziksel cihazda test ederken).
+  // Aynı wifi'ye bağlı olmalı. Terminalde: ipconfig getifaddr en0
+  static const String _lanIp = '192.168.0.17';
+  static const int _port = 5009;
+
+  static String get baseUrl {
+    if (useProd) return 'https://api.apphealzy.com';
+
+    if (kIsWeb) return 'http://localhost:$_port';
+    if (Platform.isAndroid) return 'http://10.0.2.2:$_port'; // Android emulator
+    if (Platform.isIOS) return 'http://localhost:$_port';    // iOS simulator
+    return 'http://$_lanIp:$_port'; // Fiziksel cihaz / diğer
+  }
 }

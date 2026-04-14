@@ -4,6 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/api_service.dart';
 import '../Models/duty_pharmacy_model.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_shadows.dart';
 import '../widgets/pharmacy_map_view.dart';
 import 'pharmacy_detail_page.dart';
 
@@ -79,6 +82,9 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
         _sortByDistance(filteredPharmacies);
         _sortByDistance(allPharmacies);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Konum güncellendi"), duration: Duration(seconds: 1)),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -196,34 +202,28 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? AppColors.darkGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.pearlWarm, AppColors.pearl],
+          );
 
-      // 🔥 GERİ BUTONLU APPBAR
+    return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.grey[400],
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); // 👈 ANA EKRANA DÖNER
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Nöbetçi Eczaneler",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text("Nöbetçi Eczaneler"),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(
-              _showMap ? Icons.list : Icons.map,
-              color: Colors.white,
-            ),
-            tooltip: _showMap ? "Liste gorunumu" : "Harita gorunumu",
+            icon: Icon(_showMap ? Icons.list : Icons.map),
+            tooltip: _showMap ? "Liste görünümü" : "Harita görünümü",
             onPressed: () => setState(() => _showMap = !_showMap),
           ),
           IconButton(
@@ -234,14 +234,21 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.my_location, color: Colors.white),
+                : const Icon(Icons.my_location),
             onPressed: _locLoading ? null : _initLocationFlow,
           ),
         ],
       ),
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: _buildBody(isDark),
+      ),
+    );
+  }
 
-      body: SafeArea(
-        child: FutureBuilder<List<DutyPharmacyModel>>(
+  Widget _buildBody(bool isDark) {
+    return SafeArea(
+      child: FutureBuilder<List<DutyPharmacyModel>>(
           future: futureDuty,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -366,27 +373,32 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
             );
           },
         ),
-      ),
     );
   }
 
   // ================= CARD =================
   Widget _buildDutyCard(DutyPharmacyModel p) {
     final distKm = _distanceKm(p);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final bodyColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder
+              : AppColors.border.withValues(alpha: 0.6),
+        ),
+        boxShadow: AppShadows.soft(isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,24 +409,28 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
               Expanded(
                 child: Text(
                   p.pharmacyName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                    letterSpacing: -0.2,
                   ),
                 ),
               ),
               if (distKm != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: _distanceBadgeColor(distKm),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.near_me, size: 12, color: Colors.white),
-                      const SizedBox(width: 3),
+                      const Icon(Icons.near_me,
+                          size: 12, color: Colors.white),
+                      const SizedBox(width: 4),
                       Text(
                         distKm < 1
                             ? "${(distKm * 1000).toInt()} m"
@@ -422,7 +438,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -433,29 +449,33 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
           const SizedBox(height: 4),
           Text(
             "${p.district} / ${p.city}",
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: subColor, fontSize: 13),
           ),
           const SizedBox(height: 8),
           Text(
             p.address,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 14, color: bodyColor),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          Row(
-            children: [
-              const Icon(Icons.phone, size: 16, color: Colors.green),
-              const SizedBox(width: 6),
-              Text(
-                p.phone,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ],
+          InkWell(
+            onTap: () => launchUrl(Uri.parse('tel:${p.phone}')),
+            child: Row(
+              children: [
+                const Icon(Icons.phone_rounded, size: 16, color: AppColors.success),
+                const SizedBox(width: 6),
+                Text(
+                  p.phone,
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: bodyColor,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 12),

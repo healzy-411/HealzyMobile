@@ -169,7 +169,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
             const Text("Uygun eczane bulunamadı.")
           else
             SizedBox(
-              height: 120,
+              height: 320,
               child: ListView.builder(
                 itemCount: r.pharmacies.length,
                 itemBuilder: (_, i) {

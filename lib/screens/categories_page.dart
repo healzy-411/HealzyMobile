@@ -96,7 +96,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
             // ================= KATEGORILER =================
             Expanded(
-              child: FutureBuilder<List<String>>(
+              child: FutureBuilder<List<PharmacyCategoryItem>>(
                 future: apiService.getPharmacyCategories(widget.pharmacyId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -128,7 +128,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     ),
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
-                      final categoryName = categories[index];
+                      final cat = categories[index];
 
                       return GestureDetector(
                         onTap: () {
@@ -138,13 +138,14 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               builder: (_) => ProductsPage(
                                 pharmacyId: widget.pharmacyId,
                                 pharmacyName: widget.pharmacyName,
-                                categoryName: categoryName,
+                                categoryName: cat.name,
                               ),
                             ),
                           ).then((_) => _refreshCartCount());
                         },
                         child: _buildCategoryCard(
-                          categoryName,
+                          cat.name,
+                          cat.imageUrl,
                           categoryIcons[index % categoryIcons.length],
                         ),
                       );
@@ -191,7 +192,11 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   // ================= KATEGORI KARTI =================
-  Widget _buildCategoryCard(String title, IconData icon) {
+  Widget _buildCategoryCard(String title, String? imageUrl, IconData icon) {
+    final fullUrl = (imageUrl == null || imageUrl.isEmpty)
+        ? null
+        : (imageUrl.startsWith('http') ? imageUrl : '${ApiConfig.baseUrl}$imageUrl');
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -208,7 +213,20 @@ class _CategoriesPageState extends State<CategoriesPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 50, color: Colors.black87),
+          if (fullUrl != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                fullUrl,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    Icon(icon, size: 50, color: Colors.black87),
+              ),
+            )
+          else
+            Icon(icon, size: 50, color: Colors.black87),
           const SizedBox(height: 15),
           Text(
             title,

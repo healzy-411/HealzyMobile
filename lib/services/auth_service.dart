@@ -172,7 +172,7 @@ class AuthService {
   Future<MeDto> me() async {
     final token = TokenStore.get();
     if (token == null || token.isEmpty) {
-      throw Exception("Token yok. Lütfen tekrar giriş yap.");
+      throw Exception("Oturumunuz sona erdi. Lütfen tekrar giriş yapın.");
     }
 
     final url = Uri.parse('$baseUrl/api/auth/me');

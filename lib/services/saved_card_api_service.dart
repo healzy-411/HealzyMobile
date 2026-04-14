@@ -77,6 +77,32 @@ class SavedCardApiService {
     throw Exception(_extractMessage(res));
   }
 
+  Future<SavedCardDto> updateCard({
+    required int id,
+    required String cardName,
+    required String cardholderName,
+    required int expiryMonth,
+    required int expiryYear,
+    bool isDefault = false,
+  }) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/api/saved-cards/$id'),
+      headers: _headers(),
+      body: jsonEncode({
+        'cardName': cardName,
+        'cardholderName': cardholderName,
+        'expiryMonth': expiryMonth,
+        'expiryYear': expiryYear,
+        'isDefault': isDefault,
+      }),
+    );
+    await _check401(res);
+    if (_isSuccess(res.statusCode)) {
+      return SavedCardDto.fromJson(jsonDecode(res.body));
+    }
+    throw Exception(_extractMessage(res));
+  }
+
   Future<void> deleteCard(int id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/api/saved-cards/$id'),

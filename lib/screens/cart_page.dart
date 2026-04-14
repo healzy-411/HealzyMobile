@@ -144,11 +144,13 @@ class _CartPageState extends State<CartPage> {
       ),
     );
 
-    // Checkout'tan sipariş tamamlandıysa
+    // Checkout'tan sipariş tamamlandıysa ana sayfaya dön
     if (result == true) {
       _orderCompleted = true;
       await _loadCart();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     }
   }
 
@@ -222,6 +224,8 @@ class _CartPageState extends State<CartPage> {
                       itemCount: items.length,
                       itemBuilder: (context, index) {
                         final item = items[index];
+                        final isPrescriptionItem =
+                            widget.prescriptionItemIds?.contains(item.id) ?? false;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 15),
@@ -270,7 +274,7 @@ class _CartPageState extends State<CartPage> {
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.add_circle_outline),
-                                    onPressed: (loading || item.quantity >= 99)
+                                    onPressed: (loading || item.quantity >= 99 || isPrescriptionItem)
                                         ? null
                                         : () => _setQty(item, item.quantity + 1),
                                   ),

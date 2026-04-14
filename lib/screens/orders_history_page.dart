@@ -151,7 +151,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                           ),
                                         ),
                                         Text(
-                                          o.status,
+                                          _statusLabel(o.status),
                                           style: const TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey,
@@ -203,6 +203,19 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String s) {
+    switch (s.toLowerCase()) {
+      case 'pending': return 'Beklemede';
+      case 'preparing': return 'Hazirlaniyor';
+      case 'ready': return 'Hazir';
+      case 'dispatched': return 'Yolda';
+      case 'delivered': return 'Teslim Edildi';
+      case 'cancelled':
+      case 'canceled': return 'Iptal Edildi';
+      default: return s;
+    }
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../Models/saved_card_model.dart';
 import '../services/saved_card_api_service.dart';
@@ -69,12 +70,14 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     }
   }
 
-  void _showAddCardSheet() {
-    final cardNameCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
+  void _showCardSheet({SavedCardDto? editing}) {
+    final cardNameCtrl = TextEditingController(text: editing?.cardName ?? '');
+    final nameCtrl = TextEditingController(text: editing?.cardholderName ?? '');
     final numberCtrl = TextEditingController();
-    final monthCtrl = TextEditingController();
-    final yearCtrl = TextEditingController();
+    final monthCtrl = TextEditingController(
+        text: editing != null ? editing.expiryMonth.toString().padLeft(2, '0') : '');
+    final yearCtrl = TextEditingController(
+        text: editing != null ? editing.expiryYear.toString() : '');
 
     showModalBottomSheet(
       context: context,
@@ -83,125 +86,192 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Yeni Kart Ekle",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: cardNameCtrl,
-                decoration: InputDecoration(
-                  labelText: "Kart Adi",
-                  hintText: "Orn: Is Kartim, Garanti Kartim",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                textCapitalization: TextCapitalization.sentences,
+        String? formError;
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: "Kart Sahibi",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: numberCtrl,
-                decoration: InputDecoration(
-                  labelText: "Kart Numarasi",
-                  hintText: "1234 5678 9012 3456",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                keyboardType: TextInputType.number,
-                maxLength: 19,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: monthCtrl,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(editing == null ? "Yeni Kart Ekle" : "Kartı Düzenle",
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: cardNameCtrl,
                       decoration: InputDecoration(
-                        labelText: "Ay",
-                        hintText: "MM",
+                        labelText: "Kart Adı",
+                        hintText: "Örn: İş Kartım, Garanti Kartım",
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 2,
+                      textCapitalization: TextCapitalization.sentences,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: yearCtrl,
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: nameCtrl,
                       decoration: InputDecoration(
-                        labelText: "Yil",
-                        hintText: "YYYY",
+                        labelText: "Kart Sahibi",
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 4,
+                      textCapitalization: TextCapitalization.words,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-zÇĞİÖŞÜçğıöşü ]')),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    final cardName = cardNameCtrl.text.trim();
-                    final name = nameCtrl.text.trim();
-                    final number = numberCtrl.text.trim();
-                    final month = int.tryParse(monthCtrl.text.trim()) ?? 0;
-                    final year = int.tryParse(yearCtrl.text.trim()) ?? 0;
+                    if (editing == null) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: numberCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Kart Numarası",
+                          hintText: "1234 5678 9012 3456",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          counterText: '',
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 19,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(16),
+                          _CardNumberFormatter(),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: monthCtrl,
+                            decoration: InputDecoration(
+                              labelText: "Ay",
+                              hintText: "MM",
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              counterText: '',
+                            ),
+                            keyboardType: TextInputType.number,
+                            maxLength: 2,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: yearCtrl,
+                            decoration: InputDecoration(
+                              labelText: "Yıl",
+                              hintText: "YYYY",
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              counterText: '',
+                            ),
+                            keyboardType: TextInputType.number,
+                            maxLength: 4,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (formError != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(formError!,
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: saving ? null : () async {
+                          final cardName = cardNameCtrl.text.trim();
+                          final name = nameCtrl.text.trim();
+                          final numberDigits =
+                              numberCtrl.text.replaceAll(RegExp(r'\s'), '');
+                          final month = int.tryParse(monthCtrl.text.trim()) ?? 0;
+                          final year = int.tryParse(yearCtrl.text.trim()) ?? 0;
+                          final now = DateTime.now();
 
-                    if (cardName.isEmpty || name.isEmpty || number.length < 13 || month < 1 || month > 12 || year < 2026) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Lutfen tum alanlari dogru doldurun.")),
-                      );
-                      return;
-                    }
+                          String? err;
+                          if (cardName.isEmpty) err = "Kart adı zorunlu.";
+                          else if (name.isEmpty) err = "Kart sahibi zorunlu.";
+                          else if (editing == null && numberDigits.length != 16) {
+                            err = "Kart numarası 16 haneli olmalı.";
+                          } else if (month < 1 || month > 12) err = "Geçersiz ay.";
+                          else if (year < now.year || year > now.year + 20) {
+                            err = "Geçersiz yıl.";
+                          } else if (year == now.year && month < now.month) {
+                            err = "Kartın son kullanma tarihi geçmiş.";
+                          }
 
-                    try {
-                      await _api.createCard(
-                        cardName: cardName,
-                        cardholderName: name,
-                        cardNumber: number,
-                        expiryMonth: month,
-                        expiryYear: year,
-                      );
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      await _loadCards();
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
-                      );
-                    }
-                  },
-                  child: const Text("Kaydet",
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          if (err != null) {
+                            setSheetState(() => formError = err);
+                            return;
+                          }
+
+                          setSheetState(() {
+                            saving = true;
+                            formError = null;
+                          });
+                          try {
+                            if (editing == null) {
+                              await _api.createCard(
+                                cardName: cardName,
+                                cardholderName: name,
+                                cardNumber: numberDigits,
+                                expiryMonth: month,
+                                expiryYear: year,
+                              );
+                            } else {
+                              await _api.updateCard(
+                                id: editing.id,
+                                cardName: cardName,
+                                cardholderName: name,
+                                expiryMonth: month,
+                                expiryYear: year,
+                                isDefault: editing.isDefault,
+                              );
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            await _loadCards();
+                          } catch (e) {
+                            setSheetState(() {
+                              saving = false;
+                              formError = e.toString().replaceFirst("Exception: ", "");
+                            });
+                          }
+                        },
+                        child: Text(
+                          saving ? "Kaydediliyor..." : "Kaydet",
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -212,13 +282,13 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Kayitli Kartlarim"),
+        title: const Text("Kayıtlı Kartlarım"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0.5,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCardSheet,
+        onPressed: () => _showCardSheet(),
         backgroundColor: Colors.orange,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -233,10 +303,10 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                         children: [
                           Icon(Icons.credit_card_off, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 12),
-                          Text("Kayitli kart yok",
+                          Text("Kayıtlı kart yok",
                               style: TextStyle(color: Colors.grey[600], fontSize: 16)),
                           const SizedBox(height: 8),
-                          Text("Sag alttaki + butonuyla kart ekleyebilirsiniz.",
+                          Text("Sağ alttaki + butonuyla kart ekleyebilirsiniz.",
                               style: TextStyle(color: Colors.grey[400], fontSize: 13)),
                         ],
                       ),
@@ -286,7 +356,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                                     if (card.isDefault)
                                       const Padding(
                                         padding: EdgeInsets.only(top: 4),
-                                        child: Text("Varsayilan",
+                                        child: Text("Varsayılan",
                                             style: TextStyle(
                                                 color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
                                       ),
@@ -295,13 +365,16 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                               ),
                               PopupMenuButton<String>(
                                 onSelected: (value) {
+                                  if (value == 'edit') _showCardSheet(editing: card);
                                   if (value == 'default') _setDefault(card.id);
                                   if (value == 'delete') _deleteCard(card.id);
                                 },
                                 itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                      value: 'edit', child: Text("Düzenle")),
                                   if (!card.isDefault)
                                     const PopupMenuItem(
-                                        value: 'default', child: Text("Varsayilan Yap")),
+                                        value: 'default', child: Text("Varsayılan Yap")),
                                   const PopupMenuItem(
                                       value: 'delete',
                                       child: Text("Sil", style: TextStyle(color: Colors.red))),
@@ -312,6 +385,23 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                         );
                       },
                     ),
+    );
+  }
+}
+
+class _CardNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\s'), '');
+    final buf = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) buf.write(' ');
+      buf.write(digits[i]);
+    }
+    final formatted = buf.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_shadows.dart';
+import '../theme/theme_controller.dart';
+import '../widgets/ui/bento_tile.dart';
+import '../widgets/ui/glass_card.dart';
 import '../services/token_store.dart';
 import '../services/api_service.dart';
 import '../Models/address_model.dart';
@@ -91,7 +97,7 @@ class _HomePageState extends State<HomePage> {
           content: TextField(
             controller: _prescriptionController,
             decoration: const InputDecoration(
-              hintText: "Örn: RCP-666-001",
+              hintText: "Örn: RCT-777-12345",
             ),
           ),
           actions: [
@@ -727,395 +733,509 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? AppColors.darkGradient
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.pearlWarm, AppColors.pearl],
+          );
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeader(isDark),
+              const SizedBox(height: 12),
+              _buildAddressCard(isDark),
+              const SizedBox(height: 20),
+              Expanded(child: _buildBentoGrid()),
+              _buildPrescriptionBar(isDark),
+              const SizedBox(height: 12),
+              _buildMapSection(isDark),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================= HEADER =================
+  Widget _buildHeader(bool isDark) {
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final subColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Merhaba 👋",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: subColor,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Healzy",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: titleColor,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _iconButton(
+            isDark: isDark,
+            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            onTap: () => ThemeController.I.toggle(),
+          ),
+          const SizedBox(width: 10),
+          _iconButton(
+            isDark: isDark,
+            icon: Icons.notifications_outlined,
+            badge: _unreadCount,
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              );
+              _loadUnreadCount();
+            },
+          ),
+          const SizedBox(width: 10),
+          _iconButton(
+            isDark: isDark,
+            icon: Icons.person_outline_rounded,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProfilePage(baseUrl: baseUrl)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+    int? badge,
+  }) {
+    final bg = isDark
+        ? AppColors.darkSurface.withValues(alpha: 0.8)
+        : AppColors.pearl;
+    final iconColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: bg,
+          elevation: 0,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            onTap: onTap,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.darkBorder
+                      : AppColors.border.withValues(alpha: 0.6),
+                ),
+                boxShadow: AppShadows.soft(isDark),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+          ),
+        ),
+        if (badge != null && badge > 0)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: bg, width: 2),
+              ),
+              child: Text(
+                badge > 9 ? "9+" : "$badge",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ================= ADDRESS =================
+  Widget _buildAddressCard(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        borderRadius: AppRadius.lg,
+        onTap: _openAddressPicker,
+        child: Row(
           children: [
-            // ================= HEADER =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                children: [
-                   Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Stack(
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.notifications_outlined,
-                                size: 30,
-                                color: Colors.black87,
-                              ),
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const NotificationsPage(),
-                                  ),
-                                );
-                                _loadUnreadCount();
-                              },
-                            ),
-                            if (_unreadCount > 0)
-                              Positioned(
-                                right: 4,
-                                top: 4,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    _unreadCount > 9 ? "9+" : "$_unreadCount",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.account_circle_outlined,
-                            size: 32,
-                            color: Colors.black87,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProfilePage(baseUrl: baseUrl),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 10),
-
-                  // ✅ adres bar'ı dinamik + tıklanabilir (UI aynı)
-                  GestureDetector(
-                    onTap: _openAddressPicker,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[600],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.home_outlined, color: Colors.white),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _headerText(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          if (_addrLoading) ...[
-                            const SizedBox(width: 10),
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (_addrError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _addrError!,
-                          style: const TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                      ),
-                    ),
-                ],
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: isDark
+                    ? AppColors.pearlGradient
+                    : AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.location_on_rounded,
+                color: isDark ? AppColors.midnight : AppColors.pearl,
+                size: 18,
               ),
             ),
-
-            // ================= GRID MENU =================
+            const SizedBox(width: 12),
             Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.all(20),
-                crossAxisCount: 2,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 1.1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMenuCard(
-                    icon: Icons.store_mall_directory_outlined,
-                    title: "Eczaneler",
-                    color: Colors.pink[50]!,
-                    iconColor: Colors.pink,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PharmaciesPage(),
-                        ),
-                      );
-                    },
+                  Text(
+                    "Teslimat adresi",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.darkTextTertiary
+                          : AppColors.textTertiary,
+                      letterSpacing: 0.4,
+                    ),
                   ),
-                  _buildMenuCard(
-                    icon: Icons.access_alarm,
-                    title: "İlaç Hatırlatıcı",
-                    color: Colors.orange[50]!,
-                    iconColor: Colors.orange,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MedicineReminderPage(
-                            baseUrl: baseUrl,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.medical_services_outlined,
-                    title: "Eve Serum\nServisi",
-                    color: Colors.blue[50]!,
-                    iconColor: Colors.blue,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => HomeCarePage(baseUrl: baseUrl),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.local_pharmacy_outlined,
-                    title: "Nöbetçi Eczaneler",
-                    color: Colors.teal[50]!,
-                    iconColor: Colors.teal,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DutyPharmaciesPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.search,
-                    title: "Ilac Ara",
-                    color: Colors.green[50]!,
-                    iconColor: Colors.green,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MedicineSearchPage(),
-                        ),
-                      );
-                    },
+                  const SizedBox(height: 2),
+                  Text(
+                    _headerText(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.midnight,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            // ================= SEARCH BAR =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _openPrescriptionSearch,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text("Reçete Numarası Gir",
-                                style: TextStyle(color: Colors.grey)),
-                            Icon(Icons.search, color: Colors.black87),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey[200],
-                    child: const Icon(Icons.smart_toy_outlined,
-                        color: Colors.black87),
-                  )
-                ],
+            if (_addrLoading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
-            ),
-
-            // ================= MAP =================
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onVerticalDragUpdate: (details) {
-                if (details.delta.dy < -5) {
-                  _openFullScreenMap();
-                }
-              },
-              child: Container(
-                height: MediaQuery.of(context).size.height *
-                    (_activeOrders.isNotEmpty && !_trackerDismissed ? 0.28 : 0.15),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    // Harita (dokunma devre disi - sadece gorsel)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: _filteredMarkers.isEmpty && _activeOrders.isEmpty
-                            ? const SizedBox()
-                            : PharmacyMapView(
-                                key: ValueKey('map_${_userLat}_${_userLng}'),
-                                pharmacies: _filteredMarkers,
-                                userLat: _userLat,
-                                userLng: _userLng,
-                                activeRoute: _buildActiveRoute(),
-                                showControls: false,
-                                simpleStyle: _mapSimpleStyle,
-                              ),
-                      ),
-                    ),
-                    // Tam dokunulabilir overlay
-                    Positioned.fill(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _openFullScreenMap,
-                          child: Container(),
-                        ),
-                      ),
-                    ),
-                    // Ust bar: cekme gostergesi
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.white.withValues(alpha: 0.85), Colors.white.withValues(alpha: 0.0)],
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[400],
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text("Haritayi ac", style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Aktif siparis tracker
-                    if (_activeOrders.isNotEmpty && !_trackerDismissed)
-                      ActiveOrderTracker(
-                        activeOrders: _activeOrders,
-                        userLat: _userLat,
-                        userLng: _userLng,
-                        onRefresh: _loadActiveOrders,
-                        onDismiss: _dismissTracker,
-                      ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  // ================= MENU CARD =================
-  Widget _buildMenuCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required Color iconColor,
-    VoidCallback? onTap,
-  }) {
+  // ================= BENTO GRID =================
+  Widget _buildBentoGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: BentoTile(
+                  icon: Icons.storefront_rounded,
+                  title: "Eczaneler",
+                  subtitle: "Yakınındaki",
+                  featured: true,
+                  height: 128,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PharmaciesPage()),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: BentoTile(
+                  icon: Icons.access_alarm_rounded,
+                  title: "Hatırlatıcı",
+                  subtitle: "İlaç takibi",
+                  height: 128,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MedicineReminderPage(baseUrl: baseUrl),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: BentoTile(
+                  icon: Icons.medical_services_rounded,
+                  title: "Serum",
+                  height: 104,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HomeCarePage(baseUrl: baseUrl),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: BentoTile(
+                  icon: Icons.local_pharmacy_rounded,
+                  title: "Nöbetçi",
+                  height: 104,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DutyPharmaciesPage(),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: BentoTile(
+                  icon: Icons.search_rounded,
+                  title: "İlaç Ara",
+                  height: 104,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MedicineSearchPage(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= PRESCRIPTION BAR =================
+  Widget _buildPrescriptionBar(bool isDark) {
+    final bg = isDark
+        ? AppColors.darkSurface.withValues(alpha: 0.8)
+        : AppColors.pearl;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final hintColor = isDark
+        ? AppColors.darkTextTertiary
+        : AppColors.textTertiary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Material(
+              color: bg,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                onTap: _openPrescriptionSearch,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.border.withValues(alpha: 0.6),
+                    ),
+                    boxShadow: AppShadows.soft(isDark),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long_rounded,
+                          color: hintColor, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "Reçete numarası gir",
+                          style: TextStyle(
+                            color: hintColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.search_rounded, color: textColor, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppColors.pearlGradient
+                  : AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: AppShadows.glow(
+                isDark ? AppColors.pearl : AppColors.midnight,
+              ),
+            ),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: isDark ? AppColors.midnight : AppColors.pearl,
+              size: 22,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= MAP =================
+  Widget _buildMapSection(bool isDark) {
     return GestureDetector(
-      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (details) {
+        if (details.delta.dy < -5) _openFullScreenMap();
+      },
       child: Container(
+        height: MediaQuery.of(context).size.height *
+            (_activeOrders.isNotEmpty && !_trackerDismissed ? 0.28 : 0.15),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+          boxShadow: AppShadows.elevated(isDark),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 30, color: iconColor),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _filteredMarkers.isEmpty && _activeOrders.isEmpty
+                    ? const SizedBox()
+                    : PharmacyMapView(
+                        key: ValueKey('map_${_userLat}_${_userLng}'),
+                        pharmacies: _filteredMarkers,
+                        userLat: _userLat,
+                        userLng: _userLng,
+                        activeRoute: _buildActiveRoute(),
+                        showControls: false,
+                        simpleStyle: _mapSimpleStyle,
+                      ),
               ),
             ),
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _openFullScreenMap,
+                  child: Container(),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      (isDark ? AppColors.darkSurface : AppColors.pearl)
+                          .withValues(alpha: 0.9),
+                      (isDark ? AppColors.darkSurface : AppColors.pearl)
+                          .withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isDark
+                                ? AppColors.darkTextTertiary
+                                : AppColors.textTertiary)
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Haritayı aç",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_activeOrders.isNotEmpty && !_trackerDismissed)
+              ActiveOrderTracker(
+                activeOrders: _activeOrders,
+                userLat: _userLat,
+                userLng: _userLng,
+                onRefresh: _loadActiveOrders,
+                onDismiss: _dismissTracker,
+              ),
           ],
         ),
       ),

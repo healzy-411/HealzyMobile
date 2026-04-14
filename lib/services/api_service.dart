@@ -11,6 +11,11 @@ import '../Models/medicine_search_model.dart';
 import 'token_store.dart';
 import 'package:healzy_app/config/api_config.dart';
 
+class PharmacyCategoryItem {
+  final String name;
+  final String? imageUrl;
+  PharmacyCategoryItem({required this.name, this.imageUrl});
+}
 
 class ApiService {
   // =========================================================
@@ -149,7 +154,7 @@ final response = await http.post(
   // =========================================================
 
   /// GET /api/medicines/pharmacy/{pharmacyId}/categories
-  Future<List<String>> getPharmacyCategories(int pharmacyId) async {
+  Future<List<PharmacyCategoryItem>> getPharmacyCategories(int pharmacyId) async {
     final url = Uri.parse(
       '$baseUrl/medicines/pharmacy/$pharmacyId/categories',
     );
@@ -166,7 +171,14 @@ final response = await http.post(
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
-      return jsonList.map((e) => e.toString()).toList();
+      return jsonList.map((e) {
+        if (e is String) return PharmacyCategoryItem(name: e, imageUrl: null);
+        final m = e as Map<String, dynamic>;
+        return PharmacyCategoryItem(
+          name: (m['name'] ?? '').toString(),
+          imageUrl: m['imageUrl'] as String?,
+        );
+      }).toList();
     }
 
     throw Exception(

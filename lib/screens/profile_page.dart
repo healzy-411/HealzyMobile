@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+/*import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/token_store.dart';
 import '../Models/me_model.dart';
@@ -211,15 +210,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                               onPressed: () async {
-                                try {
-                                  final token = TokenStore.get();
-                                  if (token != null) {
-                                    await http.post(
-                                      Uri.parse("${widget.baseUrl}/api/auth/logout"),
-                                      headers: {"Authorization": "Bearer $token"},
-                                    );
-                                  }
-                                } catch (_) {}
                                 await TokenStore.clear();
                                 if (!context.mounted) return;
                                 Navigator.pushAndRemoveUntil(
@@ -265,6 +255,308 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(width: 12),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
           if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+}*/
+
+import 'package:flutter/material.dart';
+import 'dart:ui';
+import '../services/auth_service.dart';
+import '../services/token_store.dart';
+import '../Models/me_model.dart';
+import 'orders_history_page.dart';
+import 'saved_cards_page.dart';
+import 'auth_page.dart';
+
+class ProfilePage extends StatefulWidget {
+  final String baseUrl;
+  const ProfilePage({super.key, required this.baseUrl});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  // --- RENK PALETİ ---
+  static const Color pearl = Color(0xFFF8F5F0);
+  static const Color creamBackground = Color.fromARGB(255, 228, 220, 194);
+  static const Color midnight = Color(0xFF1B4965);
+  static const Color subTextColor = Color(0xFF5A5A5A);
+
+  late final AuthService _api;
+  bool _loading = true;
+  String? _error;
+  MeDto? _me;
+
+  @override
+  void initState() {
+    super.initState();
+    _api = AuthService(baseUrl: widget.baseUrl);
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final me = await _api.me();
+      if (!mounted) return;
+      setState(() => _me = me);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [pearl, creamBackground],
+          ),
+        ),
+        child: SafeArea(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: midnight))
+              : (_error != null)
+                  ? _buildErrorWidget()
+                  : _buildProfileContent(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    final me = _me!;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
+          _buildTopBar(),
+          const SizedBox(height: 30),
+          
+          // Profil Header
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: midnight.withOpacity(0.1), width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: midnight.withOpacity(0.05),
+                    child: const Icon(Icons.person, size: 50, color: midnight),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  me.fullName,
+                  style: const TextStyle(
+                    fontSize: 22, 
+                    fontWeight: FontWeight.bold, 
+                    color: midnight,
+                    letterSpacing: -0.5
+                  ),
+                ),
+                const Text(
+                  "Standart Üye",
+                  style: TextStyle(color: subTextColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+
+          _buildSectionTitle("Kişisel Bilgiler"),
+          _glassInfoTile(Icons.alternate_email_rounded, "E-posta", me.email, isVerified: true),
+          _glassInfoTile(Icons.phone_iphone_rounded, "Telefon", me.phoneNumber),
+          
+          const SizedBox(height: 28),
+
+          _buildSectionTitle("Hesap İşlemleri"),
+          _glassMenuButton(
+            icon: Icons.local_mall_outlined,
+            title: "Geçmiş Siparişlerim",
+            onTap: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => OrdersHistoryPage(baseUrl: widget.baseUrl))
+            ),
+          ),
+          _glassMenuButton(
+            icon: Icons.credit_card_rounded,
+            title: "Kayıtlı Kartlarım",
+            onTap: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => const SavedCardsPage())
+            ),
+          ),
+
+          const SizedBox(height: 10),
+          
+          TextButton.icon(
+            onPressed: _handleLogout,
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            label: const Text(
+              "Hesaptan Çıkış Yap", 
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 16)
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        IconButton(
+          onPressed: () => Navigator.pop(context), 
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: midnight)
+        ),
+        const Expanded(
+          child: Center(
+            child: Text(
+              "Profilim", 
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: midnight)
+            )
+          )
+        ),
+        const SizedBox(width: 48), // Denge için
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8, bottom: 12),
+        child: Text(
+          title, 
+          style: const TextStyle(
+            color: midnight, 
+            fontWeight: FontWeight.bold, 
+            fontSize: 16, 
+            letterSpacing: 1
+          )
+        ),
+      ),
+    );
+  }
+
+  Widget _glassInfoTile(IconData icon, String label, String value, {bool isVerified = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: _glassDecoration(),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: midnight, size: 22),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 12, color: subTextColor)),
+                  Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: midnight)),
+                ],
+              ),
+            ),
+            if (isVerified) const Icon(Icons.verified, color: Colors.green, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _glassMenuButton({required IconData icon, required String title, required VoidCallback onTap}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: _glassDecoration(),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
+            children: [
+              Icon(icon, color: midnight, size: 22),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title, 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: midnight)
+                )
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: midnight),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _glassDecoration() {
+    return BoxDecoration(
+      color: Colors.white.withOpacity(0.6),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+      boxShadow: [
+        BoxShadow(
+          color: midnight.withOpacity(0.04),
+          blurRadius: 15,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    await TokenStore.clear();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context, 
+      MaterialPageRoute(
+        builder: (_) => AuthPage(
+          authService: AuthService(baseUrl: widget.baseUrl), 
+          customerHome: const SizedBox()
+        )
+      ), 
+      (route) => false
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_error!, style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: midnight),
+            onPressed: _load, 
+            child: const Text("Tekrar Dene", style: TextStyle(color: Colors.white))
+          ),
         ],
       ),
     );

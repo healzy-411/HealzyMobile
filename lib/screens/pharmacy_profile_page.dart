@@ -181,13 +181,6 @@ class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
             _editField("Ilce", _district, Icons.location_city),
             _editField("Adres", _address, Icons.home, maxLines: 2),
             _editField("Telefon", _phone, Icons.phone),
-            Row(
-              children: [
-                Expanded(child: _editField("Enlem", _latitude, Icons.my_location)),
-                const SizedBox(width: 8),
-                Expanded(child: _editField("Boylam", _longitude, Icons.my_location)),
-              ],
-            ),
             _editField("Calisma Saatleri", _workingHours, Icons.access_time),
             const SizedBox(height: 16),
             Row(
@@ -217,7 +210,6 @@ class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
             _infoTile(Icons.home, "Adres", _address.text),
             _infoTile(Icons.phone, "Telefon", _phone.text),
             _infoTile(Icons.access_time, "Calisma Saatleri", _workingHours.text),
-            _infoTile(Icons.my_location, "Konum", "${_latitude.text}, ${_longitude.text}"),
           ],
         ],
       ),

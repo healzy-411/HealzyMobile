@@ -38,10 +38,10 @@ enum HomeCareRequestStatusModel {
   accepted,
   rejected,
   cancelled,
+  completed,
 }
 
 HomeCareRequestStatusModel statusFromJson(dynamic raw) {
-  // Backend muhtemelen int (0..3) gönderiyor
   if (raw is int) {
     switch (raw) {
       case 0:
@@ -52,10 +52,12 @@ HomeCareRequestStatusModel statusFromJson(dynamic raw) {
         return HomeCareRequestStatusModel.rejected;
       case 3:
         return HomeCareRequestStatusModel.cancelled;
+      case 4:
+        return HomeCareRequestStatusModel.completed;
     }
   }
-  // String gelirse fallback
   final s = raw?.toString().toLowerCase() ?? '';
+  if (s.contains('completed')) return HomeCareRequestStatusModel.completed;
   if (s.contains('accepted')) return HomeCareRequestStatusModel.accepted;
   if (s.contains('rejected')) return HomeCareRequestStatusModel.rejected;
   if (s.contains('cancel')) return HomeCareRequestStatusModel.cancelled;
@@ -121,6 +123,11 @@ class HomeCareRequestModel {
   final String? note;
   final HomeCareRequestStatusModel status;
   final DateTime createdAtUtc;
+  final String? statusNote;
+  final double? earningAmount;
+  final DateTime? completedAtUtc;
+  final String? completionNote;
+  final String? assignedEmployeeName;
 
   HomeCareRequestModel({
     required this.id,
@@ -133,9 +140,19 @@ class HomeCareRequestModel {
     required this.note,
     required this.status,
     required this.createdAtUtc,
+    this.statusNote,
+    this.earningAmount,
+    this.completedAtUtc,
+    this.completionNote,
+    this.assignedEmployeeName,
   });
 
   factory HomeCareRequestModel.fromJson(Map<String, dynamic> j) {
+    DateTime? parseOptDate(dynamic v) {
+      if (v == null) return null;
+      try { return DateTime.parse(v.toString()).toLocal(); } catch (_) { return null; }
+    }
+    final earnRaw = j['earningAmount'] ?? j['EarningAmount'];
     return HomeCareRequestModel(
       id: (j['id'] ?? j['Id'] ?? 0) as int,
       providerId: (j['providerId'] ?? j['ProviderId'] ?? 0) as int,
@@ -153,6 +170,11 @@ class HomeCareRequestModel {
       createdAtUtc:
           DateTime.parse((j['createdAtUtc'] ?? j['CreatedAtUtc']).toString())
               .toLocal(),
+      statusNote: (j['statusNote'] ?? j['StatusNote'])?.toString(),
+      earningAmount: earnRaw == null ? null : (earnRaw is num ? earnRaw.toDouble() : double.tryParse(earnRaw.toString())),
+      completedAtUtc: parseOptDate(j['completedAtUtc'] ?? j['CompletedAtUtc']),
+      completionNote: (j['completionNote'] ?? j['CompletionNote'])?.toString(),
+      assignedEmployeeName: (j['assignedEmployeeName'] ?? j['AssignedEmployeeName'])?.toString(),
     );
   }
 }

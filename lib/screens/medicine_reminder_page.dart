@@ -7,6 +7,7 @@ import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
 import '../services/local_notification_service.dart';
 import 'all_reminders_page.dart';
+import 'dart:ui'; 
 
 class MedicineReminderPage extends StatefulWidget {
   final String baseUrl;
@@ -21,11 +22,14 @@ class MedicineReminderPage extends StatefulWidget {
 }
 
 class _MedicineReminderPageState extends State<MedicineReminderPage> {
+
+  final Color midnightBlue = const Color(0xFF1B4965);
+  final Color pearlWhite = const Color(0xFFFFF8E8);
+  final Color glassWhite = Colors.white.withOpacity(0.2); // Camsı efekt için şeffaf beyaz  
+
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-
-  final Color healzyTurquoise = const Color(0xFF00A79D);
-  final Color healzyDarkGreen = const Color(0xFF004D40);
+  
 
   late final MedicineReminderApiService _api =
       MedicineReminderApiService(baseUrl: widget.baseUrl);
@@ -54,10 +58,13 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
   double _dayIntervalFor(MedicineReminderDto r) {
     if (r.frequencyType == 0) return 1.0; // Her gün
     if (r.frequencyType == 1) return r.xValue.toDouble(); // X günde bir
-    if (r.frequencyType == 2 && r.xValue > 0) {
-      return 7 / r.xValue; // Haftada X gün ~ 7/X
-    }
-    return 1.0;
+    return 1.0; // Haftada X gün icin ayri hesap
+  }
+
+  bool _isWeeklyMedicineDay(int diffDays, int xValue) {
+    if (xValue <= 0) return false;
+    final dayInWeek = diffDays % 7;
+    return dayInWeek < xValue;
   }
 
   // ==== Takvim event loader (marker için ALL listesi) ====
@@ -69,14 +76,20 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
       final startDate =
           DateTime(r.startDateUtc.year, r.startDateUtc.month, r.startDateUtc.day);
 
-      final dayInterval = _dayIntervalFor(r);
       final duration = r.durationDays;
-
       final differenceInDays = checkDay.difference(startDate).inDays;
 
-      final isMedicineDay = differenceInDays >= 0 &&
-          differenceInDays < duration &&
-          ((differenceInDays / dayInterval) % 1.0).abs() < 0.01;
+      bool isMedicineDay;
+      if (r.frequencyType == 2) {
+        isMedicineDay = differenceInDays >= 0 &&
+            differenceInDays < duration &&
+            _isWeeklyMedicineDay(differenceInDays, r.xValue);
+      } else {
+        final dayInterval = _dayIntervalFor(r);
+        isMedicineDay = differenceInDays >= 0 &&
+            differenceInDays < duration &&
+            ((differenceInDays / dayInterval) % 1.0).abs() < 0.01;
+      }
 
       if (isMedicineDay) events.add(r);
     }
@@ -200,12 +213,16 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     final startDate =
         DateTime(r.startDateUtc.year, r.startDateUtc.month, r.startDateUtc.day);
 
-    final interval = _dayIntervalFor(r);
     final diff = checkDay.difference(startDate).inDays;
 
     if (diff < 0) return false;
     if (diff >= r.durationDays) return false;
 
+    if (r.frequencyType == 2) {
+      return _isWeeklyMedicineDay(diff, r.xValue);
+    }
+
+    final interval = _dayIntervalFor(r);
     return ((diff / interval) % 1.0).abs() < 0.01;
   }
 
@@ -449,12 +466,12 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
-                          color: healzyDarkGreen,
+                          color: midnightBlue,
                         ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: Text('Tamam', style: TextStyle(color: healzyTurquoise, fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text('Tamam', style: TextStyle(color: pearlWhite, fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ],
                   ),
@@ -523,7 +540,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     final nameController = TextEditingController(text: editing?.name ?? '');
     final timeController = TextEditingController(
       text: (editing?.timesOfDay.isNotEmpty ?? false)
-          ? editing!.timesOfDay.first
+          ? editing!.timesOfDay.first.split(':').take(2).join(':')
           : '10:30',
     );
     final durationController =
@@ -537,11 +554,30 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     List<String> mealTimes = List<String>.from(editing?.mealTimes ?? []);
     String? popupError;
 
+
+
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
+      builder: (context) => Theme(
+    // ✅ BURASI ÖNEMLİ: Dialog içindeki tüm form elemanlarını beyaz/pearlWhite yapar
+    data: Theme.of(context).copyWith(
+      textTheme: Theme.of(context).textTheme.apply(
+            bodyColor: pearlWhite, 
+            displayColor: pearlWhite,
+          ),
+      inputDecorationTheme: InputDecorationTheme(
+        labelStyle: TextStyle(color: pearlWhite.withOpacity(0.8), fontSize: 18),
+        hintStyle: TextStyle(color: pearlWhite.withOpacity(0.5), fontSize: 18),
+        prefixIconColor: pearlWhite,
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: pearlWhite.withOpacity(0.3))),
+        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: pearlWhite)),
+      ),
+    ),
+    child: StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: midnightBlue.withOpacity(0.9),//arka renk
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -549,12 +585,12 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
               Text(
                 'İlaç Planla',
                 style: TextStyle(
-                  color: healzyDarkGreen,
+                  color: pearlWhite,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close, color: healzyTurquoise),
+                icon: Icon(Icons.close, color: pearlWhite),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -591,9 +627,10 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                   ),
                 TextField(
                   controller: nameController,
+                  style: TextStyle(color: pearlWhite, fontSize: 18),
                   decoration: InputDecoration(
-                    labelText: 'İlaç Adı *',
-                    prefixIcon: Icon(Icons.medication, color: healzyTurquoise),
+                    labelText: 'İlaç Adı ',
+                    prefixIcon: Icon(Icons.medication, color: pearlWhite),
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -602,10 +639,11 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Kullanım Şekli *',
+                    'Kullanım Şekli ',
                     style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
+                      fontSize: 18,
+                      //color: Colors.grey[600],
+                      color: pearlWhite
                     ),
                   ),
                 ),
@@ -621,17 +659,16 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: intakeType == 0
-                                ? healzyTurquoise
-                                : Colors.grey[200],
+                            color: intakeType == 0 ? pearlWhite : pearlWhite.withOpacity(0.4),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             'Aç Karnına',
                             style: TextStyle(
-                              color: intakeType == 0 ? Colors.white : Colors.black87,
+                              color: midnightBlue,
                               fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
                         ),
@@ -644,17 +681,17 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: intakeType == 1
-                                ? healzyTurquoise
-                                : Colors.grey[200],
+                            color: intakeType == 1 ? pearlWhite : pearlWhite.withOpacity(0.4),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             'Tok Karnına',
                             style: TextStyle(
-                              color: intakeType == 1 ? Colors.white : Colors.black87,
+                              //color: intakeType == 1 ? Colors.white : Colors.black87,
+                              color: midnightBlue,
                               fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
                         ),
@@ -665,14 +702,14 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
 
                 // ── Yemek Saatleri (sadece Tok seçiliyse) ──
                 if (intakeType == 1) ...[
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 18),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Yemek Saatleri (isteğe bağlı)',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
+                        fontSize: 18,
+                        color: pearlWhite,
                       ),
                     ),
                   ),
@@ -690,13 +727,14 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                               mealTimes.removeAt(entry.key);
                             });
                           },
-                          backgroundColor: healzyTurquoise.withOpacity(0.1),
+                          backgroundColor: pearlWhite.withOpacity(0.1),
                         );
                       }),
                       if (mealTimes.length < 5)
                         ActionChip(
-                          avatar: Icon(Icons.add, size: 18, color: healzyTurquoise),
-                          label: const Text('Yemek Saati Ekle'),
+                          avatar: Icon(Icons.add, size: 20, color: pearlWhite),
+                          label: Text('Yemek Saati Ekle', style: TextStyle(color: midnightBlue, fontWeight: FontWeight.bold)),
+                          backgroundColor: pearlWhite,
                           onPressed: () async {
                             final result = await _showWheelTimePicker(context);
                             if (result != null) {
@@ -713,7 +751,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'En fazla 5 yemek saati ekleyebilirsiniz.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 18, color: pearlWhite),
                       ),
                     ),
                 ],
@@ -721,14 +759,19 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                 const SizedBox(height: 15),
                 DropdownButtonFormField<int>(
                   value: frequencyType,
+                  dropdownColor: midnightBlue,
+                  style: TextStyle(color: pearlWhite, fontSize: 18),
                   decoration: InputDecoration(
-                    labelText: 'Kullanım Sıklığı *',
-                    prefixIcon: Icon(Icons.loop, color: healzyTurquoise),
+                    labelText: 'Kullanım Sıklığı ',
+                    filled: true,
+                    fillColor: midnightBlue.withOpacity(0.5), 
+                    prefixIcon: Icon(Icons.loop, color: pearlWhite),
+                    labelStyle: TextStyle(color: pearlWhite, fontSize: 18),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 0, child: Text('Her Gün')),
-                    DropdownMenuItem(value: 1, child: Text('X Günde Bir')),
-                    DropdownMenuItem(value: 2, child: Text('Haftada X Gün')),
+                    DropdownMenuItem(value: 0, child: Text('Her Gün', style: TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 1, child: Text('X Günde Bir', style: TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 2, child: Text('Haftada X Gün', style: TextStyle(color: Colors.white))),
                   ],
                   onChanged: (val) => setDialogState(() => frequencyType = val!),
                 ),
@@ -741,7 +784,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                       labelText: frequencyType == 1
                           ? 'Kaç günde bir? (X)'
                           : 'Haftada kaç gün? (X)',
-                      prefixIcon: Icon(Icons.edit_calendar, color: healzyTurquoise),
+                      prefixIcon: Icon(Icons.edit_calendar, color: pearlWhite),
                     ),
                   ),
                 ],
@@ -750,30 +793,45 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                   controller: durationController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Toplam Kaç Gün Kullanılacak? *',
-                    prefixIcon: Icon(Icons.calendar_month, color: healzyTurquoise),
+                    labelText: frequencyType == 0
+                        ? 'Kaç Gün Kullanılacak?'
+                        : 'Kaç Doz Kullanılacak?',
+                    prefixIcon: Icon(Icons.calendar_month, color: pearlWhite),
                     hintText: "Örn: 10",
                   ),
                 ),
                 const SizedBox(height: 15),
                 DropdownButtonFormField<int>(
                   value: frequency,
+                  dropdownColor: midnightBlue,
+                  style: TextStyle(color: pearlWhite, fontSize: 18),
                   decoration: InputDecoration(
-                    labelText: 'Günde Kaç Defa? *',
-                    prefixIcon: Icon(Icons.repeat, color: healzyTurquoise),
+                    labelText: 'Günde Kaç Defa?',
+                    filled: true,
+                    fillColor: midnightBlue.withOpacity(0.5),
+                    labelStyle: TextStyle(color: pearlWhite, fontSize: 18),
+                    prefixIcon: Icon(Icons.repeat, color: pearlWhite),
+                    enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: pearlWhite.withOpacity(0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: pearlWhite),
+                    ),
                   ),
                   items: [1, 2, 3, 4]
-                      .map((f) => DropdownMenuItem(value: f, child: Text('$f Defa')))
+                      .map((f) => DropdownMenuItem(value: f, child: Text('$f Defa', style: const TextStyle(color: Colors.white),)))
                       .toList(),
                   onChanged: (val) => setDialogState(() => frequency = val!),
                 ),
                 const SizedBox(height: 15),
                 TextField(
                   controller: timeController,
+                  style: TextStyle(color: pearlWhite, fontSize: 18),
                   keyboardType: TextInputType.datetime,
                   decoration: InputDecoration(
-                    labelText: 'İlk Doz Saati *',
-                    prefixIcon: Icon(Icons.access_time, color: healzyTurquoise),
+                    labelText: 'İlk Doz Saati ',
+                    
+                    prefixIcon: Icon(Icons.access_time, color: pearlWhite),
                     hintText: "SS:DD",
                   ),
                 ),
@@ -783,7 +841,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: healzyTurquoise,
+                backgroundColor: pearlWhite,
                 minimumSize: const Size(double.infinity, 45),
               ),
               onPressed: () async {
@@ -812,7 +870,19 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                   return;
                 }
 
-                final durationDays = int.parse(durationText);
+                final inputValue = int.parse(durationText);
+                // Frequency'e gore gercek durationDays hesapla
+                int durationDays;
+                if (frequencyType == 0) {
+                  durationDays = inputValue; // Her gun: input = toplam gun
+                } else if (frequencyType == 1) {
+                  durationDays = inputValue * xVal; // X gunde bir, N doz icin N*X gun
+                } else {
+                  // Haftada X gun: N doz icin tam haftalar + kalan gunler
+                  final fullWeeks = inputValue ~/ xVal;
+                  final remainder = inputValue % xVal;
+                  durationDays = fullWeeks * 7 + (remainder == 0 ? 0 : remainder);
+                }
 
                 try {
                   MedicineReminderDto saved;
@@ -847,6 +917,15 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
 
                   if (!mounted) return;
 
+                  setState(() {
+                    final idxAll = _allReminders.indexWhere((r) => r.id == saved.id);
+                    if (idxAll >= 0) {
+                      _allReminders[idxAll] = saved;
+                    } else {
+                      _allReminders.add(saved);
+                    }
+                    });
+
                   // ✅ all list güncellenir
                   setState(() {
                     final idxAll = _allReminders.indexWhere((r) => r.id == saved.id);
@@ -864,22 +943,35 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                   // ✅ notification'ları yeniden kur
                   await _rescheduleAllNotifications();
 
-                  if (!mounted) return;
+                  /*if (!mounted) return;
                   Navigator.pop(context);
                 } catch (e) {
                   setDialogState(() {
                     popupError = e.toString().replaceFirst('Exception: ', '');
                   });
+                }*/
+                if (Navigator.of(context, rootNavigator: true).canPop()) {
+                  Navigator.of(context, rootNavigator: true).pop();
                 }
+                } catch (e) {
+                  // Hata durumunda diyagram kapanmaz, hata mesajı kullanıcıya gösterilir
+                  setDialogState(() {
+                  popupError = e.toString().replaceFirst('Exception: ', '');
+                });
+              }
+
+                
               },
-              child: const Text(
+              child: Text(
                 'KAYDET',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: midnightBlue, fontWeight: FontWeight.bold, fontSize: 18),
               ),
+              
             ),
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -888,7 +980,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  /*Widget build(BuildContext context) {
     final selectedDay = _selectedDay ?? DateTime.now();
 
     return Scaffold(
@@ -897,7 +989,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
           "Healzy İlaç Hatırlatıcı",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: healzyTurquoise,
+        backgroundColor: pearlWhite,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -914,8 +1006,8 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                 MaterialPageRoute(
                   builder: (_) => AllRemindersPage(
                     api: _api,
-                    healzyTurquoise: healzyTurquoise,
-                    healzyDarkGreen: healzyDarkGreen,
+                    healzyTurquoise: pearlWhite,
+                    healzyDarkGreen: midnightBlue,
                     onEdit: (item) => _showAddReminderDialog(editing: item),
                     onChanged: () => _loadAllAndSelectedDay(),
                   ),
@@ -939,6 +1031,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
             lastDay: DateTime.utc(2027, 12, 31),
             focusedDay: _focusedDay,
             eventLoader: _getEventsForDay,
+            startingDayOfWeek: StartingDayOfWeek.monday,
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
@@ -946,11 +1039,11 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             calendarStyle: CalendarStyle(
               selectedDecoration: BoxDecoration(
-                color: healzyTurquoise,
+                color: pearlWhite,
                 shape: BoxShape.circle,
               ),
               todayDecoration: BoxDecoration(
-                color: healzyTurquoise.withOpacity(0.4),
+                color: pearlWhite.withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
             ),
@@ -1023,7 +1116,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.alarm, color: healzyTurquoise),
+                              Icon(Icons.alarm, color: pearlWhite),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -1031,7 +1124,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
-                                    color: healzyDarkGreen,
+                                    color: midnightBlue,
                                   ),
                                 ),
                               ),
@@ -1060,7 +1153,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                               ),
                               IconButton(
                                 icon: Icon(Icons.edit,
-                                    color: healzyTurquoise, size: 22),
+                                    color: pearlWhite, size: 22),
                                 onPressed: () =>
                                     _showAddReminderDialog(editing: item),
                               ),
@@ -1104,7 +1197,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                     child: Text(
                                       t,
                                       style: TextStyle(
-                                        color: healzyDarkGreen,
+                                        color: midnightBlue,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),
@@ -1154,10 +1247,226 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: healzyTurquoise,
+        backgroundColor: pearlWhite,
         onPressed: () => _showAddReminderDialog(),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
+}*/
+
+Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
+          )
+        : LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              pearlWhite,
+              const Color(0xFFD4EAF7),
+              midnightBlue.withValues(alpha: 0.2),
+            ],
+          );
+    final fgColor = isDark ? const Color(0xFFF1F6FC) : midnightBlue;
+
+    return Scaffold(
+      extendBodyBehindAppBar: true, // AppBar'ın arkasına gradient geçmesi için
+      appBar: AppBar(
+        title: Text(
+          "İlaç Hatırlatıcı",
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, color: fgColor),
+        ),
+        backgroundColor: Colors.transparent, // Cam tasarımı için şeffaf
+        elevation: 0,
+        foregroundColor: fgColor,
+        iconTheme: IconThemeData(color: fgColor),
+        actions: [
+          IconButton(
+    icon: const Icon(Icons.refresh),
+    onPressed: _loadAllAndSelectedDay,
+    tooltip: "Yenile",
+  ),
+  IconButton(
+    icon: const Icon(Icons.calendar_view_day_rounded), // Burası senin bahsettiğin buton
+    tooltip: "Tüm Hatırlatıcılar",
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AllRemindersPage(
+            api: _api,
+            healzyTurquoise: pearlWhite,
+            healzyDarkGreen: midnightBlue,
+            onEdit: (item) => _showAddReminderDialog(editing: item),
+            onChanged: () => _loadAllAndSelectedDay(),
+          ),
+        ),
+      ).then((_) => _loadAllAndSelectedDay()); // Geri dönünce listeyi tazeler
+    },
+  ),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: SafeArea(
+          child: Column(
+            children: [
+              if (_loading) const LinearProgressIndicator(),
+              
+              // === CAM GÖRÜNÜMLÜ TAKVİM BAŞLANGIÇ ===
+              Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white.withOpacity(0.4)),
+                      ),
+                      child: TableCalendar(
+                        locale: 'tr_TR',
+                        firstDay: DateTime.utc(2025, 1, 1),
+                        lastDay: DateTime.utc(2099, 12, 31),
+                        focusedDay: _focusedDay,
+                        startingDayOfWeek: StartingDayOfWeek.monday,
+                        eventLoader: _getEventsForDay,
+                        headerStyle: HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                          titleTextStyle: TextStyle(
+                            color: midnightBlue,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          leftChevronIcon: Icon(Icons.chevron_left, color: midnightBlue),
+                          rightChevronIcon: Icon(Icons.chevron_right, color: midnightBlue),
+                        ),
+                        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                        calendarStyle: CalendarStyle(
+                          defaultTextStyle: TextStyle(color: midnightBlue, fontWeight: FontWeight.w500, fontSize: 15),
+
+                          weekendTextStyle: TextStyle(color: midnightBlue, fontWeight: FontWeight.w500, fontSize: 15),
+                          outsideDaysVisible: false,
+                          selectedDecoration: BoxDecoration(
+                            color: midnightBlue,
+                            shape: BoxShape.circle,
+                            
+                          ),
+
+                          
+                          todayDecoration: BoxDecoration(
+                            color: midnightBlue.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                            
+                          ),
+                        ),
+                        calendarBuilders: CalendarBuilders(
+                          markerBuilder: (context, date, events) {
+                            if (events.isNotEmpty) {
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: events.take(4).map((event) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.orangeAccent, // Önemli günler için renk
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            }
+                            return null;
+                          },
+                        ),
+                        onDaySelected: (day, focusedDay) async {
+                          setState(() {
+                            _selectedDay = day;
+                            _focusedDay = focusedDay;
+                          });
+                          await _loadSelectedDayOnly(day);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // === CAM GÖRÜNÜMLÜ TAKVİM BİTİŞ ===
+
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Bugünkü İlaçlar",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4965)),
+                  ),
+                ),
+              ),
+
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  itemCount: _reminders.length,
+                  itemBuilder: (context, index) {
+                    final item = _reminders[index];
+                    return _buildModernMedicineCard(item, index);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: midnightBlue,
+        onPressed: () => _showAddReminderDialog(),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  // Listeyi daha temiz göstermek için ufak bir yardımcı widget
+  Widget _buildModernMedicineCard(MedicineReminderDto item, int index) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: Colors.white.withOpacity(0.7),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: CircleAvatar(
+          backgroundColor: midnightBlue.withOpacity(0.1),
+          child: Icon(Icons.medication, color: midnightBlue),
+        ),
+        title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, color: midnightBlue)),
+        subtitle: Text("${_getFrequencyText(item)} - ${item.timesPerDay} Kez"),
+        trailing: Icon(Icons.chevron_right, color: midnightBlue.withOpacity(0.3)),
+      ),
+    );
+  }
 }
+

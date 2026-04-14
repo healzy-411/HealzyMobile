@@ -60,6 +60,24 @@ class HomeCareApiService {
     );
   }
 
+  Future<List<String>> getProviderTimeSlots(int providerId) async {
+    final uri = Uri.parse('$baseUrl/api/home-care/requests/providers/$providerId/time-slots');
+    final res = await http.get(uri, headers: _authHeaders());
+    await _check401(res);
+    if (_ok(res.statusCode)) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map<String, dynamic>>()
+            .map((m) => (m['label'] ?? '').toString())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+    return [];
+  }
+
   Future<HomeCareRequestModel> createRequest({
     required int providerId,
     required int addressId,

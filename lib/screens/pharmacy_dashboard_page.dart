@@ -271,7 +271,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       childAspectRatio: 1.6,
       children: [
         _summaryCard("Toplam Ciro", "${revenue.toStringAsFixed(2)} TL",
-            Icons.attach_money, const Color(0xFF00A79D)),
+            Icons.currency_lira, const Color(0xFF00A79D)),
         _summaryCard("Siparis Sayisi", "$orders",
             Icons.receipt_long, Colors.blue),
         _summaryCard("Satilan Urun", "$items",
