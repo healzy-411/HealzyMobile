@@ -51,14 +51,14 @@ class AppTextStyles {
   );
 
   static const TextStyle caption = TextStyle(
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.1,
     height: 1.35,
   );
 
   static const TextStyle overline = TextStyle(
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: FontWeight.w600,
     letterSpacing: 1.2,
   );

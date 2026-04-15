@@ -8,6 +8,7 @@ import '../services/token_store.dart';
 import 'cart_page.dart';
 import 'product_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class ProductsPage extends StatefulWidget {
   final int pharmacyId;
@@ -148,40 +149,24 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.55);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.55);
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      bottomNavigationBar: const HealzyBottomNav(),
+      appBar: AppBar(
+        title: Text(widget.categoryName),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 12),
         child: Column(
           children: [
-            // HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              color: Colors.grey,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Text(
-                    widget.categoryName,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
             // PRODUCTS
             Expanded(
               child: RefreshIndicator(
@@ -235,7 +220,13 @@ class _ProductsPageState extends State<ProductsPage> {
 
       // CART BUTTON
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBg,
+        foregroundColor: fg,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: cardBorder, width: 0.8),
+        ),
         onPressed: () {
           Navigator.push(
             context,
@@ -245,8 +236,7 @@ class _ProductsPageState extends State<ProductsPage> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.shopping_basket_outlined,
-                color: Colors.black, size: 30),
+            Icon(Icons.shopping_basket_outlined, color: fg, size: 28),
             if (cartCount > 0)
               Positioned(
                 right: -8,
@@ -306,16 +296,26 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
         ),
       ),
-      child: Container(
+      child: Builder(builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final cardBg = isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55);
+        final cardBorder = isDark
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.55);
+        final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+        return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: cardBorder, width: 0.8),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -328,11 +328,15 @@ class _ProductsPageState extends State<ProductsPage> {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: fg,
+              ),
             ),
             Text(
               "${product.price.toStringAsFixed(0)} TL",
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(color: fg.withValues(alpha: 0.7), fontSize: 14),
             ),
             GestureDetector(
               onTap: adding ? null : () => _addToCart(product),
@@ -348,7 +352,8 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
           ],
         ),
-      ),
+        );
+      }),
     );
   }
 }

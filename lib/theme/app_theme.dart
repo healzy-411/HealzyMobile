@@ -6,6 +6,13 @@ class AppTheme {
   static ThemeData light() {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: const WidgetStatePropertyAll(5),
+        radius: const Radius.circular(8),
+        thumbColor: WidgetStatePropertyAll(
+          AppColors.midnight.withValues(alpha: 0.35),
+        ),
+      ),
       scaffoldBackgroundColor: AppColors.pearlWarm,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.midnight,
@@ -58,6 +65,13 @@ class AppTheme {
   static ThemeData dark() {
     final base = ThemeData.dark(useMaterial3: true);
     return base.copyWith(
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: const WidgetStatePropertyAll(5),
+        radius: const Radius.circular(8),
+        thumbColor: WidgetStatePropertyAll(
+          Colors.white.withValues(alpha: 0.4),
+        ),
+      ),
       scaffoldBackgroundColor: AppColors.darkBg,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.midnightSoft,

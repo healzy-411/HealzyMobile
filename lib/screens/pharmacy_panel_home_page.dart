@@ -246,7 +246,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Eczane Paneli"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         actions: [
           Stack(
@@ -270,7 +270,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                     child: Text(
                       _unreadCount > 9 ? "9+" : "$_unreadCount",
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -334,7 +334,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: isOpen ? const Color(0xFF00A79D) : Colors.grey,
+                        backgroundColor: isOpen ? const Color(0xFF102E4A) : Colors.grey,
                         child: const Icon(Icons.local_pharmacy, color: Colors.white),
                       ),
                       const SizedBox(width: 12),
@@ -360,7 +360,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                                     ),
                                     child: Text("NÖBETÇİ",
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.amber.shade800,
                                       ),
@@ -381,7 +381,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                                 Text(
                                   isApproved ? "Onayli" : "Onay Bekliyor",
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 14,
                                     color: isApproved ? Colors.green : Colors.orange,
                                   ),
                                 ),
@@ -445,7 +445,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   Expanded(
                     child: Text(
                       "Eczaneniz henuz admin tarafindan onaylanmamistir. Onaylaninca tum ozellikler aktif olacaktir.",
-                      style: TextStyle(color: Colors.orange, fontSize: 13),
+                      style: TextStyle(color: Colors.orange, fontSize: 14),
                     ),
                   ),
                 ],
@@ -470,7 +470,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           children: [
             _menuCard(icon: Icons.dashboard, label: "Dashboard", color: Colors.blue,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyDashboardPage()))),
-            _menuCard(icon: Icons.receipt_long, label: "Siparisler", color: const Color(0xFF00A79D),
+            _menuCard(icon: Icons.receipt_long, label: "Siparisler", color: const Color(0xFF102E4A),
               badge: pendingOrders > 0 ? "$pendingOrders" : null,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyOrdersPage()))),
             _menuCard(icon: Icons.inventory_2, label: "Stok Yonetimi", color: Colors.purple,
@@ -489,7 +489,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           children: [
             _summaryBadge("$pendingOrders", "Bekleyen", Icons.hourglass_top, pendingOrders > 0 ? Colors.orange : Colors.grey),
             const SizedBox(width: 8),
-            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.currency_lira, const Color(0xFF00A79D)),
+            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.currency_lira, const Color(0xFF102E4A)),
             const SizedBox(width: 8),
             _summaryBadge("$todayOrders", "Siparis", Icons.receipt, Colors.blue),
           ],
@@ -555,7 +555,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.red.shade700,
-                    fontSize: 13,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -572,7 +572,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
               ),
               child: Text(
                 _rejectionNote!,
-                style: TextStyle(fontSize: 13, color: Colors.red.shade900),
+                style: TextStyle(fontSize: 14, color: Colors.red.shade900),
               ),
             ),
           ],
@@ -600,7 +600,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                     icon: _sendingFeedback
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.send, size: 18),
-                    label: Text(_sendingFeedback ? "Gonderiliyor..." : "Gonder", style: const TextStyle(fontSize: 13)),
+                    label: Text(_sendingFeedback ? "Gonderiliyor..." : "Gonder", style: const TextStyle(fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade600,
                       foregroundColor: Colors.white,
@@ -614,7 +614,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   child: ElevatedButton.icon(
                     onPressed: _openEditInfoDialog,
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 13)),
+                    label: const Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
                       foregroundColor: Colors.white,
@@ -652,7 +652,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -678,7 +678,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
             Icon(icon, color: color, size: 18),
             const SizedBox(height: 4),
             Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
           ],
         ),
       ),
@@ -723,7 +723,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
               ),
           ],

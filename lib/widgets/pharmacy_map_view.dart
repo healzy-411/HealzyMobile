@@ -463,6 +463,7 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
 
     return Card(
       elevation: 8,
+      color: const Color(0xFF102E4A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -481,6 +482,7 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -496,7 +498,7 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                       p.distanceBadge!,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -523,67 +525,90 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                     const SizedBox(width: 6),
                     Text(
                       "${p.rating!.toStringAsFixed(1)} (${p.reviewCount} yorum)",
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
 
-            // Adres + yol tarifi
+            // Adres
             Row(
               children: [
-                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                const Icon(Icons.location_on, size: 14, color: Colors.white70),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     p.address,
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _openDirections(p),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.directions, size: 14, color: Colors.blue),
-                        SizedBox(width: 4),
-                        Text("Yol Tarifi",
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
 
-            // Telefon (tiklanabilir)
+            // Telefon (tiklanabilir, koyu yeşil)
             GestureDetector(
               onTap: p.phone.isNotEmpty ? () => _callPhone(p.phone) : null,
               child: Row(
                 children: [
-                  const Icon(Icons.phone, size: 14, color: Colors.green),
+                  Icon(Icons.phone,
+                      size: 15,
+                      color: p.phone.isNotEmpty
+                          ? const Color(0xFF00B894)
+                          : Colors.white54),
                   const SizedBox(width: 4),
                   Text(
                     p.phone.isNotEmpty ? p.phone : "Telefon yok",
                     style: TextStyle(
-                      fontSize: 13,
-                      color: p.phone.isNotEmpty ? Colors.green.shade700 : Colors.grey,
-                      decoration: p.phone.isNotEmpty ? TextDecoration.underline : null,
-                      decorationColor: Colors.green.shade700,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: p.phone.isNotEmpty
+                          ? const Color(0xFF00B894)
+                          : Colors.white54,
+                      decoration: p.phone.isNotEmpty
+                          ? TextDecoration.underline
+                          : null,
+                      decorationColor: const Color(0xFF00B894),
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Yol Tarifi (büyük buton)
+            SizedBox(
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: () => _openDirections(p),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade600,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions, size: 20, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "Yol Tarifi",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
 
@@ -595,22 +620,24 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                 child: GestureDetector(
                   onTap: p.onTap,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00A79D).withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.info_outline, size: 16, color: Color(0xFF00A79D)),
+                        Icon(Icons.info_outline, size: 16, color: Colors.white),
                         SizedBox(width: 6),
                         Text(
                           "Eczane Detaylari",
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF00A79D),
+                            color: Colors.white,
                           ),
                         ),
                       ],

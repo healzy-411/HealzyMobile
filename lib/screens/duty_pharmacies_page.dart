@@ -9,6 +9,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_shadows.dart';
 import '../widgets/pharmacy_map_view.dart';
 import 'pharmacy_detail_page.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class DutyPharmaciesPage extends StatefulWidget {
   const DutyPharmaciesPage({super.key});
@@ -174,7 +175,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
     _sortByDistance(filteredPharmacies);
   }
   Color _distanceBadgeColor(double km) {
-    if (km < 2) return const Color(0xFF00A79D);   // yakin - yesil
+    if (km < 2) return const Color(0xFF102E4A);   // yakin - yesil
     if (km < 5) return Colors.orange;              // orta
     return Colors.redAccent;                       // uzak
   }
@@ -212,6 +213,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
           );
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: IconButton(
@@ -274,7 +276,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                     child: Text(
                       _locError!,
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                      style: const TextStyle(color: Colors.red, fontSize: 14),
                     ),
                   ),
 
@@ -284,24 +286,39 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: selectedDistrict,
-                          hint: const Text("İlçe seç"),
-                          items: _getDistricts()
-                              .map(
-                                (d) => DropdownMenuItem(
-                                  value: d,
-                                  child: Text(d),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              selectedDistrict = val;
-                              _applyDistrictFilter();
-                            });
-                          },
-                        ),
+                        child: Builder(builder: (context) {
+                          final isDark =
+                              Theme.of(context).brightness == Brightness.dark;
+                          final fg = isDark
+                              ? Colors.white
+                              : const Color(0xFF102E4A);
+                          return DropdownButtonFormField<String>(
+                            value: selectedDistrict,
+                            hint: Text("İlçe seç",
+                                style: TextStyle(
+                                    color: fg.withValues(alpha: 0.6))),
+                            dropdownColor: isDark
+                                ? const Color(0xFF132B44)
+                                : Colors.white,
+                            style: TextStyle(color: fg),
+                            iconEnabledColor: fg,
+                            items: _getDistricts()
+                                .map(
+                                  (d) => DropdownMenuItem(
+                                    value: d,
+                                    child: Text(d,
+                                        style: TextStyle(color: fg)),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                selectedDistrict = val;
+                                _applyDistrictFilter();
+                              });
+                            },
+                          );
+                        }),
                       ),
                       IconButton(
                         icon: const Icon(Icons.clear),
@@ -437,7 +454,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                             : "${distKm.toStringAsFixed(1)} km",
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -449,7 +466,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
           const SizedBox(height: 4),
           Text(
             "${p.district} / ${p.city}",
-            style: TextStyle(color: subColor, fontSize: 13),
+            style: TextStyle(color: subColor, fontSize: 14),
           ),
           const SizedBox(height: 8),
           Text(
@@ -526,7 +543,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                         "Kayitli Eczane",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -5,6 +5,7 @@ import '../services/prescription_api_service.dart';
 import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
 import 'cart_page.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class PrescriptionPage extends StatefulWidget {
   final PrescriptionDetailDto detail;
@@ -73,6 +74,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
     final items = widget.detail.items;
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: Text("Reçete ${widget.detail.prescriptionNumber}"),
       ),
@@ -125,6 +127,13 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
               height: 48,
               child: ElevatedButton(
                 onPressed: _loading ? null : _simulate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF102E4A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: _loading
                     ? const CircularProgressIndicator(
                         strokeWidth: 2,
@@ -147,8 +156,14 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: const Border(top: BorderSide(color: Colors.grey)),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

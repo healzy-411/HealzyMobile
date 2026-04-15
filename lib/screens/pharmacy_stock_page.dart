@@ -87,7 +87,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Stok Yonetimi"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -98,7 +98,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddStockDialog(),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text("Urun Ekle", style: TextStyle(color: Colors.white)),
       ),
@@ -139,7 +139,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
           _miniCard("Urun", "$_totalProducts", Icons.medication, Colors.blue),
           const SizedBox(width: 8),
           _miniCard(
-              "Toplam Stok", "$_totalQuantity", Icons.inventory, const Color(0xFF00A79D)),
+              "Toplam Stok", "$_totalQuantity", Icons.inventory, const Color(0xFF102E4A)),
           const SizedBox(width: 8),
           _miniCard("Dusuk Stok", "$_lowStockCount", Icons.warning_amber,
               Colors.orange),
@@ -164,7 +164,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
             Text(value,
                 style: TextStyle(
                     fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
           ],
         ),
       ),
@@ -273,14 +273,14 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                               ),
                               child: const Text("Receteli",
                                   style: TextStyle(
-                                      fontSize: 10, color: Colors.red)),
+                                      fontSize: 14, color: Colors.red)),
                             ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(category,
                           style: const TextStyle(
-                              fontSize: 12, color: Colors.grey)),
+                              fontSize: 14, color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -291,7 +291,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   decoration: BoxDecoration(
                     color: isLowStock
                         ? Colors.red.shade50
-                        : const Color(0xFF00A79D).withValues(alpha: 0.1),
+                        : const Color(0xFF102E4A).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -302,13 +302,13 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                               fontWeight: FontWeight.bold,
                               color: isLowStock
                                   ? Colors.red
-                                  : const Color(0xFF00A79D))),
+                                  : const Color(0xFF102E4A))),
                       Text("adet",
                           style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 14,
                               color: isLowStock
                                   ? Colors.red
-                                  : const Color(0xFF00A79D))),
+                                  : const Color(0xFF102E4A))),
                     ],
                   ),
                 ),
@@ -322,11 +322,11 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
               children: [
                 Text("Satis: ${unitPrice.toStringAsFixed(2)} TL",
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
+                        fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(width: 12),
                 Text("Liste: ${listPrice.toStringAsFixed(2)} TL",
                     style:
-                        const TextStyle(fontSize: 12, color: Colors.grey)),
+                        const TextStyle(fontSize: 14, color: Colors.grey)),
               ],
             ),
 
@@ -339,7 +339,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                     const SizedBox(width: 4),
                     Text("Dusuk stok!",
                         style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 14,
                             color: Colors.orange.shade700,
                             fontWeight: FontWeight.w500)),
                   ],
@@ -358,7 +358,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text("Duzenle"),
                   style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF00A79D)),
+                      foregroundColor: const Color(0xFF102E4A)),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
@@ -527,7 +527,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(addError!,
-                            style: const TextStyle(color: Colors.red, fontSize: 12)),
+                            style: const TextStyle(color: Colors.red, fontSize: 14)),
                       ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -563,7 +563,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00A79D),
+                          backgroundColor: const Color(0xFF102E4A),
                           foregroundColor: Colors.white,
                         ),
                         child: const Text("Stoga Ekle"),
@@ -651,7 +651,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A79D),
+                backgroundColor: const Color(0xFF102E4A),
                 foregroundColor: Colors.white,
               ),
               child: const Text("Kaydet"),

@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../Models/otcmedicine_model.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final OtcMedicine product;
@@ -39,13 +40,13 @@ class ProductDetailPage extends StatelessWidget {
     final imageUrl = _fullUrl(product.imageUrl);
     final hasProspectus =
         product.prospectusUrl != null && product.prospectusUrl!.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final sub = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[600]!;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(product.name, overflow: TextOverflow.ellipsis),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
@@ -92,12 +93,12 @@ class ProductDetailPage extends StatelessWidget {
             // Ad + kategori
             Text(
               product.name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
             ),
             const SizedBox(height: 4),
             Text(
               categoryName,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 14, color: sub),
             ),
             const SizedBox(height: 16),
 
@@ -106,10 +107,10 @@ class ProductDetailPage extends StatelessWidget {
               children: [
                 Text(
                   "${product.price.toStringAsFixed(2)} TL",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF00A79D),
+                    color: fg,
                   ),
                 ),
                 const Spacer(),
@@ -127,7 +128,7 @@ class ProductDetailPage extends StatelessWidget {
                         ? 'Stokta: ${product.quantity}'
                         : 'Stokta yok',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: product.quantity > 0
                           ? Colors.green.shade700
@@ -141,8 +142,8 @@ class ProductDetailPage extends StatelessWidget {
               const SizedBox(height: 10),
               Text('Barkod: ${product.barcode}',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                      fontSize: 14,
+                      color: sub,
                       fontFamily: 'monospace')),
             ],
 
@@ -150,21 +151,22 @@ class ProductDetailPage extends StatelessWidget {
             if (product.description != null &&
                 product.description!.trim().isNotEmpty) ...[
               const SizedBox(height: 20),
-              const Text('Açıklama',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('Açıklama',
+                  style: TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold, color: fg)),
               const SizedBox(height: 6),
               Text(
                 product.description!,
-                style:
-                    const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+                style: TextStyle(fontSize: 14, height: 1.5, color: fg),
               ),
             ],
 
             // Prospektüs
             if (hasProspectus) ...[
               const SizedBox(height: 20),
-              const Text('Prospektüs',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('Prospektüs',
+                  style: TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold, color: fg)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () => _openProspectus(context),
@@ -172,9 +174,16 @@ class ProductDetailPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark
+                        ? const Color(0xFF132B44).withValues(alpha: 0.85)
+                        : Colors.white.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.55),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -182,29 +191,29 @@ class ProductDetailPage extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.red.shade50,
+                          color: Colors.red.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.picture_as_pdf,
                             color: Colors.red),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Prospektüsü Görüntüle',
                                 style: TextStyle(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.w600)),
-                            SizedBox(height: 2),
+                                    fontWeight: FontWeight.w600,
+                                    color: fg)),
+                            const SizedBox(height: 2),
                             Text('Tarayıcıda açılır ve indirilebilir.',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey)),
+                                style: TextStyle(fontSize: 14, color: sub)),
                           ],
                         ),
                       ),
-                      const Icon(Icons.open_in_new, size: 18, color: Colors.grey),
+                      Icon(Icons.open_in_new, size: 18, color: sub),
                     ],
                   ),
                 ),
@@ -215,9 +224,13 @@ class ProductDetailPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: onAddToCart == null
-          ? null
-          : SafeArea(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (onAddToCart != null)
+            SafeArea(
+              top: false,
+              bottom: false,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton.icon(
@@ -227,7 +240,7 @@ class ProductDetailPage extends StatelessWidget {
                       ? 'Sepete Ekle'
                       : 'Stokta Yok'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A79D),
+                    backgroundColor: const Color(0xFF102E4A),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
@@ -236,6 +249,9 @@ class ProductDetailPage extends StatelessWidget {
                 ),
               ),
             ),
+          const HealzyBottomNav(),
+        ],
+      ),
     );
   }
 }

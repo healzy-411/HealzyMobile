@@ -65,7 +65,7 @@ class _ActiveOrderTrackerState extends State<ActiveOrderTracker>
     final order = widget.activeOrders.first;
 
     return Positioned(
-      top: 8,
+      bottom: 8,
       left: 12,
       right: 12,
       child: GestureDetector(
@@ -115,11 +115,13 @@ class AnimatedBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusInfo = _getStatusInfo(order.status);
     final estimate = _estimateDelivery(order, userLat, userLng);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
 
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
-      color: Colors.white,
+      color: bg,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -144,13 +146,13 @@ class AnimatedBuilder extends StatelessWidget {
                         statusInfo.label,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 14,
                           color: statusInfo.color,
                         ),
                       ),
                       Text(
                         order.pharmacyName,
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF8A97A8)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -172,7 +174,7 @@ class AnimatedBuilder extends StatelessWidget {
                           "Teslim Edildi",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: 14,
                             color: Colors.green,
                           ),
                         ),
@@ -190,7 +192,7 @@ class AnimatedBuilder extends StatelessWidget {
                       "~${estimate.minutes} dk",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: statusInfo.color,
                       ),
                     ),
@@ -209,35 +211,50 @@ class AnimatedBuilder extends StatelessWidget {
           SizeTransition(
             sizeFactor: animation,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Column(
                 children: [
-                  // Progress bar
                   _buildProgressBar(order.status),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
 
                   // Mesafe ve sure detayi
                   if (estimate != null && order.status != "Delivered")
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(10),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : const Color(0xFF102E4A).withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on_outlined, size: 14, color: Colors.black54),
-                          const SizedBox(width: 4),
+                          Icon(Icons.location_on_outlined,
+                              size: 16,
+                              color: isDark ? Colors.white : const Color(0xFF102E4A)),
+                          const SizedBox(width: 6),
                           Text(
                             "${estimate.distanceKm.toStringAsFixed(1)} km uzakta",
-                            style: const TextStyle(fontSize: 11, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF102E4A),
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.timer_outlined, size: 14, color: Colors.black54),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Hazirlik ~${estimate.prepMin} dk + Yol ~${estimate.travelMin} dk",
-                            style: const TextStyle(fontSize: 11, color: Colors.black54),
+                          const SizedBox(width: 14),
+                          Icon(Icons.timer_outlined,
+                              size: 16,
+                              color: isDark ? Colors.white : const Color(0xFF102E4A)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              "Hazırlık ~${estimate.prepMin} dk + Yol ~${estimate.travelMin} dk",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : const Color(0xFF102E4A),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -251,12 +268,12 @@ class AnimatedBuilder extends StatelessWidget {
                     children: [
                       Text(
                         "Siparis #${order.orderId}",
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF8A97A8)),
                       ),
                       Text(
                         "${order.total.toStringAsFixed(2)} TL",
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -267,7 +284,7 @@ class AnimatedBuilder extends StatelessWidget {
                     children: [
                       Text(
                         "${order.items.length} urun",
-                        style: const TextStyle(fontSize: 11, color: Colors.black45),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF9AA7B8)),
                       ),
                       const Spacer(),
                       if (onDismiss != null)
@@ -282,9 +299,9 @@ class AnimatedBuilder extends StatelessWidget {
                             child: const Text(
                               "Gizle",
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black54,
+                                color: Color(0xFF8A97A8),
                               ),
                             ),
                           ),
@@ -295,7 +312,7 @@ class AnimatedBuilder extends StatelessWidget {
                         child: const Text(
                           "Detay >",
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.blue,
                           ),
@@ -314,7 +331,7 @@ class AnimatedBuilder extends StatelessWidget {
 
   Widget _buildProgressBar(String status) {
     final steps = ["Pending", "Preparing", "Ready", "Dispatched", "Delivered"];
-    final labels = ["Alindi", "Hazirlaniyor", "Hazir", "Yolda", "Teslim"];
+    final labels = ["Alındı", "Hazırlanıyor", "Hazır", "Yolda", "Teslim"];
     final icons = [
       Icons.receipt_long,
       Icons.local_pharmacy,
@@ -323,18 +340,24 @@ class AnimatedBuilder extends StatelessWidget {
       Icons.home_outlined,
     ];
     final currentIndex = steps.indexOf(status).clamp(0, steps.length - 1);
+    const Color doneColor = Color(0xFF00B894);
+    final Color idleColor = Colors.grey.shade400;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(steps.length * 2 - 1, (i) {
         if (i.isOdd) {
           final stepBefore = i ~/ 2;
           final active = stepBefore < currentIndex;
           return Expanded(
-            child: Container(
-              height: 3,
-              decoration: BoxDecoration(
-                color: active ? Colors.green : Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 18),
+              child: Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  color: active ? doneColor : idleColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
           );
@@ -345,30 +368,45 @@ class AnimatedBuilder extends StatelessWidget {
         final isCurrent = stepIndex == currentIndex;
 
         return Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: isCurrent ? 22 : 16,
-              height: isCurrent ? 22 : 16,
+              width: isCurrent ? 40 : 34,
+              height: isCurrent ? 40 : 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: done ? Colors.green : Colors.grey[300],
+                color: done ? doneColor : idleColor,
                 border: isCurrent
-                    ? Border.all(color: Colors.green.shade700, width: 2.5)
+                    ? Border.all(
+                        color: doneColor.withValues(alpha: 0.35), width: 4)
+                    : null,
+                boxShadow: isCurrent
+                    ? [
+                        BoxShadow(
+                          color: doneColor.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ]
                     : null,
               ),
               child: Icon(
-                done ? icons[stepIndex] : icons[stepIndex],
-                size: isCurrent ? 12 : 9,
-                color: done ? Colors.white : Colors.grey,
+                icons[stepIndex],
+                size: isCurrent ? 20 : 16,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              labels[stepIndex],
-              style: TextStyle(
-                fontSize: 8,
-                color: done ? Colors.green.shade700 : Colors.grey,
-                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 54,
+              child: Text(
+                labels[stepIndex],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: done ? doneColor : idleColor,
+                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                ),
               ),
             ),
           ],

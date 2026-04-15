@@ -160,7 +160,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Sigorta Yonetimi"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -193,7 +193,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
                               style: TextStyle(color: Colors.grey, fontSize: 16)),
                           SizedBox(height: 4),
                           Text("Asagidaki butondan ekleyebilirsiniz.",
-                              style: TextStyle(color: Colors.grey, fontSize: 13)),
+                              style: TextStyle(color: Colors.grey, fontSize: 14)),
                         ],
                       ),
                     )

@@ -159,42 +159,20 @@ class _CartPageState extends State<CartPage> {
     final total = totalPrice;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              color: Colors.grey,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 10,
-                    child: GestureDetector(
-                      onTap: () async {
-                        await _cleanupPrescriptionItemsIfNeeded();
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      },
-                      child: const Icon(Icons.arrow_back, color: Colors.white),
-                    ),
-                  ),
-                  const Center(
-                    child: Text(
-                      "Siparişlerim",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
+      appBar: AppBar(
+        title: const Text("Sepetim"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () async {
+            await _cleanupPrescriptionItemsIfNeeded();
+            if (!mounted) return;
+            if (!context.mounted) return;
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Column(
+        children: [
             if (loading) const LinearProgressIndicator(),
 
             if (error != null)
@@ -248,8 +226,11 @@ class _CartPageState extends State<CartPage> {
                                     Text(
                                       item.pharmacyName,
                                       style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[700],
+                                        fontSize: 14,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors.grey[700],
                                       ),
                                     ),
                                   ],
@@ -342,7 +323,8 @@ class _CartPageState extends State<CartPage> {
                       child: ElevatedButton(
                         onPressed: loading ? null : _goToCheckout,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[700],
+                          backgroundColor: const Color(0xFF102E4A),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -361,7 +343,6 @@ class _CartPageState extends State<CartPage> {
                 ),
               )
           ],
-        ),
       ),
     );
   }

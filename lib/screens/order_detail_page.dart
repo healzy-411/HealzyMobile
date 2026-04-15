@@ -6,6 +6,7 @@ import '../services/review_api_service.dart';
 import 'cart_page.dart';
 import 'pharmacy_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class OrderDetailPage extends StatefulWidget {
   final String? baseUrl;
@@ -75,6 +76,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Future<void> _showRatingDialog() async {
     int selectedRating = 0;
     final commentController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final fieldBg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFF102E4A).withValues(alpha: 0.05);
 
     final result = await showDialog<bool>(
       context: context,
@@ -82,11 +88,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return AlertDialog(
-              title: const Text("Degerlendirme"),
+              backgroundColor: isDark
+                  ? const Color(0xFF132B44)
+                  : const Color(0xFFFFFFFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                "Değerlendirme",
+                style: TextStyle(color: fg, fontWeight: FontWeight.w700),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Bu siparisi nasil buldunuz?"),
+                  Text("Bu siparişi nasıl buldunuz?",
+                      style: TextStyle(color: fg)),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -108,9 +124,27 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     controller: commentController,
                     maxLines: 3,
                     maxLength: 500,
-                    decoration: const InputDecoration(
-                      hintText: "Yorumunuz (istege bagli)",
-                      border: OutlineInputBorder(),
+                    style: TextStyle(color: fg),
+                    decoration: InputDecoration(
+                      hintText: "Yorumunuz (isteğe bağlı)",
+                      hintStyle: TextStyle(color: fg.withValues(alpha: 0.5)),
+                      counterStyle: TextStyle(color: fg.withValues(alpha: 0.6)),
+                      filled: true,
+                      fillColor: fieldBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: fg.withValues(alpha: 0.2), width: 1),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: fg.withValues(alpha: 0.2), width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: fg, width: 1.4),
+                      ),
                     ),
                   ),
                 ],
@@ -118,17 +152,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text("Iptal"),
+                  style: TextButton.styleFrom(foregroundColor: fg),
+                  child: const Text("İptal"),
                 ),
                 ElevatedButton(
                   onPressed: selectedRating > 0
                       ? () => Navigator.pop(ctx, true)
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A79D),
+                    backgroundColor: const Color(0xFF102E4A),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text("Gonder"),
+                  child: const Text("Gönder"),
                 ),
               ],
             );
@@ -168,8 +206,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final o = widget.order;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: Text("Siparis #${o.orderId}"),
         centerTitle: true,
@@ -196,14 +237,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         Expanded(
                           child: Text(
                             o.pharmacyName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF00A79D),
+                              color: fg,
                             ),
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0xFF00A79D)),
+                        Icon(Icons.chevron_right, color: fg),
                       ],
                     ),
                   ),
@@ -340,7 +381,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ? null
                     : _repeatOrder,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[800],
+                  backgroundColor: const Color(0xFF102E4A),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -379,7 +421,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A79D),
+                    backgroundColor: const Color(0xFF102E4A),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -400,9 +442,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       children: [
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 6),
-        Text("$label: ", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text("$label: ", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         Expanded(
-          child: Text(value, style: const TextStyle(fontSize: 13)),
+          child: Text(value, style: const TextStyle(fontSize: 14)),
         ),
       ],
     );
@@ -426,15 +468,24 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   Widget _card({required Widget child}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.55),
+          width: 0.8,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],

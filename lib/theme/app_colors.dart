@@ -8,8 +8,8 @@ class AppColors {
   static const Color pearlWarm = Color(0xFFFFF8E8);
 
   // Accent (dikkat çeken ikincil)
-  static const Color accent = Color(0xFF4FC3CF);
-  static const Color accentSoft = Color(0xFFA9E5E8);
+  static const Color accent = Color(0xFF1B4965);
+  static const Color accentSoft = Color(0xFFFFF8E8);
 
   // Semantic
   static const Color success = Color(0xFF10B981);

@@ -7,6 +7,7 @@ import '../services/cart_helper.dart';
 import '../services/token_store.dart';
 import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class MedicineSearchPage extends StatefulWidget {
   const MedicineSearchPage({super.key});
@@ -151,7 +152,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("${pharmacy.lines.length} ilac sepete eklendi"),
-          backgroundColor: const Color(0xFF00A79D),
+          backgroundColor: const Color(0xFF102E4A),
         ),
       );
       _goToPharmacy(pharmacy);
@@ -175,13 +176,12 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: const Text("Ilac Ara"),
-        backgroundColor: const Color(0xFF00A79D),
-        foregroundColor: Colors.white,
       ),
       body: _loadingMedicines
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A79D)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF102E4A)))
           : Column(
               children: [
                 // Search field
@@ -192,7 +192,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                     onChanged: _onFilterChanged,
                     decoration: InputDecoration(
                       hintText: "Ilac adi yazin...",
-                      prefixIcon: const Icon(Icons.search, color: Color(0xFF00A79D)),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF102E4A)),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
@@ -207,15 +207,15 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF00A79D), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFF102E4A), width: 2),
                       ),
                     ),
                   ),
                 ),
 
-                // Medicine checkbox list
+                // Medicine checkbox list (compared sonrası daralsın)
                 SizedBox(
-                  height: 200,
+                  height: _compared ? 120 : 240,
                   child: _filteredMedicines.isEmpty
                       ? const Center(
                           child: Text("Ilac bulunamadi", style: TextStyle(color: Colors.grey)),
@@ -226,12 +226,24 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                           itemBuilder: (context, index) {
                             final med = _filteredMedicines[index];
                             final selected = _selectedIds.contains(med.id);
+                            final isDark = Theme.of(context).brightness ==
+                                Brightness.dark;
                             return CheckboxListTile(
                               value: selected,
                               onChanged: (_) => _toggleSelection(med.id),
                               title: Text(med.name),
                               subtitle: Text("${med.price.toStringAsFixed(2)} TL"),
-                              activeColor: const Color(0xFF00A79D),
+                              activeColor:
+                                  isDark ? Colors.white : const Color(0xFF102E4A),
+                              checkColor:
+                                  isDark ? const Color(0xFF102E4A) : Colors.white,
+                              side: BorderSide(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.7)
+                                    : const Color(0xFF102E4A)
+                                        .withValues(alpha: 0.6),
+                                width: 1.4,
+                              ),
                               dense: true,
                               controlAffinity: ListTileControlAffinity.leading,
                             );
@@ -255,12 +267,19 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                           spacing: 8,
                           runSpacing: 4,
                           children: _selectedIds.map((id) {
+                            final isDark = Theme.of(context).brightness ==
+                                Brightness.dark;
+                            final chipColor = isDark
+                                ? Colors.white
+                                : const Color(0xFF102E4A);
                             return Chip(
                               label: Text(_medicineName(id)),
-                              deleteIcon: const Icon(Icons.close, size: 18),
+                              deleteIcon: Icon(Icons.close,
+                                  size: 18, color: chipColor),
                               onDeleted: () => _toggleSelection(id),
-                              backgroundColor: const Color(0xFF00A79D).withValues(alpha: 0.12),
-                              labelStyle: const TextStyle(color: Color(0xFF00A79D)),
+                              backgroundColor:
+                                  chipColor.withValues(alpha: 0.15),
+                              labelStyle: TextStyle(color: chipColor),
                             );
                           }).toList(),
                         ),
@@ -287,7 +306,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                           : const Icon(Icons.search),
                       label: Text(_comparing ? "Aranıyor..." : "Eczaneleri Karsilastir"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00A79D),
+                        backgroundColor: const Color(0xFF102E4A),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -359,8 +378,8 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF00A79D).withValues(alpha: 0.15),
-                  child: const Icon(Icons.local_pharmacy, color: Color(0xFF00A79D)),
+                  backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
+                  child: const Icon(Icons.local_pharmacy, color: Color(0xFF102E4A)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -373,7 +392,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                       ),
                       Text(
                         pharmacy.district,
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -409,7 +428,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 17,
-                    color: Color(0xFF00A79D),
+                    color: Color(0xFF102E4A),
                   ),
                 ),
               ],
@@ -423,8 +442,8 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                     icon: const Icon(Icons.storefront, size: 18),
                     label: const Text("Eczaneye Git"),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF00A79D),
-                      side: const BorderSide(color: Color(0xFF00A79D)),
+                      foregroundColor: const Color(0xFF102E4A),
+                      side: const BorderSide(color: Color(0xFF102E4A)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -438,7 +457,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                     icon: const Icon(Icons.add_shopping_cart, size: 18),
                     label: const Text("Sepete Ekle"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A79D),
+                      backgroundColor: const Color(0xFF102E4A),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

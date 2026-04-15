@@ -5,6 +5,7 @@ import '../Models/review_model.dart';
 import '../services/review_api_service.dart';
 import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class PharmacyDetailPage extends StatefulWidget {
   final int pharmacyId;
@@ -68,21 +69,19 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
+        bottomNavigationBar: const HealzyBottomNav(),
         appBar: AppBar(
           title: const Text("Eczane Detay"),
-          backgroundColor: const Color(0xFF00A79D),
-          foregroundColor: Colors.white,
         ),
-        body: const Center(child: CircularProgressIndicator(color: Color(0xFF00A79D))),
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFF102E4A))),
       );
     }
 
     if (_error != null || _detail == null) {
       return Scaffold(
+        bottomNavigationBar: const HealzyBottomNav(),
         appBar: AppBar(
           title: const Text("Eczane Detay"),
-          backgroundColor: const Color(0xFF00A79D),
-          foregroundColor: Colors.white,
         ),
         body: Center(
           child: Column(
@@ -101,10 +100,9 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
     final baseUrl = ApiConfig.baseUrl;
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: Text(d.name),
-        backgroundColor: const Color(0xFF00A79D),
-        foregroundColor: Colors.white,
       ),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -184,7 +182,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
                       icon: const Icon(Icons.shopping_bag_outlined),
                       label: const Text("Magazaya Git"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00A79D),
+                        backgroundColor: const Color(0xFF102E4A),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -230,14 +228,16 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF00A79D)),
+            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 text,
                 style: TextStyle(
                   fontSize: 14,
-                  color: onTap != null ? const Color(0xFF00A79D) : Colors.black87,
+                  color: onTap != null
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).textTheme.bodyMedium?.color,
                   decoration: onTap != null ? TextDecoration.underline : null,
                 ),
               ),
@@ -260,11 +260,11 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: const Color(0xFF00A79D).withValues(alpha: 0.15),
+                  backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
                   child: Text(
                     review.userFirstName.isNotEmpty ? review.userFirstName[0].toUpperCase() : "?",
                     style: const TextStyle(
-                      color: Color(0xFF00A79D),
+                      color: Color(0xFF102E4A),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -277,7 +277,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
                 const Spacer(),
                 Text(
                   DateFormat('dd.MM.yyyy').format(review.createdAtUtc.toLocal()),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),

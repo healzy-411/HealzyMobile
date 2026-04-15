@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../Models/pharmacy_model.dart';
 import '../Models/district_model.dart';
@@ -7,6 +8,7 @@ import '../services/api_service.dart';
 import '../widgets/pharmacy_map_view.dart';
 import 'categories_page.dart';
 import 'pharmacy_detail_page.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class PharmaciesPage extends StatefulWidget {
   const PharmaciesPage({super.key});
@@ -102,12 +104,21 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.55);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.55);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      bottomNavigationBar: const HealzyBottomNav(),
 
       // ================= FILTER DRAWER =================
       endDrawer: Drawer(
         width: MediaQuery.of(context).size.width * 0.75,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         child: Column(
           children: [
             _buildFilterHeader(),
@@ -129,21 +140,18 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
 
       // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text("Eczaneler", style: TextStyle(color: Colors.black)),
+        title: const Text("Eczaneler"),
         actions: [
           IconButton(
-            icon: Icon(
-              _showMap ? Icons.list : Icons.map,
-              color: Colors.black,
-            ),
+            icon: Icon(_showMap ? Icons.list : Icons.map),
             tooltip: _showMap ? "Liste gorunumu" : "Harita gorunumu",
             onPressed: () => setState(() => _showMap = !_showMap),
           ),
           Builder(
             builder: (context) => IconButton(
-              icon: const Icon(Icons.tune, color: Colors.black),
+              icon: const Icon(Icons.tune),
               onPressed: () => Scaffold.of(context).openEndDrawer(),
             ),
           )
@@ -160,7 +168,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                 hintText: "Eczane ara...",
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: cardBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -201,7 +209,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                               phone: p.phone,
                               latitude: p.latitude,
                               longitude: p.longitude,
-                              markerColor: p.isOnDuty ? Colors.purple : const Color(0xFF00A79D),
+                              markerColor: p.isOnDuty ? Colors.purple : const Color(0xFF00B894),
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -241,15 +249,27 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 20),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: isClosed ? null : [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 6),
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
                               ),
                             ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                              child: Container(
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: cardBorder,
+                              width: 0.8,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,7 +305,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                           children: [
                                             Icon(Icons.lock_outline, size: 14, color: Colors.white),
                                             SizedBox(width: 4),
-                                            Text("Kapali", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                            Text("Kapali", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ),
@@ -304,7 +324,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                           children: [
                                             Icon(Icons.access_time_filled, size: 14, color: Colors.white),
                                             SizedBox(width: 4),
-                                            Text("Nobetci", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                            Text("Nobetci", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ),
@@ -328,7 +348,13 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                         ),
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.info_outline, color: Color(0xFF00A79D)),
+                                        icon: Icon(
+                                          Icons.info_outline,
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : const Color(0xFF102E4A),
+                                        ),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
@@ -382,8 +408,11 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                             ),
                           ],
                         ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                     );
                   },
                 );
@@ -398,17 +427,17 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
   // ================= FILTER UI =================
 
   Widget _buildFilterHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 50, 20, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10),
-        ],
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
       ),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
+        children: [
           Text("Filtrele",
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           Icon(Icons.filter_alt_outlined),
@@ -422,14 +451,14 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     required String title,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
-        ],
       ),
       child: ExpansionTile(
         leading: Icon(icon),
@@ -446,7 +475,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
       title: "İlçe",
       children: districtFilters.keys.map((key) {
         return CheckboxListTile(
-          activeColor: Colors.green,
+          activeColor: const Color(0xFF102E4A),
           title: Text(key),
           value: districtFilters[key],
           onChanged: (val) {
@@ -467,7 +496,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
       title: "Sigorta",
       children: _insurances.map((insurance) {
         return CheckboxListTile(
-          activeColor: Colors.green,
+          activeColor: const Color(0xFF102E4A),
           title: Text(insurance.name),
           value: insuranceFilters[insurance.id] ?? false,
           onChanged: (val) {
@@ -493,7 +522,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
           title: "İlaç",
           children: medicines.map((m) {
             return CheckboxListTile(
-              activeColor: Colors.green,
+              activeColor: const Color(0xFF102E4A),
               title: Text(m.name),
               value: medicineFilters[m.id] ?? false,
               onChanged: (val) {
@@ -531,7 +560,10 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF102E4A),
+                foregroundColor: Colors.white,
+              ),
               onPressed: () {
                 _applyFilters();
                 Navigator.pop(context);

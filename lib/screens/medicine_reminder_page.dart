@@ -7,7 +7,8 @@ import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
 import '../services/local_notification_service.dart';
 import 'all_reminders_page.dart';
-import 'dart:ui'; 
+import 'dart:ui';
+import '../widgets/healzy_bottom_nav.dart';
 
 class MedicineReminderPage extends StatefulWidget {
   final String baseUrl;
@@ -439,9 +440,13 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     int selectedHour = initialHour;
     int selectedMinute = initialMinute;
 
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF132B44) : Colors.white;
+    final textColor = isDark ? Colors.white : midnightBlue;
+
     final confirmed = await showModalBottomSheet<bool>(
       context: ctx,
-      backgroundColor: Colors.white,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -451,7 +456,6 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
             height: 300,
             child: Column(
               children: [
-                // Başlık + butonlar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -459,29 +463,34 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: Text('Vazgeç', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                        child: Text('Vazgeç',
+                            style: TextStyle(
+                                color: textColor.withValues(alpha: 0.6),
+                                fontSize: 16)),
                       ),
                       Text(
                         'Saat Seçin',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
-                          color: midnightBlue,
+                          color: textColor,
                         ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: Text('Tamam', style: TextStyle(color: pearlWhite, fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text('Tamam',
+                            style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
                       ),
                     ],
                   ),
                 ),
                 const Divider(height: 1),
-                // Saat : Dakika wheel picker
                 Expanded(
                   child: Row(
                     children: [
-                      // Saat
                       Expanded(
                         child: CupertinoPicker(
                           scrollController: FixedExtentScrollController(initialItem: initialHour),
@@ -491,14 +500,17 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                             return Center(
                               child: Text(
                                 i.toString().padLeft(2, '0'),
-                                style: const TextStyle(fontSize: 22),
+                                style: TextStyle(fontSize: 22, color: textColor),
                               ),
                             );
                           }),
                         ),
                       ),
-                      const Text(':', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                      // Dakika
+                      Text(':',
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: textColor)),
                       Expanded(
                         child: CupertinoPicker(
                           scrollController: FixedExtentScrollController(initialItem: initialMinute),
@@ -508,7 +520,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                             return Center(
                               child: Text(
                                 i.toString().padLeft(2, '0'),
-                                style: const TextStyle(fontSize: 22),
+                                style: TextStyle(fontSize: 22, color: textColor),
                               ),
                             );
                           }),
@@ -617,7 +629,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                             popupError!,
                             style: const TextStyle(
                               color: Colors.redAccent,
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -984,13 +996,13 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     final selectedDay = _selectedDay ?? DateTime.now();
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
       appBar: AppBar(
         title: const Text(
           "Healzy İlaç Hatırlatıcı",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: pearlWhite,
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             tooltip: "Yenile",
@@ -1143,7 +1155,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                 child: Text(
                                   _getIntakeTypeText(item.intakeType),
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: item.intakeType == 0
                                         ? Colors.orange[800]
@@ -1175,7 +1187,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                           Text(
                             "${_getFrequencyText(item)} - Günde ${item.timesPerDay} kez",
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: Colors.black54,
                             ),
@@ -1199,7 +1211,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                       style: TextStyle(
                                         color: midnightBlue,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 12,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -1227,7 +1239,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                                       t,
                                       style: TextStyle(
                                         color: Colors.green[700],
-                                        fontSize: 11,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -1275,6 +1287,7 @@ Widget build(BuildContext context) {
     final fgColor = isDark ? const Color(0xFFF1F6FC) : midnightBlue;
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
       extendBodyBehindAppBar: true, // AppBar'ın arkasına gradient geçmesi için
       appBar: AppBar(
         title: Text(
@@ -1340,9 +1353,14 @@ Widget build(BuildContext context) {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: isDark
+                            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+                            : Colors.white.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.white.withOpacity(0.4)),
+                        border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.white.withValues(alpha: 0.4)),
                       ),
                       child: TableCalendar(
                         locale: 'tr_TR',
@@ -1351,34 +1369,36 @@ Widget build(BuildContext context) {
                         focusedDay: _focusedDay,
                         startingDayOfWeek: StartingDayOfWeek.monday,
                         eventLoader: _getEventsForDay,
+                        daysOfWeekStyle: DaysOfWeekStyle(
+                          weekdayStyle: TextStyle(color: fgColor.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
+                          weekendStyle: TextStyle(color: fgColor.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
+                        ),
                         headerStyle: HeaderStyle(
                           formatButtonVisible: false,
                           titleCentered: true,
                           titleTextStyle: TextStyle(
-                            color: midnightBlue,
+                            color: fgColor,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
-                          leftChevronIcon: Icon(Icons.chevron_left, color: midnightBlue),
-                          rightChevronIcon: Icon(Icons.chevron_right, color: midnightBlue),
+                          leftChevronIcon: Icon(Icons.chevron_left, color: fgColor),
+                          rightChevronIcon: Icon(Icons.chevron_right, color: fgColor),
                         ),
                         selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                         calendarStyle: CalendarStyle(
-                          defaultTextStyle: TextStyle(color: midnightBlue, fontWeight: FontWeight.w500, fontSize: 15),
-
-                          weekendTextStyle: TextStyle(color: midnightBlue, fontWeight: FontWeight.w500, fontSize: 15),
+                          defaultTextStyle: TextStyle(color: fgColor, fontWeight: FontWeight.w500, fontSize: 15),
+                          weekendTextStyle: TextStyle(color: fgColor, fontWeight: FontWeight.w500, fontSize: 15),
                           outsideDaysVisible: false,
                           selectedDecoration: BoxDecoration(
-                            color: midnightBlue,
+                            color: isDark ? pearlWhite : midnightBlue,
                             shape: BoxShape.circle,
-                            
                           ),
-
-                          
+                          selectedTextStyle: TextStyle(
+                              color: isDark ? midnightBlue : Colors.white,
+                              fontWeight: FontWeight.bold),
                           todayDecoration: BoxDecoration(
-                            color: midnightBlue.withOpacity(0.2),
+                            color: fgColor.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
-                            
                           ),
                         ),
                         calendarBuilders: CalendarBuilders(
@@ -1416,13 +1436,13 @@ Widget build(BuildContext context) {
               ),
               // === CAM GÖRÜNÜMLÜ TAKVİM BİTİŞ ===
 
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Bugünkü İlaçlar",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4965)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: fgColor),
                   ),
                 ),
               ),

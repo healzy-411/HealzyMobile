@@ -234,39 +234,53 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _showSuccessDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: Colors.orange[200],
+          backgroundColor: bg,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  radius: 30,
-                  child: Icon(Icons.celebration, color: Colors.orange, size: 30),
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF00B894).withValues(alpha: 0.15),
+                  radius: 36,
+                  child: const Icon(Icons.celebration,
+                      color: Color(0xFF00B894), size: 36),
                 ),
-                const SizedBox(height: 15),
-                const Text("Siparisiniz Olusturuldu",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                const Text("Tesekkur Ederiz!"),
+                const SizedBox(height: 16),
+                Text("Siparişiniz Oluşturuldu",
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold, color: fg)),
+                const SizedBox(height: 8),
+                Text("Teşekkür Ederiz!",
+                    style: TextStyle(color: fg.withValues(alpha: 0.8))),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF102E4A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pop(context, true);
+                    },
+                    child: const Text("Tamam",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context); // dialog kapat
-                    Navigator.pop(context, true); // checkout'u kapat, cart'a true dön
-                  },
-                  child: const Text("Tamam", style: TextStyle(color: Colors.white)),
                 )
               ],
             ),
@@ -279,11 +293,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text("Odeme"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0.5,
       ),
       body: _loading
@@ -335,14 +346,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // ============= SECTION BUILDERS =============
 
   Widget _sectionCard({required String title, required Widget child, IconData? icon}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.55),
+          width: 0.8,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -393,10 +416,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(_pharmacy!.address,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text(_pharmacy!.phone, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                Text(_pharmacy!.phone, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),
           ),
@@ -424,7 +447,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       Text(item.medicineName,
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       Text("${item.quantity} adet x ${item.unitPrice.toStringAsFixed(2)} TL",
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -510,7 +533,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: TextStyle(color: Colors.grey[700], fontSize: 14)),
                 const SizedBox(height: 4),
                 Text("${_selectedAddress!.fullName} - ${_selectedAddress!.phone}",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: _changeAddress,
@@ -541,9 +564,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 const SizedBox(height: 4),
                 _estimatedMinutes != null
                     ? Text("Tahmini teslimat: ~$_estimatedMinutes dakika",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13))
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14))
                     : Text("Tahmini sure hesaplanamadi",
-                        style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14)),
               ],
             ),
           ),
@@ -595,7 +618,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   children: [
                     Text(
                       "Kayıtlı kart bulunamadı.",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
@@ -687,13 +710,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // 10. Alt Buton
   Widget _buildBottomButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.55),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -3)),
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -3)),
         ],
       ),
       child: SafeArea(
@@ -703,7 +731,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           child: ElevatedButton(
             onPressed: _submitting ? null : _completeOrder,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: const Color(0xFF102E4A),
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             child: _submitting

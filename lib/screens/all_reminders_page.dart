@@ -180,13 +180,12 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     }
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
       appBar: AppBar(
         title: const Text(
           'Tüm Hatırlatıcılar',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: widget.healzyTurquoise,
-        foregroundColor: Colors.white,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -247,7 +246,9 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: widget.healzyDarkGreen,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : widget.healzyDarkGreen,
             ),
           ),
         ],
@@ -290,7 +291,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                   child: Text(
                     status,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: _statusColor(status),
                     ),
@@ -309,7 +310,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                   child: Text(
                     _intakeText(item.intakeType),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: item.intakeType == 0 ? Colors.orange[800] : Colors.green[800],
                     ),
@@ -320,7 +321,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
             const SizedBox(height: 6),
             Text(
               '${_frequencyText(item)} · Günde ${item.timesPerDay} kez · ${item.durationDays} gün',
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
             ),
             const SizedBox(height: 4),
             // Saatler
@@ -338,7 +339,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                           style: TextStyle(
                             color: widget.healzyDarkGreen,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: 14,
                           ),
                         ),
                       ))
@@ -362,7 +363,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                         t,
                         style: TextStyle(
                           color: Colors.green[700],
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -375,7 +376,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
             const SizedBox(height: 6),
             Text(
               'Başlangıç: ${_formatDate(item.startDateUtc)} · Bitiş: ${_formatDate(item.startDateUtc.add(Duration(days: item.durationDays)))}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
             // Düzenle / Sil butonları
             const SizedBox(height: 8),
@@ -421,6 +422,7 @@ import 'dart:ui'; // Cam efekti (blur) için gerekli
 
 import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class AllRemindersPage extends StatefulWidget {
   final MedicineReminderApiService api;
@@ -526,17 +528,27 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
   // ============================================================
 
   Future<void> _delete(MedicineReminderDto item) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Silinsin mi?'),
-        content: Text('${item.name} hatırlatıcısı silinecek.'),
+        backgroundColor: bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Silinsin mi?',
+            style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
+        content: Text('${item.name} hatırlatıcısı silinecek.',
+            style: TextStyle(color: fg)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              style: TextButton.styleFrom(foregroundColor: fg),
+              child: const Text('Vazgeç')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            child: const Text('Sil'),
           ),
         ],
       ),
@@ -553,17 +565,27 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
   }
 
   Future<void> _hardDelete(MedicineReminderDto item) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Kalıcı Silme'),
-        content: Text('${item.name} kalıcı olarak silinecek.'),
+        backgroundColor: bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Kalıcı Silme',
+            style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
+        content: Text('${item.name} kalıcı olarak silinecek.',
+            style: TextStyle(color: fg)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              style: TextButton.styleFrom(foregroundColor: fg),
+              child: const Text('Vazgeç')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Kalıcı Sil', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Kalıcı Sil'),
           ),
         ],
       ),
@@ -585,6 +607,9 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fgColor = isDark ? Colors.white : midnightBlue;
+
     final active = <MedicineReminderDto>[];
     final completed = <MedicineReminderDto>[];
     final deleted = <MedicineReminderDto>[];
@@ -596,45 +621,53 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
       else deleted.add(r);
     }
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          'Tüm Hatırlatıcılar',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: midnightBlue,
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+    final bgGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
+          )
+        : LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               pearlWhite,
-              const Color(0xFFF2E9D8), // Hafif koyu pearl tonu
+              const Color(0xFFF2E9D8),
               pearlWhite,
             ],
-          ),
+          );
+
+    return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(
+          'Tüm Hatırlatıcılar',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1, color: fgColor),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: fgColor,
+        iconTheme: IconThemeData(color: fgColor),
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(gradient: bgGradient),
         child: SafeArea(
           child: _loading
-              ? Center(child: CircularProgressIndicator(color: midnightBlue))
+              ? Center(child: CircularProgressIndicator(color: fgColor))
               : _all.isEmpty
-                  ? Center(child: Text('Henüz hatırlatıcı eklenmemiş.', style: TextStyle(color: midnightBlue)))
+                  ? Center(child: Text('Henüz hatırlatıcı eklenmemiş.', style: TextStyle(color: fgColor)))
                   : RawScrollbar(
                       controller: _scrollController,
-                      thumbColor: midnightBlue.withOpacity(0.3),
+                      thumbColor: fgColor.withValues(alpha: 0.3),
                       radius: const Radius.circular(20),
                       thickness: 6,
-                      thumbVisibility: true, // Her zaman görünür olsun
+                      thumbVisibility: true,
                       child: RefreshIndicator(
                         onRefresh: _load,
-                        color: midnightBlue,
+                        color: fgColor,
                         child: ListView(
                           controller: _scrollController,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -661,13 +694,15 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
   }
 
   Widget _sectionHeader(String title, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : midnightBlue;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 20, 8, 12),
       child: Row(
         children: [
           Container(width: 4, height: 18, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10))),
           const SizedBox(width: 10),
-          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: midnightBlue)),
+          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: textColor)),
         ],
       ),
     );
@@ -676,6 +711,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
   Widget _glassReminderCard(MedicineReminderDto item) {
     final status = _statusText(item);
     final isEditable = item.isActive && status != 'Tamamlandı';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -686,9 +722,16 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6), // Biraz daha belirgin beyazlık
+              color: isDark
+                  ? const Color(0xFF132B44).withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.5)),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.55),
+                width: 0.8,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -696,24 +739,32 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: midnightBlue.withOpacity(0.1),
-                      child: Icon(Icons.medication, color: midnightBlue, size: 20),
+                      backgroundColor: (isDark ? Colors.white : midnightBlue)
+                          .withValues(alpha: 0.12),
+                      child: Icon(Icons.medication,
+                          color: isDark ? Colors.white : midnightBlue, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         item.name,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: midnightBlue),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            color: isDark ? Colors.white : midnightBlue),
                       ),
                     ),
-                    _badge(_intakeText(item.intakeType), 
+                    _badge(_intakeText(item.intakeType),
                            item.intakeType == 0 ? Colors.orange : Colors.green),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   '${_frequencyText(item)} · ${item.durationDays} Gün',
-                  style: TextStyle(color: midnightBlue.withOpacity(0.7), fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: (isDark ? Colors.white : midnightBlue)
+                          .withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -752,15 +803,17 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-      child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+      child: Text(text, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.bold)),
     );
   }
 
   Widget _timeChip(String time) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : midnightBlue;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: midnightBlue.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-      child: Text(time, style: TextStyle(color: midnightBlue, fontSize: 12, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(time, style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.bold)),
     );
   }
 

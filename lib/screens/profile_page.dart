@@ -269,6 +269,7 @@ import '../Models/me_model.dart';
 import 'orders_history_page.dart';
 import 'saved_cards_page.dart';
 import 'auth_page.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class ProfilePage extends StatefulWidget {
   final String baseUrl;
@@ -318,18 +319,26 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgGradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
+          )
+        : const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [pearl, creamBackground],
-          ),
-        ),
+          );
+    return Scaffold(
+      bottomNavigationBar:
+          const HealzyBottomNav(current: HealzyNavTab.profile),
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
         child: SafeArea(
           child: _loading
-              ? const Center(child: CircularProgressIndicator(color: midnight))
+              ? const Center(child: CircularProgressIndicator())
               : (_error != null)
                   ? _buildErrorWidget()
                   : _buildProfileContent(),
@@ -337,6 +346,13 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  Color get _fg => Theme.of(context).brightness == Brightness.dark
+      ? Colors.white
+      : midnight;
+  Color get _sub => Theme.of(context).brightness == Brightness.dark
+      ? Colors.white.withValues(alpha: 0.65)
+      : subTextColor;
 
   Widget _buildProfileContent() {
     final me = _me!;
@@ -356,27 +372,27 @@ class _ProfilePageState extends State<ProfilePage> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: midnight.withOpacity(0.1), width: 2),
+                    border: Border.all(color: _fg.withOpacity(0.1), width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 50,
                     backgroundColor: midnight.withOpacity(0.05),
-                    child: const Icon(Icons.person, size: 50, color: midnight),
+                    child: Icon(Icons.person, size: 50, color: _fg),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   me.fullName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22, 
                     fontWeight: FontWeight.bold, 
-                    color: midnight,
+                    color: _fg,
                     letterSpacing: -0.5
                   ),
                 ),
-                const Text(
+                Text(
                   "Standart Üye",
-                  style: TextStyle(color: subTextColor, fontSize: 14),
+                  style: TextStyle(color: _sub, fontSize: 14),
                 ),
               ],
             ),
@@ -429,13 +445,13 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         IconButton(
           onPressed: () => Navigator.pop(context), 
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: midnight)
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: _fg)
         ),
-        const Expanded(
+        Expanded(
           child: Center(
             child: Text(
-              "Profilim", 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: midnight)
+              "Profilim",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _fg)
             )
           )
         ),
@@ -451,8 +467,8 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.only(left: 8, bottom: 12),
         child: Text(
           title, 
-          style: const TextStyle(
-            color: midnight, 
+          style: TextStyle(
+            color: _fg, 
             fontWeight: FontWeight.bold, 
             fontSize: 16, 
             letterSpacing: 1
@@ -470,14 +486,14 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(icon, color: midnight, size: 22),
+            Icon(icon, color: _fg, size: 22),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 12, color: subTextColor)),
-                  Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: midnight)),
+                  Text(label, style: TextStyle(fontSize: 14, color: _sub)),
+                  Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _fg)),
                 ],
               ),
             ),
@@ -499,15 +515,15 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Row(
             children: [
-              Icon(icon, color: midnight, size: 22),
+              Icon(icon, color: _fg, size: 22),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title, 
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: midnight)
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _fg)
                 )
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: midnight),
+              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _fg),
             ],
           ),
         ),
@@ -516,15 +532,23 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   BoxDecoration _glassDecoration() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
-      color: Colors.white.withOpacity(0.6),
+      color: isDark
+          ? const Color(0xFF132B44).withValues(alpha: 0.85)
+          : Colors.white.withValues(alpha: 0.6),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+      border: Border.all(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.4),
+        width: 1.2,
+      ),
       boxShadow: [
         BoxShadow(
-          color: midnight.withOpacity(0.04),
-          blurRadius: 15,
-          offset: const Offset(0, 8),
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
       ],
     );

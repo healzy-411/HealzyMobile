@@ -121,7 +121,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text("Siparisler"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
@@ -223,7 +223,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -255,7 +255,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
               "${order.createdAtUtc.year} "
               "${order.createdAtUtc.hour.toString().padLeft(2, '0')}:"
               "${order.createdAtUtc.minute.toString().padLeft(2, '0')}",
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
 
             const SizedBox(height: 8),
@@ -288,7 +288,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                     Expanded(
                       child: Text(
                         order.deliveryAddressSnapshot,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                   ],
@@ -306,7 +306,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                     order.paymentMethod == "CreditCard"
                         ? "Kredi Karti${order.cardNameSnapshot != null ? ' - ${order.cardNameSnapshot} (**** ${order.maskedCardNumberSnapshot ?? ''})' : ''}"
                         : "Kapida Odeme",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
@@ -324,7 +324,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                     Expanded(
                       child: Text(
                         "Siparis Notu: ${order.orderNote!}",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                   ],
@@ -343,7 +343,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                     Expanded(
                       child: Text(
                         "Teslimat: ${order.deliveryNote!}",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                   ],
@@ -381,7 +381,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                       Expanded(
                         child: Text(
                           order.statusNote!,
-                          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                          style: TextStyle(fontSize: 14, color: Colors.blue.shade900),
                         ),
                       ),
                     ],
@@ -434,7 +434,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
         ];
       case "Ready":
         return [
-          _OrderAction("Delivered", "Teslim Edildi", Icons.local_shipping, const Color(0xFF00A79D)),
+          _OrderAction("Delivered", "Teslim Edildi", Icons.local_shipping, const Color(0xFF102E4A)),
         ];
       default:
         return [];
@@ -450,7 +450,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
       case "Ready":
         return Colors.green;
       case "Delivered":
-        return const Color(0xFF00A79D);
+        return const Color(0xFF102E4A);
       case "Cancelled":
         return Colors.red;
       default:

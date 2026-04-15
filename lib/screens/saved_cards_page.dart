@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../Models/saved_card_model.dart';
 import '../services/saved_card_api_service.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -79,9 +80,12 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     final yearCtrl = TextEditingController(
         text: editing != null ? editing.expiryYear.toString() : '');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor:
+          isDark ? const Color(0xFF132B44) : const Color(0xFFFFFFFF),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -190,7 +194,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                           border: Border.all(color: Colors.red.shade200),
                         ),
                         child: Text(formError!,
-                            style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 14)),
                       ),
                     ],
                     const SizedBox(height: 16),
@@ -280,17 +284,16 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: const Text("Kayıtlı Kartlarım"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0.5,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCardSheet(),
-        backgroundColor: Colors.orange,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF102E4A),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -307,7 +310,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                               style: TextStyle(color: Colors.grey[600], fontSize: 16)),
                           const SizedBox(height: 8),
                           Text("Sağ alttaki + butonuyla kart ekleyebilirsiniz.",
-                              style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                              style: TextStyle(color: Colors.grey[400], fontSize: 14)),
                         ],
                       ),
                     )
@@ -316,20 +319,30 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                       itemCount: _cards.length,
                       itemBuilder: (context, i) {
                         final card = _cards[i];
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final cardBg = isDark
+                            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+                            : Colors.white.withValues(alpha: 0.55);
+                        final cardBorder = isDark
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : Colors.white.withValues(alpha: 0.55);
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: cardBg,
                             borderRadius: BorderRadius.circular(14),
-                            border: card.isDefault
-                                ? Border.all(color: Colors.orange, width: 2)
-                                : null,
+                            border: Border.all(
+                              color: card.isDefault
+                                  ? const Color(0xFF102E4A)
+                                  : cardBorder,
+                              width: card.isDefault ? 2 : 0.8,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2)),
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4)),
                             ],
                           ),
                           child: Row(
@@ -349,16 +362,16 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                                             fontSize: 14, color: Colors.grey[700], letterSpacing: 1)),
                                     const SizedBox(height: 2),
                                     Text(card.cardholderName,
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                                     Text(
                                         "Son Kullanma: ${card.expiryMonth.toString().padLeft(2, '0')}/${card.expiryYear}",
-                                        style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                        style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                                     if (card.isDefault)
                                       const Padding(
                                         padding: EdgeInsets.only(top: 4),
                                         child: Text("Varsayılan",
                                             style: TextStyle(
-                                                color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+                                                color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14)),
                                       ),
                                   ],
                                 ),

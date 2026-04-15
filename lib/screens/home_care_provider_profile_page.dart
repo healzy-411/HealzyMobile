@@ -116,8 +116,8 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     }
     return CircleAvatar(
       radius: 48,
-      backgroundColor: const Color(0xFF00A79D).withValues(alpha: 0.15),
-      child: const Icon(Icons.medical_services, size: 48, color: Color(0xFF00A79D)),
+      backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
+      child: const Icon(Icons.medical_services, size: 48, color: Color(0xFF102E4A)),
     );
   }
 
@@ -128,7 +128,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     return Scaffold(
       appBar: AppBar(
         title: const Text("Saglayici Bilgileri"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         actions: [
           if (!_editing)
@@ -148,8 +148,8 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
             Center(
               child: TextButton.icon(
                 onPressed: _pickImage,
-                icon: const Icon(Icons.photo_camera, color: Color(0xFF00A79D)),
-                label: const Text("Resim Sec", style: TextStyle(color: Color(0xFF00A79D))),
+                icon: const Icon(Icons.photo_camera, color: Color(0xFF102E4A)),
+                label: const Text("Resim Sec", style: TextStyle(color: Color(0xFF102E4A))),
               ),
             ),
           ],
@@ -193,7 +193,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                   child: ElevatedButton(
                     onPressed: _saving ? null : _save,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A79D),
+                      backgroundColor: const Color(0xFF102E4A),
                       foregroundColor: Colors.white,
                     ),
                     child: Text(_saving ? "Kaydediliyor..." : "Kaydet"),
@@ -222,7 +222,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF00A79D)),
+          prefixIcon: Icon(icon, color: const Color(0xFF102E4A)),
           border: const OutlineInputBorder(),
         ),
       ),
@@ -233,8 +233,8 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF00A79D)),
-        title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        leading: Icon(icon, color: const Color(0xFF102E4A)),
+        title: Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         subtitle: Text(value.isEmpty ? "-" : value, style: const TextStyle(fontSize: 15)),
       ),
     );

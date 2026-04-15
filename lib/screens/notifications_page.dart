@@ -12,6 +12,7 @@ import 'order_detail_page.dart';
 import 'pharmacy_orders_page.dart';
 import 'home_care_provider_requests_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -195,6 +196,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         : AppColors.pearlWarm;
 
     return Scaffold(
+      bottomNavigationBar:
+          const HealzyBottomNav(current: HealzyNavTab.notifications),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text("Bildirimler"),
@@ -303,7 +306,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         Text(
                                           n.body,
                                           style: TextStyle(
-                                            fontSize: 13,
+                                            fontSize: 14,
                                             color: subColor,
                                             height: 1.4,
                                           ),
@@ -312,7 +315,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         Text(
                                           _formatTime(n.createdAtUtc),
                                           style: TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.w500,
                                             color: isDark
                                                 ? AppColors.darkTextTertiary

@@ -103,7 +103,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Dashboard"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -153,9 +153,9 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           ..._presets.map((p) => Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ChoiceChip(
-                  label: Text(p.label, style: const TextStyle(fontSize: 12)),
+                  label: Text(p.label, style: const TextStyle(fontSize: 14)),
                   selected: _selectedPreset == p.label,
-                  selectedColor: const Color(0xFF00A79D),
+                  selectedColor: const Color(0xFF102E4A),
                   labelStyle: TextStyle(
                     color: _selectedPreset == p.label
                         ? Colors.white
@@ -167,9 +167,9 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: ChoiceChip(
-              label: const Text("Ozel", style: TextStyle(fontSize: 12)),
+              label: const Text("Ozel", style: TextStyle(fontSize: 14)),
               selected: _selectedPreset == "Ozel",
-              selectedColor: const Color(0xFF00A79D),
+              selectedColor: const Color(0xFF102E4A),
               labelStyle: TextStyle(
                 color:
                     _selectedPreset == "Ozel" ? Colors.white : Colors.black87,
@@ -271,7 +271,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       childAspectRatio: 1.6,
       children: [
         _summaryCard("Toplam Ciro", "${revenue.toStringAsFixed(2)} TL",
-            Icons.currency_lira, const Color(0xFF00A79D)),
+            Icons.currency_lira, const Color(0xFF102E4A)),
         _summaryCard("Siparis Sayisi", "$orders",
             Icons.receipt_long, Colors.blue),
         _summaryCard("Satilan Urun", "$items",
@@ -301,7 +301,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
               style: TextStyle(
                   fontSize: 18, fontWeight: FontWeight.bold, color: color)),
           Text(label,
-              style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              style: const TextStyle(fontSize: 14, color: Colors.grey)),
         ],
       ),
     );
@@ -339,7 +339,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                   "$shortDate\n${rod.toY.toStringAsFixed(0)} TL",
                   const TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold),
                 );
               },
@@ -353,7 +353,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 getTitlesWidget: (value, meta) {
                   return Text("${value.toInt()}",
                       style:
-                          const TextStyle(fontSize: 10, color: Colors.grey));
+                          const TextStyle(fontSize: 14, color: Colors.grey));
                 },
               ),
             ),
@@ -380,7 +380,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(short,
                         style: const TextStyle(
-                            fontSize: 9, color: Colors.grey)),
+                            fontSize: 14, color: Colors.grey)),
                   );
                 },
               ),
@@ -407,7 +407,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
               barRods: [
                 BarChartRodData(
                   toY: revenue,
-                  color: const Color(0xFF00A79D),
+                  color: const Color(0xFF102E4A),
                   width: dailySales.length > 20 ? 6 : 14,
                   borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(4)),
@@ -423,7 +423,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
   // ======== KATEGORİ PIE CHART ========
   Widget _buildCategoryPieChart(List<Map<String, dynamic>> categorySales) {
     final colors = [
-      const Color(0xFF00A79D),
+      const Color(0xFF102E4A),
       Colors.blue,
       Colors.orange,
       Colors.purple,
@@ -462,7 +462,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
               value: revenue,
               title: "${pct.toStringAsFixed(0)}%",
               titleStyle: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.white),
               radius: 50,
@@ -475,7 +475,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   Widget _buildCategoryLegend(List<Map<String, dynamic>> categorySales) {
     final colors = [
-      const Color(0xFF00A79D),
+      const Color(0xFF102E4A),
       Colors.blue,
       Colors.orange,
       Colors.purple,
@@ -504,7 +504,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
             ),
             const SizedBox(width: 4),
             Text("$name (${revenue.toStringAsFixed(0)} TL)",
-                style: const TextStyle(fontSize: 12)),
+                style: const TextStyle(fontSize: 14)),
           ],
         );
       }),
@@ -543,7 +543,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 SizedBox(
                   width: 90,
                   child: Text(_statusText(status),
-                      style: const TextStyle(fontSize: 12)),
+                      style: const TextStyle(fontSize: 14)),
                 ),
                 Expanded(
                   child: ClipRRect(
@@ -560,7 +560,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 Text("$count",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: 14,
                         color: color)),
               ],
             ),
@@ -593,20 +593,20 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
           return ListTile(
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFF00A79D).withValues(alpha: 0.15),
+              backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
               child: Text("${i + 1}",
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF00A79D))),
+                      color: Color(0xFF102E4A))),
             ),
             title: Text(name,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text("$cat | $qty adet",
-                style: const TextStyle(fontSize: 12)),
+                style: const TextStyle(fontSize: 14)),
             trailing: Text("${revenue.toStringAsFixed(0)} TL",
                 style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF00A79D))),
+                    color: Color(0xFF102E4A))),
           );
         }),
       ),
@@ -629,7 +629,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       case "Ready":
         return Colors.green;
       case "Delivered":
-        return const Color(0xFF00A79D);
+        return const Color(0xFF102E4A);
       case "Cancelled":
         return Colors.red;
       default:

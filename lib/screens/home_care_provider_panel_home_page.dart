@@ -200,7 +200,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     return Scaffold(
       appBar: AppBar(
         title: const Text("Serum Saglayici Paneli"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         actions: [
           Stack(
@@ -224,7 +224,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                     child: Text(
                       _unreadCount > 9 ? "9+" : "$_unreadCount",
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -281,7 +281,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
           Card(
             child: ListTile(
               leading: const CircleAvatar(
-                backgroundColor: Color(0xFF00A79D),
+                backgroundColor: Color(0xFF102E4A),
                 child: Icon(Icons.medical_services, color: Colors.white),
               ),
               title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -321,7 +321,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                 "$todayRequests",
                 "Bugun",
                 Icons.today,
-                const Color(0xFF00A79D),
+                const Color(0xFF102E4A),
               ),
             ],
           ),
@@ -361,7 +361,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
               _menuCard(
                 icon: Icons.receipt_long,
                 label: "Talepler",
-                color: const Color(0xFF00A79D),
+                color: const Color(0xFF102E4A),
                 badge: pendingRequests > 0 ? "$pendingRequests" : null,
                 onTap: () => Navigator.push(
                   context,
@@ -394,7 +394,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                 _menuCard(
                   icon: Icons.receipt_long,
                   label: "Talepler",
-                  color: const Color(0xFF00A79D),
+                  color: const Color(0xFF102E4A),
                   badge: pendingRequests > 0 ? "$pendingRequests" : null,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeCareProviderRequestsPage())),
                 ),
@@ -448,7 +448,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.red.shade700,
-                    fontSize: 13,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -465,7 +465,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
               ),
               child: Text(
                 _rejectionNote!,
-                style: TextStyle(fontSize: 13, color: Colors.red.shade900),
+                style: TextStyle(fontSize: 14, color: Colors.red.shade900),
               ),
             ),
           ],
@@ -493,7 +493,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                     icon: _sendingFeedback
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.send, size: 18),
-                    label: Text(_sendingFeedback ? "Gonderiliyor..." : "Gonder", style: const TextStyle(fontSize: 13)),
+                    label: Text(_sendingFeedback ? "Gonderiliyor..." : "Gonder", style: const TextStyle(fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade600,
                   foregroundColor: Colors.white,
@@ -507,7 +507,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
               child: ElevatedButton.icon(
                 onPressed: _openEditInfoDialog,
                 icon: const Icon(Icons.edit, size: 18),
-                label: const Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 13)),
+                label: const Text("Bilgilerimi Duzenle", style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade600,
                   foregroundColor: Colors.white,
@@ -545,7 +545,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -571,7 +571,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
             Icon(icon, color: color, size: 18),
             const SizedBox(height: 4),
             Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
           ],
         ),
       ),
@@ -616,7 +616,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
               ),
           ],

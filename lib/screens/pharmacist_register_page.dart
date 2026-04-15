@@ -219,7 +219,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
                             if (_error != null)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                                child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 14)),
                               ),
                             _buildMainButton(_loading ? "KAYDEDİLİYOR..." : "KAYDI TAMAMLA", _handleRegister),
                             const SizedBox(height: 40),

@@ -44,7 +44,7 @@ Future<bool> checkCartPharmacyConflict({
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00A79D),
+            backgroundColor: const Color(0xFF102E4A),
             foregroundColor: Colors.white,
           ),
           child: const Text("Sepeti Temizle ve Ekle"),

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
@@ -7,6 +8,7 @@ import '../../theme/app_shadows.dart';
 /// Modern bento-grid tile. Icon + title + (optional) subtitle. Tappable with scale.
 class BentoTile extends StatefulWidget {
   final IconData icon;
+  final Widget? customIcon;
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
@@ -19,6 +21,7 @@ class BentoTile extends StatefulWidget {
   const BentoTile({
     super.key,
     required this.icon,
+    this.customIcon,
     required this.title,
     this.subtitle,
     this.onTap,
@@ -44,7 +47,7 @@ class _BentoTileState extends State<BentoTile> {
         ? null
         : (widget.featured
             ? (isDark ? AppColors.pearl : AppColors.midnight)
-            : (isDark ? AppColors.darkSurface : AppColors.pearl));
+            : Colors.transparent);
     final gradient = widget.gradient ??
         (widget.featured
             ? (isDark ? AppColors.pearlGradient : AppColors.primaryGradient)
@@ -84,47 +87,61 @@ class _BentoTileState extends State<BentoTile> {
         duration: const Duration(milliseconds: 120),
         child: Container(
           height: widget.height,
-          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: bg,
-            gradient: gradient,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            boxShadow: AppShadows.soft(isDark),
-            border: widget.featured
-                ? null
-                : Border.all(
-                    color: isDark
-                        ? AppColors.darkBorder
-                        : AppColors.border.withValues(alpha: 0.6),
-                    width: 1,
-                  ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(widget.icon, color: iconColor, size: 20),
+            boxShadow: [
+              BoxShadow(
+                color: (isDark ? Colors.black : AppColors.midnight)
+                    .withValues(alpha: 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-              Flexible(
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.featured
+                      ? bg
+                      : (isDark ? AppColors.darkSurface : AppColors.pearl)
+                          .withValues(alpha: 0.35),
+                  gradient: gradient,
+                ),
+          child: Stack(
+            children: [
+              Center(
+                child: widget.customIcon ??
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: iconBg,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(widget.icon, color: iconColor, size: 32),
+                    ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      overflow: TextOverflow.visible,
                       style: TextStyle(
                         color: titleColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
+                        height: 1.1,
                       ),
                     ),
                     if (widget.subtitle != null) ...[
@@ -135,7 +152,7 @@ class _BentoTileState extends State<BentoTile> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: subColor,
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -144,6 +161,9 @@ class _BentoTileState extends State<BentoTile> {
                 ),
               ),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       ),

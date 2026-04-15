@@ -9,6 +9,7 @@ import '../services/local_notification_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_shadows.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class HomeCarePage extends StatefulWidget {
   final String baseUrl;
@@ -169,9 +170,17 @@ class _HomeCarePageState extends State<HomeCarePage>
       return;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final borderColor =
+        isDark ? AppColors.darkBorder : Colors.grey.shade300;
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -215,7 +224,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                   const SizedBox(height: 12),
                   Text(
                     addr.fullLine(),
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    style: TextStyle(fontSize: 14, color: subColor),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -232,6 +241,27 @@ class _HomeCarePageState extends State<HomeCarePage>
                         initialDate: tomorrow,
                         firstDate: tomorrow,
                         lastDate: now.add(const Duration(days: 30)),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.fromSeed(
+                                seedColor: const Color(0xFF102E4A),
+                                brightness: isDark
+                                    ? Brightness.dark
+                                    : Brightness.light,
+                                surface: isDark
+                                    ? const Color(0xFF132B44)
+                                    : Colors.white,
+                              ),
+                              dialogTheme: DialogThemeData(
+                                backgroundColor: isDark
+                                    ? const Color(0xFF132B44)
+                                    : Colors.white,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (picked != null) {
                         setModalState(() {
@@ -251,7 +281,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: borderColor),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,20 +308,27 @@ class _HomeCarePageState extends State<HomeCarePage>
                       final selected = selectedTimeSlot == slot;
                       final isDisabled = disabledSlots.contains(slot);
 
+                      final chipFg = isDisabled
+                          ? subColor.withValues(alpha: 0.5)
+                          : (selected
+                              ? (isDark ? AppColors.midnight : Colors.white)
+                              : (isDark ? Colors.white : AppColors.midnight));
                       return ChoiceChip(
-                        label: Text(
-                          slot,
-                          style: TextStyle(
-                            color: isDisabled ? Colors.black38 : null,
-                          ),
-                        ),
+                        label: Text(slot, style: TextStyle(color: chipFg)),
                         selected: selected,
+                        selectedColor: isDark
+                            ? AppColors.pearl
+                            : AppColors.midnight,
+                        backgroundColor: isDark
+                            ? AppColors.darkSurfaceElevated
+                            : Colors.white,
+                        side: BorderSide(color: borderColor),
                         onSelected: isDisabled
                             ? null
                             : (_) {
                                 setModalState(() {
                                   selectedTimeSlot = slot;
-                                  error = null; // seçince hata temizle
+                                  error = null;
                                 });
                               },
                       );
@@ -318,7 +355,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                     const SizedBox(height: 8),
                     Text(
                       error!,
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                      style: const TextStyle(color: Colors.red, fontSize: 14),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -327,7 +364,8 @@ class _HomeCarePageState extends State<HomeCarePage>
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey[800],
+                        backgroundColor: const Color(0xFF102E4A),
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -455,7 +493,7 @@ class _HomeCarePageState extends State<HomeCarePage>
       case HomeCareRequestStatusModel.cancelled:
         return Colors.grey;
       case HomeCareRequestStatusModel.completed:
-        return Colors.indigo;
+        return const Color(0xFF00B894);
     }
   }
 
@@ -475,13 +513,20 @@ class _HomeCarePageState extends State<HomeCarePage>
   }
 
   void _showRequestDetail(HomeCareRequestModel r) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.pearl,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        final labelColor = isDark
+            ? AppColors.darkTextSecondary
+            : AppColors.textSecondary;
+        final valueTextColor =
+            isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
         Widget row(String label, String? value, {Color? valueColor}) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -491,14 +536,14 @@ class _HomeCarePageState extends State<HomeCarePage>
                 SizedBox(
                   width: 120,
                   child: Text(label,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500)),
+                    style: TextStyle(fontSize: 14, color: labelColor, fontWeight: FontWeight.w500)),
                 ),
                 Expanded(
                   child: Text(
                     value == null || value.isEmpty ? '—' : value,
                     style: TextStyle(
-                      fontSize: 13,
-                      color: valueColor ?? Colors.black87,
+                      fontSize: 14,
+                      color: valueColor ?? valueTextColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -530,7 +575,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(_statusText(r.status),
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,
                           color: _statusColor(r.status))),
                     ),
                     const Spacer(),
@@ -556,7 +601,8 @@ class _HomeCarePageState extends State<HomeCarePage>
                     r.completedAtUtc != null
                       ? '${r.completedAtUtc!.day.toString().padLeft(2, '0')}.${r.completedAtUtc!.month.toString().padLeft(2, '0')}.${r.completedAtUtc!.year} ${r.completedAtUtc!.hour.toString().padLeft(2, '0')}:${r.completedAtUtc!.minute.toString().padLeft(2, '0')}'
                       : null),
-                  row('Çalışan Notu', r.completionNote, valueColor: Colors.indigo.shade700),
+                  row('Çalışan Notu', r.completionNote,
+                      valueColor: isDark ? Colors.white : Colors.indigo.shade700),
                 ],
                 if (r.status == HomeCareRequestStatusModel.cancelled ||
                     r.status == HomeCareRequestStatusModel.rejected)
@@ -588,6 +634,7 @@ class _HomeCarePageState extends State<HomeCarePage>
           );
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: const Text('Eve Serum Hizmeti'),
         bottom: TabBar(
@@ -680,7 +727,7 @@ class _HomeCarePageState extends State<HomeCarePage>
             const SizedBox(height: 8),
             Text(
               _errorAddresses!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: const TextStyle(color: Colors.red, fontSize: 14),
             ),
           ],
           const SizedBox(height: 16),
@@ -771,18 +818,18 @@ class _HomeCarePageState extends State<HomeCarePage>
                 const SizedBox(height: 4),
                 Text(
                   '${p.city} / ${p.district}',
-                  style: TextStyle(fontSize: 13, color: subColor),
+                  style: TextStyle(fontSize: 14, color: subColor),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   p.address,
-                  style: TextStyle(fontSize: 12, color: bodyColor),
+                  style: TextStyle(fontSize: 14, color: bodyColor),
                 ),
                 if (p.description != null && p.description!.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
                     p.description!,
-                    style: TextStyle(fontSize: 12, color: bodyColor),
+                    style: TextStyle(fontSize: 14, color: bodyColor),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -793,17 +840,17 @@ class _HomeCarePageState extends State<HomeCarePage>
                         onTap: () => launchUrl(Uri.parse('tel:${p.phone}')),
                         child: Row(
                         children: [
-                          const Icon(Icons.phone_rounded,
-                              size: 16, color: AppColors.accent),
+                          Icon(Icons.phone_rounded,
+                              size: 16, color: titleColor),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               p.phone,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.accent,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: titleColor,
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
                               ),
@@ -836,7 +883,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                                 color: isDark
                                     ? AppColors.midnight
                                     : AppColors.pearl,
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -951,7 +998,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                       child: Text(
                         _statusText(r.status),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 14,
                           color: _statusColor(r.status),
                           fontWeight: FontWeight.w700,
                         ),
@@ -967,20 +1014,20 @@ class _HomeCarePageState extends State<HomeCarePage>
                     const SizedBox(width: 4),
                     Text(
                       '$dateText • ${r.timeSlot}',
-                      style: TextStyle(fontSize: 12, color: subColor),
+                      style: TextStyle(fontSize: 14, color: subColor),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   r.addressSnapshot,
-                  style: TextStyle(fontSize: 12, color: bodyColor),
+                  style: TextStyle(fontSize: 14, color: bodyColor),
                 ),
                 if (r.note != null && r.note!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Not: ${r.note}',
-                    style: TextStyle(fontSize: 12, color: bodyColor),
+                    style: TextStyle(fontSize: 14, color: bodyColor),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -992,7 +1039,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                       icon: const Icon(Icons.info_outline, size: 18),
                       label: const Text('Detay'),
                       style: TextButton.styleFrom(
-                        foregroundColor: _statusColor(r.status),
+                        foregroundColor: titleColor,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     ),

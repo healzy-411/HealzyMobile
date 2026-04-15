@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../Models/order_model.dart';
 import '../services/order_api_service.dart';
 import 'order_detail_page.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class OrdersHistoryPage extends StatefulWidget {
   final String baseUrl;
@@ -48,6 +49,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: const Text("Geçmiş Siparişlerim"),
         centerTitle: true,
@@ -108,17 +110,28 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                             final dateText =
                                 "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} "
                                 "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
+                            final cardBg = isDark
+                                ? const Color(0xFF132B44).withValues(alpha: 0.85)
+                                : Colors.white.withValues(alpha: 0.55);
+                            final cardBorder = isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.white.withValues(alpha: 0.55);
+                            final subColor = isDark
+                                ? Colors.white.withValues(alpha: 0.6)
+                                : Colors.grey;
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: cardBg,
                                 borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: cardBorder, width: 0.8),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 8,
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
                                 ],
@@ -152,9 +165,9 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                         ),
                                         Text(
                                           _statusLabel(o.status),
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: subColor,
                                           ),
                                         ),
                                       ],
@@ -170,9 +183,9 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                     const SizedBox(height: 4),
                                     Text(
                                       dateText,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: subColor,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -187,10 +200,10 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        const Icon(
+                                        Icon(
                                           Icons.arrow_forward_ios,
                                           size: 14,
-                                          color: Colors.grey,
+                                          color: subColor,
                                         ),
                                       ],
                                     ),

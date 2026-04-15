@@ -12,6 +12,7 @@ import '../Models/neighborhood_model.dart';
 import '../services/neighborhood_api_service.dart';
 import '../services/api_service.dart';
 import '../widgets/search_picker_sheet.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class AddAddressPage extends StatefulWidget {
   final String baseUrl; // ör: https://api.apphealzy.com
@@ -280,6 +281,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
     final neighborhoodText = _neighborhood.text.trim();
 
     return Scaffold(
+      bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(title: const Text("Adres Ekle")),
       body: SafeArea(
         child: Padding(
@@ -405,9 +407,17 @@ class _AddAddressPageState extends State<AddAddressPage> {
 
                 const SizedBox(height: 16),
                 SizedBox(
+                  width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     onPressed: _loading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF102E4A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     child: Text(_loading ? "Kaydediliyor..." : "Kaydet"),
                   ),
                 ),

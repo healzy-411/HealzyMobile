@@ -8,6 +8,9 @@ import '../theme/app_radius.dart';
 import '../theme/app_shadows.dart';
 import '../theme/theme_controller.dart';
 import '../widgets/ui/bento_tile.dart';
+import '../widgets/ui/eczane_icon.dart';
+import '../widgets/ui/nobetci_icon.dart';
+import '../widgets/ui/modern_icon.dart';
 import '../widgets/ui/glass_card.dart';
 import '../services/token_store.dart';
 import '../services/api_service.dart';
@@ -25,6 +28,7 @@ import 'profile_page.dart';
 import 'pharmacy_detail_page.dart';
 import 'prescription_page.dart';
 import 'medicine_reminder_page.dart';
+import 'cart_page.dart';
 import 'home_care_page.dart';
 import 'medicine_search_page.dart';
 import 'notifications_page.dart';
@@ -35,6 +39,7 @@ import '../services/local_notification_service.dart';
 import '../services/order_api_service.dart';
 import '../Models/order_model.dart';
 import '../widgets/active_order_tracker.dart';
+import '../widgets/healzy_bottom_nav.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class HomePage extends StatefulWidget {
@@ -89,26 +94,65 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openPrescriptionSearch() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final fieldBg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFF102E4A).withValues(alpha: 0.05);
+
     final text = await showDialog<String>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text("Reçete Numarası"),
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Reçete Numarası",
+            style: TextStyle(color: fg, fontWeight: FontWeight.w700),
+          ),
           content: TextField(
             controller: _prescriptionController,
-            decoration: const InputDecoration(
+            style: TextStyle(color: fg),
+            decoration: InputDecoration(
               hintText: "Örn: RCT-777-12345",
+              hintStyle: TextStyle(color: fg.withValues(alpha: 0.5)),
+              filled: true,
+              fillColor: fieldBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: fg.withValues(alpha: 0.2), width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: fg.withValues(alpha: 0.2), width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: fg, width: 1.4),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(foregroundColor: fg),
               child: const Text("İptal"),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx, _prescriptionController.text);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF102E4A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               child: const Text("Ara"),
             ),
           ],
@@ -295,8 +339,8 @@ class _HomePageState extends State<HomePage> {
                   latitude: p.latitude,
                   longitude: p.longitude,
                   distanceBadge: isBoth ? "Kayitli + Nobetci" : "Kayitli",
-                  badgeColor: isBoth ? Colors.purple : const Color(0xFF00A79D),
-                  markerColor: isBoth ? Colors.purple : const Color(0xFF00A79D),
+                  badgeColor: isBoth ? Colors.purple : const Color(0xFF00B894),
+                  markerColor: isBoth ? Colors.purple : const Color(0xFF00B894),
                   rating: p.averageRating > 0 ? p.averageRating : null,
                   reviewCount: p.reviewCount > 0 ? p.reviewCount : null,
                   onTap: () {
@@ -532,8 +576,11 @@ class _HomePageState extends State<HomePage> {
     }
     if (!mounted) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showModalBottomSheet(
       context: context,
+      backgroundColor:
+          isDark ? AppColors.darkSurface : AppColors.pearl,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -685,15 +732,16 @@ class _HomePageState extends State<HomePage> {
                       height: 48,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[700],
+                          backgroundColor: const Color(0xFF102E4A),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        icon: const Icon(Icons.add_location_alt_outlined, color: Colors.white),
+                        icon: const Icon(Icons.add_location_alt_outlined),
                         label: const Text(
                           "Adres Ekle",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         onPressed: () async {
                           final rootContext = context;
@@ -734,34 +782,36 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgGradient = isDark
-        ? AppColors.darkGradient
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.pearlWarm, AppColors.pearl],
-          );
+    final bgColor = isDark ? AppColors.darkBg : AppColors.pearlWarm;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(gradient: bgGradient),
-        child: SafeArea(
+      backgroundColor: bgColor,
+      body: SafeArea(
           bottom: false,
-          child: Column(
+          child: Stack(
             children: [
-              _buildHeader(isDark),
-              const SizedBox(height: 12),
-              _buildAddressCard(isDark),
-              const SizedBox(height: 20),
-              Expanded(child: _buildBentoGrid()),
-              _buildPrescriptionBar(isDark),
-              const SizedBox(height: 12),
-              _buildMapSection(isDark),
+              Column(
+                children: [
+                  _buildHeader(isDark),
+                  const SizedBox(height: 12),
+                  _buildAddressCard(isDark),
+                  const SizedBox(height: 20),
+                  Expanded(child: _buildBentoGrid()),
+                  const SizedBox(height: 100),
+                ],
+              ),
+              if (_activeOrders.isNotEmpty && !_trackerDismissed)
+                ActiveOrderTracker(
+                  activeOrders: _activeOrders,
+                  userLat: _userLat,
+                  userLng: _userLng,
+                  onRefresh: _loadActiveOrders,
+                  onDismiss: _dismissTracker,
+                ),
             ],
           ),
         ),
-      ),
+      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.home),
     );
   }
 
@@ -781,7 +831,7 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   "Merhaba 👋",
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: subColor,
                     letterSpacing: 0.2,
@@ -802,30 +852,17 @@ class _HomePageState extends State<HomePage> {
           ),
           _iconButton(
             isDark: isDark,
-            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            onTap: () => ThemeController.I.toggle(),
-          ),
-          const SizedBox(width: 10),
-          _iconButton(
-            isDark: isDark,
-            icon: Icons.notifications_outlined,
-            badge: _unreadCount,
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationsPage()),
-              );
-              _loadUnreadCount();
-            },
-          ),
-          const SizedBox(width: 10),
-          _iconButton(
-            isDark: isDark,
-            icon: Icons.person_outline_rounded,
+            icon: Icons.shopping_basket_outlined,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ProfilePage(baseUrl: baseUrl)),
+              MaterialPageRoute(builder: (_) => const CartPage()),
             ),
+          ),
+          const SizedBox(width: 10),
+          _iconButton(
+            isDark: isDark,
+            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            onTap: () => ThemeController.I.toggle(),
           ),
         ],
       ),
@@ -884,7 +921,7 @@ class _HomePageState extends State<HomePage> {
                 badge > 9 ? "9+" : "$badge",
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -926,7 +963,7 @@ class _HomePageState extends State<HomePage> {
                   Text(
                     "Teslimat adresi",
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark
                           ? AppColors.darkTextTertiary
@@ -980,10 +1017,9 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 child: BentoTile(
                   icon: Icons.storefront_rounded,
+                  customIcon: const EczaneIcon(size: 64),
                   title: "Eczaneler",
-                  subtitle: "Yakınındaki",
-                  featured: true,
-                  height: 128,
+                  height: 160,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const PharmaciesPage()),
@@ -993,14 +1029,14 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: BentoTile(
-                  icon: Icons.access_alarm_rounded,
-                  title: "Hatırlatıcı",
-                  subtitle: "İlaç takibi",
-                  height: 128,
+                  icon: Icons.local_pharmacy_rounded,
+                  customIcon: const NobetciIcon(size: 64),
+                  title: "Nöbetçi Eczaneler",
+                  height: 160,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => MedicineReminderPage(baseUrl: baseUrl),
+                      builder: (_) => const DutyPharmaciesPage(),
                     ),
                   ),
                 ),
@@ -1012,9 +1048,13 @@ class _HomePageState extends State<HomePage> {
             children: [
               Expanded(
                 child: BentoTile(
-                  icon: Icons.medical_services_rounded,
+                  icon: Icons.vaccines_rounded,
+                  customIcon: const ModernIcon(
+                    icon: Icons.vaccines_rounded,
+                    size: 56,
+                  ),
                   title: "Serum",
-                  height: 104,
+                  height: 128,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1026,23 +1066,26 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: BentoTile(
-                  icon: Icons.local_pharmacy_rounded,
-                  title: "Nöbetçi",
-                  height: 104,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DutyPharmaciesPage(),
-                    ),
+                  icon: Icons.qr_code_rounded,
+                  customIcon: const ModernIcon(
+                    icon: Icons.qr_code_rounded,
+                    size: 56,
                   ),
+                  title: "Reçete Gir",
+                  height: 128,
+                  onTap: _openPrescriptionSearch,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: BentoTile(
-                  icon: Icons.search_rounded,
+                  icon: Icons.medication_rounded,
+                  customIcon: const ModernIcon(
+                    icon: Icons.medication_rounded,
+                    size: 56,
+                  ),
                   title: "İlaç Ara",
-                  height: 104,
+                  height: 128,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1217,7 +1260,7 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       "Haritayı aç",
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: isDark
                             ? AppColors.darkTextSecondary
@@ -1242,3 +1285,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

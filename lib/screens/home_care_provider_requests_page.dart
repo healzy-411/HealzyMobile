@@ -120,7 +120,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
     return Scaffold(
       appBar: AppBar(
         title: const Text("Talepler"),
-        backgroundColor: const Color(0xFF00A79D),
+        backgroundColor: const Color(0xFF102E4A),
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
@@ -222,7 +222,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -251,12 +251,12 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                   "${request.serviceDateUtc.day.toString().padLeft(2, '0')}."
                   "${request.serviceDateUtc.month.toString().padLeft(2, '0')}."
                   "${request.serviceDateUtc.year}",
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 14),
                 ),
                 const SizedBox(width: 12),
                 const Icon(Icons.access_time, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(request.timeSlot, style: const TextStyle(fontSize: 13)),
+                Text(request.timeSlot, style: const TextStyle(fontSize: 14)),
               ],
             ),
 
@@ -274,7 +274,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                     Expanded(
                       child: Text(
                         request.addressSnapshot,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                   ],
@@ -300,7 +300,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                       Expanded(
                         child: Text(
                           request.note!,
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade900),
+                          style: TextStyle(fontSize: 14, color: Colors.grey.shade900),
                         ),
                       ),
                     ],
@@ -327,7 +327,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                       Expanded(
                         child: Text(
                           request.statusNote!,
-                          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                          style: TextStyle(fontSize: 14, color: Colors.blue.shade900),
                         ),
                       ),
                     ],

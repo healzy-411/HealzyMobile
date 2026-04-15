@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 import 'services/auth_service.dart';
@@ -72,8 +73,25 @@ class HealzyApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeController.I.mode,
+        scrollBehavior: _HealzyScrollBehavior(),
         home: _getInitialPage(authService),
       ),
     );
+  }
+}
+
+class _HealzyScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+      };
+
+  @override
+  Widget buildScrollbar(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
   }
 }

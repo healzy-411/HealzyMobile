@@ -5,6 +5,7 @@ import '../services/token_store.dart';
 import 'products_page.dart';
 import 'cart_page.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../widgets/healzy_bottom_nav.dart';
 
 class CategoriesPage extends StatefulWidget {
   final int pharmacyId;
@@ -54,113 +55,82 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.55);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.55);
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ================= UST BASLIK =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              color: Colors.grey[300],
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Text(
-                    widget.pharmacyName,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 2,
-                          color: Colors.black26,
-                          offset: Offset(1, 1),
-                        )
-                      ],
-                    ),
-                  ),
-                ],
+      bottomNavigationBar: const HealzyBottomNav(),
+      appBar: AppBar(
+        title: Text(widget.pharmacyName),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: FutureBuilder<List<PharmacyCategoryItem>>(
+          future: apiService.getPharmacyCategories(widget.pharmacyId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text("Hata: ${snapshot.error}"));
+            }
+            final categories = snapshot.data ?? [];
+            if (categories.isEmpty) {
+              return const Center(
+                  child: Text("Bu eczanede kategori bulunamadi"));
+            }
+            return GridView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+                childAspectRatio: 1.0,
               ),
-            ),
-
-            // ================= KATEGORILER =================
-            Expanded(
-              child: FutureBuilder<List<PharmacyCategoryItem>>(
-                future: apiService.getPharmacyCategories(widget.pharmacyId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text("Hata: ${snapshot.error}"),
-                    );
-                  }
-
-                  final categories = snapshot.data ?? [];
-
-                  if (categories.isEmpty) {
-                    return const Center(
-                      child: Text("Bu eczanede kategori bulunamadi"),
-                    );
-                  }
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final cat = categories[index];
-
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ProductsPage(
-                                pharmacyId: widget.pharmacyId,
-                                pharmacyName: widget.pharmacyName,
-                                categoryName: cat.name,
-                              ),
-                            ),
-                          ).then((_) => _refreshCartCount());
-                        },
-                        child: _buildCategoryCard(
-                          cat.name,
-                          cat.imageUrl,
-                          categoryIcons[index % categoryIcons.length],
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final cat = categories[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProductsPage(
+                          pharmacyId: widget.pharmacyId,
+                          pharmacyName: widget.pharmacyName,
+                          categoryName: cat.name,
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+                      ),
+                    ).then((_) => _refreshCartCount());
+                  },
+                  child: _buildCategoryCard(
+                    cat.name,
+                    cat.imageUrl,
+                    categoryIcons[index % categoryIcons.length],
+                    cardBg,
+                    cardBorder,
+                    fg,
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
-
-      // ================= SEPET BUTONU =================
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBg,
+        foregroundColor: fg,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: cardBorder, width: 0.8),
+        ),
         onPressed: () {
           Navigator.push(
             context,
@@ -170,8 +140,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.shopping_basket_outlined,
-                color: Colors.black, size: 30),
+            Icon(Icons.shopping_basket_outlined, color: fg, size: 28),
             if (cartCount > 0)
               Positioned(
                 right: -8,
@@ -191,22 +160,30 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
-  // ================= KATEGORI KARTI =================
-  Widget _buildCategoryCard(String title, String? imageUrl, IconData icon) {
+  Widget _buildCategoryCard(
+    String title,
+    String? imageUrl,
+    IconData icon,
+    Color bg,
+    Color borderColor,
+    Color fg,
+  ) {
     final fullUrl = (imageUrl == null || imageUrl.isEmpty)
         ? null
-        : (imageUrl.startsWith('http') ? imageUrl : '${ApiConfig.baseUrl}$imageUrl');
+        : (imageUrl.startsWith('http')
+            ? imageUrl
+            : '${ApiConfig.baseUrl}$imageUrl');
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: borderColor, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -221,20 +198,19 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 width: 70,
                 height: 70,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Icon(icon, size: 50, color: Colors.black87),
+                errorBuilder: (_, __, ___) => Icon(icon, size: 50, color: fg),
               ),
             )
           else
-            Icon(icon, size: 50, color: Colors.black87),
+            Icon(icon, size: 50, color: fg),
           const SizedBox(height: 15),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: fg,
             ),
           ),
         ],
