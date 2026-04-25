@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../Models/cart_model.dart';
 import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
@@ -171,7 +172,13 @@ class _CartPageState extends State<CartPage> {
           },
         ),
       ),
-      body: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkPageGradient
+              : AppColors.lightPageGradient,
+        ),
+        child: Column(
         children: [
             if (loading) const LinearProgressIndicator(),
 
@@ -193,7 +200,7 @@ class _CartPageState extends State<CartPage> {
                         children: [
                           Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey.shade400),
                           const SizedBox(height: 12),
-                          Text("Sepetiniz bos", style: TextStyle(color: Colors.grey.shade600)),
+                          Text("Sepetiniz boş", style: TextStyle(color: Colors.grey.shade600)),
                         ],
                       ),
                     )
@@ -210,6 +217,35 @@ class _CartPageState extends State<CartPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              // Fotoğraf
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: item.medicineImageUrl != null && item.medicineImageUrl!.isNotEmpty
+                                    ? Image.network(
+                                        item.medicineImageUrl!.startsWith('http')
+                                            ? item.medicineImageUrl!
+                                            : '${ApiConfig.baseUrl}${item.medicineImageUrl}',
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          width: 50,
+                                          height: 50,
+                                          color: Colors.grey.shade200,
+                                          child: const Icon(Icons.medication, size: 28, color: Colors.grey),
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.medication, size: 28, color: Colors.grey),
+                                      ),
+                              ),
+                              const SizedBox(width: 12),
                               // Sol: Ürün adı + eczane
                               Expanded(
                                 child: Column(
@@ -261,7 +297,7 @@ class _CartPageState extends State<CartPage> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    "${item.lineTotal.toStringAsFixed(0)} TL",
+                                    "${item.lineTotal.toStringAsFixed(2)} TL",
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -308,7 +344,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         Text(
-                          "${total.toStringAsFixed(0)} TL",
+                          "${total.toStringAsFixed(2)} TL",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -330,7 +366,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         child: const Text(
-                          "Odemeye Devam Et",
+                          "Ödemeye Devam Et",
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -343,6 +379,7 @@ class _CartPageState extends State<CartPage> {
                 ),
               )
           ],
+      ),
       ),
     );
   }

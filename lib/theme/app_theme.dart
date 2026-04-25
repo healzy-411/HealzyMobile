@@ -9,11 +9,12 @@ class AppTheme {
       scrollbarTheme: ScrollbarThemeData(
         thickness: const WidgetStatePropertyAll(5),
         radius: const Radius.circular(8),
+        thumbVisibility: const WidgetStatePropertyAll(true),
         thumbColor: WidgetStatePropertyAll(
           AppColors.midnight.withValues(alpha: 0.35),
         ),
       ),
-      scaffoldBackgroundColor: AppColors.pearlWarm,
+      scaffoldBackgroundColor: AppColors.lightBlueSoft,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.midnight,
         brightness: Brightness.light,
@@ -68,6 +69,7 @@ class AppTheme {
       scrollbarTheme: ScrollbarThemeData(
         thickness: const WidgetStatePropertyAll(5),
         radius: const Radius.circular(8),
+        thumbVisibility: const WidgetStatePropertyAll(true),
         thumbColor: WidgetStatePropertyAll(
           Colors.white.withValues(alpha: 0.4),
         ),

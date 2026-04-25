@@ -6,6 +6,7 @@ import '../services/review_api_service.dart';
 import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class PharmacyDetailPage extends StatefulWidget {
   final int pharmacyId;
@@ -67,13 +68,20 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_loading) {
       return Scaffold(
         bottomNavigationBar: const HealzyBottomNav(),
         appBar: AppBar(
           title: const Text("Eczane Detay"),
         ),
-        body: const Center(child: CircularProgressIndicator(color: Color(0xFF102E4A))),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+          child: const Center(child: CircularProgressIndicator(color: Color(0xFF102E4A))),
+        ),
       );
     }
 
@@ -83,7 +91,12 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
         appBar: AppBar(
           title: const Text("Eczane Detay"),
         ),
-        body: Center(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+          child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -92,6 +105,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
               ElevatedButton(onPressed: _load, child: const Text("Tekrar Dene")),
             ],
           ),
+        ),
         ),
       );
     }
@@ -104,7 +118,12 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
       appBar: AppBar(
         title: Text(d.name),
       ),
-      body: RefreshIndicator(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           children: [
@@ -115,7 +134,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
               color: Colors.grey.shade200,
               child: d.imageUrl != null && d.imageUrl!.isNotEmpty
                   ? Image.network(
-                      '$baseUrl${d.imageUrl}',
+                      d.imageUrl!.startsWith('http') ? d.imageUrl! : '$baseUrl${d.imageUrl}',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
                         child: Icon(Icons.local_pharmacy, size: 80, color: Colors.grey),
@@ -149,7 +168,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        "(${d.reviewCount} degerlendirme)",
+                        "(${d.reviewCount} değerlendirme)",
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],
@@ -164,26 +183,53 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
                   _infoRow(Icons.access_time, d.workingHours),
                   const SizedBox(height: 16),
 
-                  // Magazaya Git Butonu
+                  // Kapalı eczane badge
+                  if (!d.isOpen)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock_clock, color: Colors.red.shade700, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Bu eczane şu an kapalı",
+                            style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Mağazaya Git Butonu
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CategoriesPage(
-                              pharmacyId: d.pharmacyId,
-                              pharmacyName: d.name,
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed: d.isOpen
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CategoriesPage(
+                                    pharmacyId: d.pharmacyId,
+                                    pharmacyName: d.name,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
                       icon: const Icon(Icons.shopping_bag_outlined),
-                      label: const Text("Magazaya Git"),
+                      label: Text(d.isOpen ? "Mağazaya Git" : "Eczane Kapalı"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF102E4A),
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade400,
+                        disabledForegroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -205,7 +251,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
                       padding: EdgeInsets.all(16),
                       child: Center(
                         child: Text(
-                          "Henuz degerlendirme yok",
+                          "Henüz değerlendirme yok",
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
@@ -217,6 +263,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -249,8 +296,10 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
   }
 
   Widget _buildReviewCard(ReviewDto review) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: isDark ? null : AppColors.lightBlueSoft.withValues(alpha: 0.6),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(

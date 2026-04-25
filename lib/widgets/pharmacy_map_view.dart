@@ -164,6 +164,34 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
     }
   }
 
+  void _fitAllMarkers() {
+    final allMarkers = widget.pharmacies;
+    if (allMarkers.isEmpty) return;
+    if (allMarkers.length == 1) {
+      _mapController.move(
+        LatLng(allMarkers.first.latitude, allMarkers.first.longitude),
+        14.0,
+      );
+      return;
+    }
+    double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    for (final m in allMarkers) {
+      if (m.latitude < minLat) minLat = m.latitude;
+      if (m.latitude > maxLat) maxLat = m.latitude;
+      if (m.longitude < minLng) minLng = m.longitude;
+      if (m.longitude > maxLng) maxLng = m.longitude;
+    }
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds(
+          LatLng(minLat, minLng),
+          LatLng(maxLat, maxLng),
+        ),
+        padding: const EdgeInsets.all(50),
+      ),
+    );
+  }
+
   void _zoomIn() {
     final zoom = _mapController.camera.zoom + 1;
     _mapController.move(_mapController.camera.center, zoom);
@@ -366,6 +394,13 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
             right: 16,
             child: Column(
               children: [
+                _mapButton(
+                  heroTag: 'fitAll',
+                  icon: Icons.fit_screen,
+                  color: Colors.deepPurple,
+                  onPressed: _fitAllMarkers,
+                ),
+                const SizedBox(height: 8),
                 if (widget.userLat != null && widget.userLng != null)
                   _mapButton(
                     heroTag: 'centerOnUser',
@@ -459,7 +494,7 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
   }
 
   Widget _buildPopup(PharmacyMarkerData p) {
-    final isRegistered = p.distanceBadge == "Kayitli";
+    final isRegistered = p.distanceBadge == "Kayıtlı";
 
     return Card(
       elevation: 8,

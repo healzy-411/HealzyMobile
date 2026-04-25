@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../Models/prescription_models.dart';
 import '../services/prescription_api_service.dart';
-import '../services/cart_api_service.dart';
-import '../services/token_store.dart';
 import 'cart_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
 
@@ -27,11 +25,6 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
   String? _error;
 
   PrescriptionPriceResultDto? _result;
-
-  late final CartApiService _cartApi = CartApiService(
-    baseUrl: widget.api.baseUrl,
-    getToken: () async => TokenStore.get(),
-  );
 
   @override
   void initState() {
@@ -205,12 +198,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
                       });
 
                       try {
-                        // 1) Mevcut sepet snapshot'ını al
-                        final beforeCart = await _cartApi.getMyCart();
-                        final beforeIds =
-                            beforeCart.items.map((e) => e.id).toSet();
-
-                        // 2) Reçete ilaçlarını topluca sepete ekle
+                        // Backend sepeti temizleyip reçete ilaçlarını ekler
                         final afterCart = await widget.api.addPrescriptionToCart(
                           prescriptionNumber: widget.detail.prescriptionNumber,
                           pharmacyId: p.id,
@@ -219,18 +207,15 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
 
                         if (!mounted) return;
 
-                        // 3) Yeni eklenen cart item id'lerini bul
-                        final afterIds =
-                            afterCart.items.map((e) => e.id).toSet();
-                        final newIds =
-                            afterIds.difference(beforeIds).toList();
+                        // Tüm cart item'lar reçeteden geldi (sepet temizlendi)
+                        final allIds =
+                            afterCart.items.map((e) => e.id).toList();
 
-                        // 4) CartPage'e bu liste ve reçete numarası ile git
                         await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => CartPage(
-                              prescriptionItemIds: newIds,
+                              prescriptionItemIds: allIds,
                               prescriptionNumber:
                                   widget.detail.prescriptionNumber,
                             ),

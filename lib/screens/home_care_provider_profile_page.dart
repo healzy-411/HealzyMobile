@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/home_care_panel_api_service.dart';
 import '../services/upload_api_service.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class HomeCareProviderProfilePage extends StatefulWidget {
@@ -116,8 +117,8 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     }
     return CircleAvatar(
       radius: 48,
-      backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
-      child: const Icon(Icons.medical_services, size: 48, color: Color(0xFF102E4A)),
+      backgroundColor: AppColors.midnight.withValues(alpha: 0.15),
+      child: const Icon(Icons.medical_services, size: 48, color: AppColors.midnight),
     );
   }
 
@@ -128,7 +129,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     return Scaffold(
       appBar: AppBar(
         title: const Text("Saglayici Bilgileri"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
         actions: [
           if (!_editing)
@@ -148,8 +149,8 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
             Center(
               child: TextButton.icon(
                 onPressed: _pickImage,
-                icon: const Icon(Icons.photo_camera, color: Color(0xFF102E4A)),
-                label: const Text("Resim Sec", style: TextStyle(color: Color(0xFF102E4A))),
+                icon: const Icon(Icons.photo_camera, color: AppColors.midnight),
+                label: const Text("Resim Sec", style: TextStyle(color: AppColors.midnight)),
               ),
             ),
           ],
@@ -193,7 +194,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                   child: ElevatedButton(
                     onPressed: _saving ? null : _save,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF102E4A),
+                      backgroundColor: AppColors.midnight,
                       foregroundColor: Colors.white,
                     ),
                     child: Text(_saving ? "Kaydediliyor..." : "Kaydet"),
@@ -222,7 +223,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF102E4A)),
+          prefixIcon: Icon(icon, color: AppColors.midnight),
           border: const OutlineInputBorder(),
         ),
       ),
@@ -233,7 +234,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF102E4A)),
+        leading: Icon(icon, color: AppColors.midnight),
         title: Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         subtitle: Text(value.isEmpty ? "-" : value, style: const TextStyle(fontSize: 15)),
       ),

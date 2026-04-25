@@ -35,6 +35,7 @@ class PharmacyCompareResult {
   final String district;
   final List<MedicineLine> lines;
   final double totalPrice;
+  final bool isOpen;
 
   PharmacyCompareResult({
     required this.pharmacyId,
@@ -42,6 +43,7 @@ class PharmacyCompareResult {
     required this.district,
     required this.lines,
     required this.totalPrice,
+    this.isOpen = true,
   });
 
   factory PharmacyCompareResult.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class PharmacyCompareResult {
           .map((e) => MedicineLine.fromJson(e))
           .toList(),
       totalPrice: (json['totalPrice'] ?? 0).toDouble(),
+      isOpen: json['isOpen'] ?? true,
     );
   }
 }

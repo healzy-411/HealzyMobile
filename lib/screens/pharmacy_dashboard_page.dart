@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/pharmacy_panel_api_service.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyDashboardPage extends StatefulWidget {
@@ -23,14 +24,14 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
   DateTime? _customTo;
 
   final List<_DatePreset> _presets = [
-    _DatePreset("Bugun", _todayRange),
-    _DatePreset("Dun", _yesterdayRange),
+    _DatePreset("Bugün", _todayRange),
+    _DatePreset("Dün", _yesterdayRange),
     _DatePreset("Bu Hafta", _thisWeekRange),
-    _DatePreset("Gecen Hafta", _lastWeekRange),
+    _DatePreset("Geçen Hafta", _lastWeekRange),
     _DatePreset("Bu Ay", _thisMonthRange),
-    _DatePreset("Gecen Ay", _lastMonthRange),
-    _DatePreset("Bu Yil", _thisYearRange),
-    _DatePreset("Gecen Yil", _lastYearRange),
+    _DatePreset("Geçen Ay", _lastMonthRange),
+    _DatePreset("Bu Yıl", _thisYearRange),
+    _DatePreset("Geçen Yıl", _lastYearRange),
   ];
 
   @override
@@ -103,13 +104,13 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Dashboard"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.date_range),
             onPressed: _pickCustomRange,
-            tooltip: "Tarih Sec",
+            tooltip: "Tarih Seç",
           ),
         ],
       ),
@@ -155,7 +156,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 child: ChoiceChip(
                   label: Text(p.label, style: const TextStyle(fontSize: 14)),
                   selected: _selectedPreset == p.label,
-                  selectedColor: const Color(0xFF102E4A),
+                  selectedColor: AppColors.midnight,
                   labelStyle: TextStyle(
                     color: _selectedPreset == p.label
                         ? Colors.white
@@ -169,7 +170,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
             child: ChoiceChip(
               label: const Text("Ozel", style: TextStyle(fontSize: 14)),
               selected: _selectedPreset == "Ozel",
-              selectedColor: const Color(0xFF102E4A),
+              selectedColor: AppColors.midnight,
               labelStyle: TextStyle(
                 color:
                     _selectedPreset == "Ozel" ? Colors.white : Colors.black87,
@@ -209,7 +210,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
           // Günlük satış grafiği
           if (dailySales.isNotEmpty) ...[
-            _sectionTitle("Gunluk Satis"),
+            _sectionTitle("Günlük Satış"),
             const SizedBox(height: 8),
             _buildDailySalesChart(dailySales),
             const SizedBox(height: 24),
@@ -227,7 +228,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
           // Sipariş durumu dağılımı
           if (statusDist.isNotEmpty) ...[
-            _sectionTitle("Siparis Durumlari"),
+            _sectionTitle("Sipariş Durumları"),
             const SizedBox(height: 8),
             _buildStatusBars(statusDist),
             const SizedBox(height: 24),
@@ -271,12 +272,12 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       childAspectRatio: 1.6,
       children: [
         _summaryCard("Toplam Ciro", "${revenue.toStringAsFixed(2)} TL",
-            Icons.currency_lira, const Color(0xFF102E4A)),
-        _summaryCard("Siparis Sayisi", "$orders",
+            Icons.currency_lira, AppColors.midnight),
+        _summaryCard("Sipariş Sayısı", "$orders",
             Icons.receipt_long, Colors.blue),
-        _summaryCard("Satilan Urun", "$items",
+        _summaryCard("Satılan Ürün", "$items",
             Icons.shopping_bag, Colors.purple),
-        _summaryCard("Iptal Edilen", "$cancelled",
+        _summaryCard("İptal Edilen", "$cancelled",
             Icons.cancel, Colors.red),
       ],
     );
@@ -407,7 +408,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
               barRods: [
                 BarChartRodData(
                   toY: revenue,
-                  color: const Color(0xFF102E4A),
+                  color: AppColors.midnight,
                   width: dailySales.length > 20 ? 6 : 14,
                   borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(4)),
@@ -423,7 +424,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
   // ======== KATEGORİ PIE CHART ========
   Widget _buildCategoryPieChart(List<Map<String, dynamic>> categorySales) {
     final colors = [
-      const Color(0xFF102E4A),
+      AppColors.midnight,
       Colors.blue,
       Colors.orange,
       Colors.purple,
@@ -475,7 +476,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   Widget _buildCategoryLegend(List<Map<String, dynamic>> categorySales) {
     final colors = [
-      const Color(0xFF102E4A),
+      AppColors.midnight,
       Colors.blue,
       Colors.orange,
       Colors.purple,
@@ -593,11 +594,11 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
           return ListTile(
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
+              backgroundColor: AppColors.midnight.withValues(alpha: 0.15),
               child: Text("${i + 1}",
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF102E4A))),
+                      color: AppColors.midnight)),
             ),
             title: Text(name,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -606,7 +607,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
             trailing: Text("${revenue.toStringAsFixed(0)} TL",
                 style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF102E4A))),
+                    color: AppColors.midnight)),
           );
         }),
       ),
@@ -629,7 +630,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       case "Ready":
         return Colors.green;
       case "Delivered":
-        return const Color(0xFF102E4A);
+        return AppColors.midnight;
       case "Cancelled":
         return Colors.red;
       default:

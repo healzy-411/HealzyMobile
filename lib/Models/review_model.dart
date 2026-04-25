@@ -37,6 +37,7 @@ class PharmacyDetailModel {
   final double averageRating;
   final int reviewCount;
   final List<ReviewDto> recentReviews;
+  final bool isOpen;
 
   PharmacyDetailModel({
     required this.pharmacyId,
@@ -51,6 +52,7 @@ class PharmacyDetailModel {
     required this.averageRating,
     required this.reviewCount,
     required this.recentReviews,
+    this.isOpen = true,
   });
 
   factory PharmacyDetailModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class PharmacyDetailModel {
       recentReviews: (json['recentReviews'] as List? ?? [])
           .map((e) => ReviewDto.fromJson(e))
           .toList(),
+      isOpen: json['isOpen'] ?? true,
     );
   }
 }

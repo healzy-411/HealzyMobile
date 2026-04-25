@@ -335,7 +335,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          t,
+                          t.split(':').take(2).join(':'),
                           style: TextStyle(
                             color: widget.healzyDarkGreen,
                             fontWeight: FontWeight.bold,
@@ -360,7 +360,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        t,
+                        t.split(':').take(2).join(':'),
                         style: TextStyle(
                           color: Colors.green[700],
                           fontSize: 14,
@@ -499,6 +499,10 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
 
   String _intakeText(int intakeType) => intakeType == 1 ? 'Tok' : 'Aç';
 
+  String _formatDate(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+
   String _statusText(MedicineReminderDto item) {
     if (!item.isActive) return 'Silindi';
     final now = DateTime.now();
@@ -517,10 +521,6 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
       case 'Bekliyor': return Colors.orange;
       default: return Colors.grey;
     }
-  }
-
-  String _formatDate(DateTime dt) {
-    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
   }
 
   // ============================================================
@@ -627,13 +627,13 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
             end: Alignment.bottomRight,
             colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
           )
-        : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              pearlWhite,
-              const Color(0xFFF2E9D8),
-              pearlWhite,
+              Colors.white,
+              Color(0xFFD4EAF7),
+              Color(0xFFB8D8EB),
             ],
           );
 
@@ -657,8 +657,10 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
         child: SafeArea(
           child: _loading
               ? Center(child: CircularProgressIndicator(color: fgColor))
-              : _all.isEmpty
-                  ? Center(child: Text('Henüz hatırlatıcı eklenmemiş.', style: TextStyle(color: fgColor)))
+              : _error != null
+                  ? Center(child: Text(_error!, style: TextStyle(color: Colors.redAccent, fontSize: 15)))
+                  : _all.isEmpty
+                      ? Center(child: Text('Henüz hatırlatıcı eklenmemiş.', style: TextStyle(color: fgColor)))
                   : RawScrollbar(
                       controller: _scrollController,
                       thumbColor: fgColor.withValues(alpha: 0.3),
@@ -766,6 +768,14 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                           .withValues(alpha: 0.7),
                       fontWeight: FontWeight.w500),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatDate(item.startDateUtc)} — ${_formatDate(item.startDateUtc.add(Duration(days: item.durationDays)))}',
+                  style: TextStyle(
+                      color: (isDark ? Colors.white : midnightBlue)
+                          .withValues(alpha: 0.5),
+                      fontSize: 13),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -780,8 +790,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                       children: [
                         if (isEditable) ...[
                           _actionButton(Icons.edit_rounded, Colors.blue, () {
-                            widget.onEdit?.call(item);
-                            Navigator.pop(context);
+                            Navigator.pop(context, item);
                           }),
                           const SizedBox(width: 8),
                           _actionButton(Icons.delete_outline_rounded, Colors.red, () => _delete(item)),
@@ -813,7 +822,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: fg.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(time, style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.bold)),
+      child: Text(time.split(':').take(2).join(':'), style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.bold)),
     );
   }
 

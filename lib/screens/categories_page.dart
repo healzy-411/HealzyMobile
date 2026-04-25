@@ -6,6 +6,7 @@ import 'products_page.dart';
 import 'cart_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class CategoriesPage extends StatefulWidget {
   final int pharmacyId;
@@ -69,7 +70,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
       appBar: AppBar(
         title: Text(widget.pharmacyName),
       ),
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: Padding(
         padding: const EdgeInsets.only(top: 12),
         child: FutureBuilder<List<PharmacyCategoryItem>>(
           future: apiService.getPharmacyCategories(widget.pharmacyId),
@@ -122,6 +128,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
             );
           },
         ),
+      ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: cardBg,

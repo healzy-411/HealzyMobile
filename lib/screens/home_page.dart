@@ -24,16 +24,14 @@ import 'duty_pharmacies_page.dart';
 import 'add_address_page.dart';
 import 'edit_address_page.dart';
 import '../services/address_api_service.dart';
-import 'profile_page.dart';
 import 'pharmacy_detail_page.dart';
 import 'prescription_page.dart';
-import 'medicine_reminder_page.dart';
 import 'cart_page.dart';
 import 'home_care_page.dart';
 import 'medicine_search_page.dart';
-import 'notifications_page.dart';
 import 'home_map_fullscreen_page.dart';
 import '../services/notification_api_service.dart';
+import '../services/auth_service.dart';
 import 'dart:async';
 import '../services/local_notification_service.dart';
 import '../services/order_api_service.dart';
@@ -52,6 +50,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // Flutter Web
   final String baseUrl = ApiConfig.baseUrl;
+
+  String _userName = '';
 
   bool _addrLoading = false;
   String? _addrError;
@@ -94,6 +94,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openPrescriptionSearch() async {
+    // Her açıldığında eski yazıyı temizle
+    _prescriptionController.clear();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fg = isDark ? Colors.white : const Color(0xFF102E4A);
     final fieldBg = isDark
@@ -162,6 +165,18 @@ class _HomePageState extends State<HomePage> {
 
     if (text == null || text.trim().isEmpty) return;
 
+    // Reçete numarası format kontrolü: RCT-777-XXXXX (son kısım tam 5 hane)
+    final prescriptionRegex = RegExp(r'^RCT-777-\d{5}$');
+    if (!prescriptionRegex.hasMatch(text.trim())) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Geçersiz reçete formatı. Örn: RCT-777-12345 (son kısım 5 haneli olmalı)"),
+        ),
+      );
+      return;
+    }
+
     try {
       final detail = await _prescriptionApi.loadPrescription(text);
       if (!mounted) return;
@@ -210,6 +225,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _loadUserName();
     _loadAddresses();
     _loadUnreadCount();
     _loadMapData();
@@ -338,7 +354,7 @@ class _HomePageState extends State<HomePage> {
                   phone: p.phone,
                   latitude: p.latitude,
                   longitude: p.longitude,
-                  distanceBadge: isBoth ? "Kayitli + Nobetci" : "Kayitli",
+                  distanceBadge: isBoth ? "Kayıtlı + Nöbetçi" : "Kayıtlı",
                   badgeColor: isBoth ? Colors.purple : const Color(0xFF00B894),
                   markerColor: isBoth ? Colors.purple : const Color(0xFF00B894),
                   rating: p.averageRating > 0 ? p.averageRating : null,
@@ -362,10 +378,10 @@ class _HomePageState extends State<HomePage> {
             .map((d) => PharmacyMarkerData(
                   name: d.pharmacyName,
                   address: "${d.district} / ${d.address}",
-                  phone: d.phone ?? "",
+                  phone: d.phone,
                   latitude: d.latitude!,
                   longitude: d.longitude!,
-                  distanceBadge: "Nobetci",
+                  distanceBadge: "Nöbetçi",
                   badgeColor: Colors.red,
                   markerColor: Colors.red,
                   onTap: () {
@@ -428,6 +444,15 @@ class _HomePageState extends State<HomePage> {
     final copy = [...list];
     copy.sort((p, q) => _score(q).compareTo(_score(p)));
     return copy;
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final authService = AuthService(baseUrl: ApiConfig.baseUrl);
+      final me = await authService.me();
+      if (!mounted) return;
+      setState(() => _userName = me.fullName);
+    } catch (_) {}
   }
 
   Future<void> _loadAddresses() async {
@@ -782,11 +807,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.darkBg : AppColors.pearlWarm;
 
     return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppColors.darkPageGradient : AppColors.lightPageGradient,
+        ),
+        child: SafeArea(
           bottom: false,
           child: Stack(
             children: [
@@ -811,6 +838,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
       bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.home),
     );
   }
@@ -839,12 +867,12 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Healzy",
+                  _userName.isNotEmpty ? _userName : "Healzy",
                   style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: titleColor,
-                    letterSpacing: -0.6,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: subColor,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ],
@@ -928,6 +956,43 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _imageButton({
+    required bool isDark,
+    required String assetPath,
+    required VoidCallback onTap,
+  }) {
+    final bg = isDark
+        ? AppColors.darkSurface.withValues(alpha: 0.8)
+        : AppColors.pearl;
+
+    return Material(
+      color: bg,
+      elevation: 0,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.darkBorder
+                  : AppColors.border.withValues(alpha: 0.6),
+            ),
+            boxShadow: AppShadows.soft(isDark),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Image.asset(assetPath, fit: BoxFit.cover),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1084,7 +1149,7 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.medication_rounded,
                     size: 56,
                   ),
-                  title: "İlaç Ara",
+                  title: "Ürün Ara",
                   height: 128,
                   onTap: () => Navigator.push(
                     context,
@@ -1101,188 +1166,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ================= PRESCRIPTION BAR =================
-  Widget _buildPrescriptionBar(bool isDark) {
-    final bg = isDark
-        ? AppColors.darkSurface.withValues(alpha: 0.8)
-        : AppColors.pearl;
-    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
-    final hintColor = isDark
-        ? AppColors.darkTextTertiary
-        : AppColors.textTertiary;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Material(
-              color: bg,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                onTap: _openPrescriptionSearch,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 18, vertical: 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkBorder
-                          : AppColors.border.withValues(alpha: 0.6),
-                    ),
-                    boxShadow: AppShadows.soft(isDark),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.receipt_long_rounded,
-                          color: hintColor, size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "Reçete numarası gir",
-                          style: TextStyle(
-                            color: hintColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.search_rounded, color: textColor, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? AppColors.pearlGradient
-                  : AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              boxShadow: AppShadows.glow(
-                isDark ? AppColors.pearl : AppColors.midnight,
-              ),
-            ),
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              color: isDark ? AppColors.midnight : AppColors.pearl,
-              size: 22,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================= MAP =================
-  Widget _buildMapSection(bool isDark) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onVerticalDragUpdate: (details) {
-        if (details.delta.dy < -5) _openFullScreenMap();
-      },
-      child: Container(
-        height: MediaQuery.of(context).size.height *
-            (_activeOrders.isNotEmpty && !_trackerDismissed ? 0.28 : 0.15),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
-          ),
-          boxShadow: AppShadows.elevated(isDark),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: _filteredMarkers.isEmpty && _activeOrders.isEmpty
-                    ? const SizedBox()
-                    : PharmacyMapView(
-                        key: ValueKey('map_${_userLat}_${_userLng}'),
-                        pharmacies: _filteredMarkers,
-                        userLat: _userLat,
-                        userLng: _userLng,
-                        activeRoute: _buildActiveRoute(),
-                        showControls: false,
-                        simpleStyle: _mapSimpleStyle,
-                      ),
-              ),
-            ),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _openFullScreenMap,
-                  child: Container(),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      (isDark ? AppColors.darkSurface : AppColors.pearl)
-                          .withValues(alpha: 0.9),
-                      (isDark ? AppColors.darkSurface : AppColors.pearl)
-                          .withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: (isDark
-                                ? AppColors.darkTextTertiary
-                                : AppColors.textTertiary)
-                            .withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Haritayı aç",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_activeOrders.isNotEmpty && !_trackerDismissed)
-              ActiveOrderTracker(
-                activeOrders: _activeOrders,
-                userLat: _userLat,
-                userLng: _userLng,
-                onRefresh: _loadActiveOrders,
-                onDismiss: _dismissTracker,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 

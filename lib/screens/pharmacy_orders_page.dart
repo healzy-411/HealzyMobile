@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../Models/order_model.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyOrdersPage extends StatefulWidget {
@@ -121,7 +122,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text("Siparisler"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
@@ -434,7 +435,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
         ];
       case "Ready":
         return [
-          _OrderAction("Delivered", "Teslim Edildi", Icons.local_shipping, const Color(0xFF102E4A)),
+          _OrderAction("Delivered", "Teslim Edildi", Icons.local_shipping, AppColors.midnight),
         ];
       default:
         return [];
@@ -450,7 +451,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
       case "Ready":
         return Colors.green;
       case "Delivered":
-        return const Color(0xFF102E4A);
+        return AppColors.midnight;
       case "Cancelled":
         return Colors.red;
       default:

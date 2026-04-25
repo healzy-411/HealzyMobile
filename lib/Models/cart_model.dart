@@ -31,6 +31,7 @@ class CartItem {
   final int quantity;
   final double unitPrice;
   final double lineTotal;
+  final String? medicineImageUrl;
 
   CartItem({
     required this.id,
@@ -41,6 +42,7 @@ class CartItem {
     required this.quantity,
     required this.unitPrice,
     required this.lineTotal,
+    this.medicineImageUrl,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class CartItem {
       quantity: (json['quantity'] as num).toInt(),
       unitPrice: (json['unitPrice'] as num? ?? 0).toDouble(),
       lineTotal: (json['lineTotal'] as num? ?? 0).toDouble(),
+      medicineImageUrl: json['medicineImageUrl'] as String?,
     );
   }
 }

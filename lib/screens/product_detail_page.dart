@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../Models/otcmedicine_model.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final OtcMedicine product;
@@ -49,7 +50,12 @@ class ProductDetailPage extends StatelessWidget {
         title: Text(product.name, overflow: TextOverflow.ellipsis),
         elevation: 0.5,
       ),
-      body: SingleChildScrollView(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +108,7 @@ class ProductDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Fiyat + stok
+            // Fiyat + stok durumu
             Row(
               children: [
                 Text(
@@ -114,38 +120,42 @@ class ProductDetailPage extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: product.quantity > 0
-                        ? Colors.green.shade50
-                        : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    product.quantity > 0
-                        ? 'Stokta: ${product.quantity}'
-                        : 'Stokta yok',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: product.quantity > 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                if (product.quantity == 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Stokta Yok',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  )
+                else if (product.quantity > 0 && product.quantity < 5)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Tükenmek Üzere',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
-            if (product.barcode != null && product.barcode!.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text('Barkod: ${product.barcode}',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: sub,
-                      fontFamily: 'monospace')),
-            ],
 
             // Açıklama
             if (product.description != null &&
@@ -223,6 +233,7 @@ class ProductDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
           ],
         ),
+      ),
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,

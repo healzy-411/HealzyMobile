@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../services/auth_service.dart';
 import 'email_verify_page.dart';
@@ -7,7 +8,8 @@ import 'pharmacy_panel_home_page.dart';
 import 'home_care_provider_panel_home_page.dart';
 import 'home_care_provider_register_page.dart';
 import '../services/token_store.dart';
-import 'dart:ui'; // Cam efekti için gerekli
+import 'dart:ui';
+import '../theme/app_colors.dart';
 
 class AuthPage extends StatefulWidget {
   final AuthService authService;
@@ -24,21 +26,22 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin {
-  // --- SENİN TEMA RENKLERİN ---
-  static const Color pearl = Color.fromARGB(255, 255, 255, 255);
-  static const Color midnight = Color(0xFF102E4A);
-
   late final TabController _tabController;
   bool loading = false;
+  bool _rememberMe = false;
 
-  // Controllers (Arkadaşının eklediği _regPhoneNumber dahil)
+  // ScrollController'lar — Scrollbar için ayrı controller lazım
+  final _loginScrollController = ScrollController();
+  final _registerScrollController = ScrollController();
+
+  // Controllers
   final _loginEmail = TextEditingController();
   final _loginPassword = TextEditingController();
   final _regFirstName = TextEditingController();
   final _regLastName = TextEditingController();
   final _regEmail = TextEditingController();
   final _regNationalId = TextEditingController();
-  final _regPhoneNumber = TextEditingController(); 
+  final _regPhoneNumber = TextEditingController();
   final _regPassword = TextEditingController();
   final _regPasswordConfirm = TextEditingController();
 
@@ -56,6 +59,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   @override
   void dispose() {
     _tabController.dispose();
+    _loginScrollController.dispose();
+    _registerScrollController.dispose();
     _loginEmail.dispose();
     _loginPassword.dispose();
     _regFirstName.dispose();
@@ -78,11 +83,11 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   String? _phoneValidate(String? v) {
     if (v == null || v.trim().isEmpty) return "Zorunlu alan";
     final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
-    if (!RegExp(r'^5\d{9}$').hasMatch(digits)) return "5 ile başlayan 10 haneli numara girin";
+    if (!RegExp(r'^0\d{10}$').hasMatch(digits)) return "0 ile başlayan 11 haneli numara girin";
     return null;
   }
 
-  // --- AUTH LOGIC (Arkadaşının güncel mantığı) ---
+  // --- AUTH LOGIC ---
   Future<void> _handleAuth({required bool isLogin}) async {
     setState(() => _error = null);
     final formOk = isLogin ? _loginFormKey.currentState!.validate() : _regFormKey.currentState!.validate();
@@ -91,7 +96,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
     try {
       if (isLogin) {
-        final result = await widget.authService.login(email: _loginEmail.text.trim(), password: _loginPassword.text);
+        final result = await widget.authService.login(email: _loginEmail.text.trim(), password: _loginPassword.text, rememberMe: _rememberMe);
         final token = (result["accessToken"] ?? result["token"])?.toString();
         if (token == null || token.isEmpty) throw Exception("Giriş yapılamadı. Lütfen tekrar deneyin.");
         await TokenStore.set(token);
@@ -127,34 +132,43 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final headerColor = isDark ? AppColors.darkBg : AppColors.midnight;
+
+    final bodyGradient = isDark
+        ? const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [AppColors.darkSurface, AppColors.darkBg])
+        : const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [AppColors.pearl, AppColors.lightBlueSoft, Color(0xFFB8D8EB)]);
+
+    final joinColor = isDark ? AppColors.darkBg : AppColors.midnight;
+
+    final tabLabelColor = isDark ? AppColors.darkTextPrimary : AppColors.pearl;
+    final tabUnselected = isDark ? AppColors.darkTextTertiary : AppColors.pearl.withValues(alpha: 0.5);
+
     return Scaffold(
-      backgroundColor: pearl,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.pearl,
       body: Column(
         children: [
-          // Üst Midnight Alanı (Tasarımını Geri Getirdik)
+          // Üst Header
           Container(
             height: MediaQuery.of(context).size.height * 0.28,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [midnight, Color(0xFF1B4965)],
-              ),
-              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(60)),
+            decoration: BoxDecoration(
+              color: headerColor,
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(60)),
             ),
             child: SafeArea(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("HEALZY", style: TextStyle(color: pearl, fontSize: 38, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  Text("HEALZY", style: TextStyle(color: tabLabelColor, fontSize: 38, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                   const SizedBox(height: 15),
                   TabBar(
                     controller: _tabController,
-                    indicatorColor: pearl,
+                    indicatorColor: tabLabelColor,
                     indicatorWeight: 3,
-                    labelColor: pearl,
-                    unselectedLabelColor: pearl.withOpacity(0.5),
+                    labelColor: tabLabelColor,
+                    unselectedLabelColor: tabUnselected,
                     dividerColor: Colors.transparent,
                     labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     tabs: const [Tab(text: "Giriş Yap"), Tab(text: "Kayıt Ol")],
@@ -163,24 +177,20 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
               ),
             ),
           ),
-          // Alt Pearl Alanı (Kavisli Beyaz Panel)
+          // Alt Form Alanı
           Expanded(
             child: Container(
-              color: const Color(0xFF1B4965),
+              color: joinColor,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [pearl, Color.fromARGB(255, 255, 248, 232)],
-                  ),
+                  gradient: bodyGradient,
                   borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: TabBarView(
                     controller: _tabController,
-                    children: [_buildLoginForm(), _buildRegisterForm()],
+                    children: [_buildLoginForm(isDark), _buildRegisterForm(isDark)],
                   ),
                 ),
               ),
@@ -191,70 +201,108 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(bool isDark) {
     return Form(
       key: _loginFormKey,
       child: ListView(
+        controller: _loginScrollController,
         padding: const EdgeInsets.only(top: 40),
         children: [
-          _buildInput(_loginEmail, "Email", Icons.email, validator: _emailValidate),
+          _buildInput(_loginEmail, "Email", Icons.email, isDark: isDark, validator: _emailValidate),
           const SizedBox(height: 15),
-          _buildInput(_loginPassword, "Şifre", Icons.lock, obscure: true, validator: _req),
-          const SizedBox(height: 30),
-          _buildMainButton("Giriş Yap", () => _handleAuth(isLogin: true)),
-          if (_error != null) _debugArea(),
+          _buildInput(_loginPassword, "Şifre", Icons.lock, isDark: isDark, obscure: true, validator: _req),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: _rememberMe,
+                  onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                  activeColor: isDark ? AppColors.pearl : AppColors.midnight,
+                  checkColor: isDark ? AppColors.midnight : AppColors.pearl,
+                  side: BorderSide(color: isDark ? AppColors.pearl.withValues(alpha: 0.5) : AppColors.midnight.withValues(alpha: 0.4)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text("Beni Hatırla", style: TextStyle(color: isDark ? AppColors.pearl : AppColors.midnight, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildMainButton("Giriş Yap", () => _handleAuth(isLogin: true), isDark: isDark),
+          if (_error != null) _debugArea(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildRegisterForm() {
-    return Scrollbar(
-      thumbVisibility: true,
-      thickness: 6,
-      radius: const Radius.circular(10),
-      child: ListView(
-        padding: const EdgeInsets.only(top: 25, bottom: 50),
-        children: [
-          _buildInput(_regFirstName, "Ad", Icons.person, validator: _req),
+  Widget _buildRegisterForm(bool isDark) {
+    return Form(
+      key: _regFormKey,
+      child: Scrollbar(
+        controller: _registerScrollController,
+        thumbVisibility: true,
+        thickness: 6,
+        radius: const Radius.circular(10),
+        child: ListView(
+          controller: _registerScrollController,
+          padding: const EdgeInsets.only(top: 25, bottom: 50),
+          children: [
+          _buildInput(_regFirstName, "Ad", Icons.person, isDark: isDark, validator: _req),
           const SizedBox(height: 12),
-          _buildInput(_regLastName, "Soyad", Icons.person_outline, validator: _req),
+          _buildInput(_regLastName, "Soyad", Icons.person_outline, isDark: isDark, validator: _req),
           const SizedBox(height: 12),
-          _buildInput(_regEmail, "Email", Icons.email_outlined, validator: _emailValidate),
+          _buildInput(_regEmail, "Email", Icons.email_outlined, isDark: isDark, validator: _emailValidate),
           const SizedBox(height: 12),
-          _buildInput(_regNationalId, "TC Kimlik No", Icons.badge, isNum: true, validator: (v) => (v?.length != 11) ? "11 haneli olmalı" : null),
+          _buildInput(_regNationalId, "TC Kimlik No", Icons.badge, isDark: isDark, isNum: true, maxLength: 11, validator: (v) {
+            if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+            final tc = v.trim();
+            if (tc.length != 11) return "11 haneli olmalı";
+            if (!RegExp(r'^\d{11}$').hasMatch(tc)) return "Sadece rakam giriniz";
+            if (tc.startsWith('0')) return "TC kimlik no 0 ile başlayamaz";
+            final lastDigit = int.parse(tc[10]);
+            if (lastDigit % 2 != 0) return "TC kimlik no çift sayı ile bitmeli";
+            return null;
+          }),
           const SizedBox(height: 12),
-          _buildInput(_regPhoneNumber, "Telefon (5xx...)", Icons.phone, isNum: true, validator: _phoneValidate),
+          _buildInput(_regPhoneNumber, "Telefon (0xxx xxx xx xx)", Icons.phone, isDark: isDark, isNum: true, maxLength: 11, validator: _phoneValidate),
           const SizedBox(height: 12),
-          _buildInput(_regPassword, "Şifre", Icons.vpn_key, obscure: true, validator: _req),
+          _buildInput(_regPassword, "Şifre", Icons.vpn_key, isDark: isDark, obscure: true, validator: _req),
           const SizedBox(height: 12),
-          _buildInput(_regPasswordConfirm, "Şifre (Tekrar)", Icons.vpn_key_outlined, obscure: true, validator: (v) {
+          _buildInput(_regPasswordConfirm, "Şifre (Tekrar)", Icons.vpn_key_outlined, isDark: isDark, obscure: true, validator: (v) {
             if (v == null || v.isEmpty) return "Zorunlu alan";
             if (v != _regPassword.text) return "Şifreler eşleşmiyor";
             return null;
           }),
           const SizedBox(height: 30),
-          _buildMainButton("Kayıt Ol", () => _handleAuth(isLogin: false)),
+          _buildMainButton("Kayıt Ol", () => _handleAuth(isLogin: false), isDark: isDark),
           const SizedBox(height: 20),
           _buildSmallButton("Eczacı Olarak Kaydol", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => PharmacistRegisterPage(authService: widget.authService)));
-          }),
+          }, isDark: isDark),
           _buildSmallButton("Serum Sağlayıcı Olarak Kaydol", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => HomeCareProviderRegisterPage(authService: widget.authService)));
-          }),
-          if (_error != null) _debugArea(),
+          }, isDark: isDark),
+          if (_error != null) _debugArea(isDark),
         ],
+        ),
       ),
     );
   }
 
-  // --- TASARIMIN KALBİ: CUSTOM INPUT ---
-  Widget _buildInput(TextEditingController controller, String label, IconData icon, {bool obscure = false, bool isNum = false, String? Function(String?)? validator}) {
+  Widget _buildInput(TextEditingController controller, String label, IconData icon, {required bool isDark, bool obscure = false, bool isNum = false, int? maxLength, String? Function(String?)? validator}) {
+    final fieldBg = isDark ? AppColors.darkSurface.withValues(alpha: 0.8) : Colors.white;
+    final fieldBorder = isDark ? AppColors.darkBorder.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1);
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final hintColor = isDark ? AppColors.darkTextTertiary : AppColors.midnight.withValues(alpha: 0.4);
+    final iconColor = isDark ? AppColors.darkTextSecondary : AppColors.midnight.withValues(alpha: 0.7);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: fieldBg,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: midnight.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: (isDark ? Colors.black : AppColors.midnight).withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
@@ -262,21 +310,28 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: fieldBg.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+              border: Border.all(color: fieldBorder, width: 1.5),
             ),
             child: TextFormField(
               controller: controller,
               obscureText: obscure,
-              style: const TextStyle(fontSize: 15, color: midnight),
+              style: TextStyle(fontSize: 15, color: textColor),
               keyboardType: isNum ? TextInputType.number : TextInputType.emailAddress,
+              maxLength: maxLength,
+              inputFormatters: [
+                if (isNum) FilteringTextInputFormatter.digitsOnly,
+                if (isNum) FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+              ],
               decoration: InputDecoration(
                 hintText: label,
-                hintStyle: TextStyle(color: midnight.withOpacity(0.4), fontSize: 16),
-                prefixIcon: Icon(icon, color: midnight.withOpacity(0.7), size: 22),
+                hintStyle: TextStyle(color: hintColor, fontSize: 16),
+                prefixIcon: Icon(icon, color: iconColor, size: 22),
                 contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 border: InputBorder.none,
+                counterText: '',
               ),
               validator: validator,
             ),
@@ -286,44 +341,53 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildMainButton(String text, VoidCallback onPressed) {
+  Widget _buildMainButton(String text, VoidCallback onPressed, {required bool isDark}) {
+    final btnGradient = isDark
+        ? const LinearGradient(colors: [AppColors.darkSurfaceElevated, AppColors.darkSurface])
+        : const LinearGradient(colors: [AppColors.midnight, AppColors.midnightSoft]);
+    final btnTextColor = isDark ? AppColors.darkTextPrimary : AppColors.pearl;
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.3) : AppColors.midnight.withValues(alpha: 0.3);
+
     return Container(
       width: double.infinity,
       height: 55,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [midnight, Color(0xFF1B4965)]),
+        gradient: btnGradient,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: midnight.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: shadowColor, blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
         onPressed: loading ? null : onPressed,
-        child: Text(loading ? "Lütfen Bekleyin..." : text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: pearl)),
+        child: Text(loading ? "Lütfen Bekleyin..." : text, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: btnTextColor)),
       ),
     );
   }
 
-  Widget _buildSmallButton(String text, VoidCallback onPressed) {
+  Widget _buildSmallButton(String text, VoidCallback onPressed, {required bool isDark}) {
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.midnight;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: midnight, width: 1),
+          side: BorderSide(color: borderColor, width: 1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
-        child: Text(text, style: const TextStyle(color: midnight, fontSize: 16, fontWeight: FontWeight.w600)),
+        child: Text(text, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
-  Widget _debugArea() {
+  Widget _debugArea(bool isDark) {
     return Container(
       margin: const EdgeInsets.only(top: 20),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-      child: Text(_error ?? "", style: const TextStyle(color: Colors.red, fontSize: 14)),
+      decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+      child: Text(_error ?? "", style: const TextStyle(color: AppColors.error, fontSize: 14)),
     );
   }
 }

@@ -133,6 +133,74 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
     return allPharmacies.map((e) => e.district).toSet().toList()..sort();
   }
 
+  void _showDistrictSearchSheet() {
+    final districts = _getDistricts();
+    final searchCtrl = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF132B44) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final query = searchCtrl.text.toLowerCase();
+            final filtered = query.isEmpty
+                ? districts
+                : districts.where((d) => d.toLowerCase().contains(query)).toList();
+
+            return SizedBox(
+              height: MediaQuery.of(ctx).size.height * 0.5,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: searchCtrl,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: "İlçe ara...",
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (_) => setSheetState(() {}),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final d = filtered[i];
+                        final isSelected = d == selectedDistrict;
+                        return ListTile(
+                          title: Text(d),
+                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF102E4A)) : null,
+                          onTap: () {
+                            setState(() {
+                              selectedDistrict = d;
+                              _applyDistrictFilter();
+                            });
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   // ================= MESAFE HESAPLAMA =================
   double? _distanceKm(DutyPharmacyModel p) {
     if (_currentPos == null || p.latitude == null || p.longitude == null) {
@@ -206,11 +274,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgGradient = isDark
         ? AppColors.darkGradient
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.pearlWarm, AppColors.pearl],
-          );
+        : AppColors.lightPageGradient;
 
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
@@ -292,31 +356,33 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                           final fg = isDark
                               ? Colors.white
                               : const Color(0xFF102E4A);
-                          return DropdownButtonFormField<String>(
-                            value: selectedDistrict,
-                            hint: Text("İlçe seç",
-                                style: TextStyle(
-                                    color: fg.withValues(alpha: 0.6))),
-                            dropdownColor: isDark
-                                ? const Color(0xFF132B44)
-                                : Colors.white,
-                            style: TextStyle(color: fg),
-                            iconEnabledColor: fg,
-                            items: _getDistricts()
-                                .map(
-                                  (d) => DropdownMenuItem(
-                                    value: d,
-                                    child: Text(d,
-                                        style: TextStyle(color: fg)),
+                          return InkWell(
+                            onTap: () => _showDistrictSearchSheet(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.darkSurface
+                                    : AppColors.lightBlueSoft.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: fg.withValues(alpha: 0.15)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      selectedDistrict ?? "İlçe seç",
+                                      style: TextStyle(
+                                        color: selectedDistrict != null ? fg : fg.withValues(alpha: 0.6),
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                   ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                selectedDistrict = val;
-                                _applyDistrictFilter();
-                              });
-                            },
+                                  Icon(Icons.arrow_drop_down, color: fg),
+                                ],
+                              ),
+                            ),
                           );
                         }),
                       ),
@@ -402,7 +468,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
         isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     final bodyColor =
         isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
-    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightBlueSoft.withValues(alpha: 0.6);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -413,7 +479,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
         border: Border.all(
           color: isDark
               ? AppColors.darkBorder
-              : AppColors.border.withValues(alpha: 0.6),
+              : AppColors.midnight.withValues(alpha: 0.1),
         ),
         boxShadow: AppShadows.soft(isDark),
       ),
@@ -540,7 +606,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                       Icon(Icons.verified, size: 14, color: Colors.white),
                       SizedBox(width: 4),
                       Text(
-                        "Kayitli Eczane",
+                        "Kayıtlı Eczane",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/home_care_panel_api_service.dart';
 import '../services/token_store.dart';
+import '../theme/app_colors.dart';
 import '../services/notification_api_service.dart';
 import '../services/local_notification_service.dart';
 import 'home_care_provider_requests_page.dart';
 import 'home_care_provider_profile_page.dart';
+import 'home_page.dart';
 import 'notifications_page.dart';
 import 'auth_page.dart';
 import '../services/auth_service.dart';
@@ -188,7 +190,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
       MaterialPageRoute(
         builder: (_) => AuthPage(
           authService: AuthService(baseUrl: ApiConfig.baseUrl),
-          customerHome: const SizedBox(),
+          customerHome: const HomePage(),
         ),
       ),
       (route) => false,
@@ -200,8 +202,8 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     return Scaffold(
       appBar: AppBar(
         title: const Text("Serum Saglayici Paneli"),
-        backgroundColor: const Color(0xFF102E4A),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary(context),
+        foregroundColor: AppColors.primaryFg(context),
         actions: [
           Stack(
             children: [
@@ -238,11 +240,13 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
-            tooltip: "Cikis Yap",
+            tooltip: "Çıkış Yap",
           ),
         ],
       ),
-      body: _loading
+      body: Container(
+        decoration: AppColors.pageDecoration(context),
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
@@ -256,6 +260,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                   ),
                 )
               : _buildContent(),
+      ),
     );
   }
 
@@ -281,7 +286,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
           Card(
             child: ListTile(
               leading: const CircleAvatar(
-                backgroundColor: Color(0xFF102E4A),
+                backgroundColor: AppColors.midnight,
                 child: Icon(Icons.medical_services, color: Colors.white),
               ),
               title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -321,7 +326,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                 "$todayRequests",
                 "Bugun",
                 Icons.today,
-                const Color(0xFF102E4A),
+                AppColors.midnight,
               ),
             ],
           ),
@@ -361,7 +366,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
               _menuCard(
                 icon: Icons.receipt_long,
                 label: "Talepler",
-                color: const Color(0xFF102E4A),
+                color: AppColors.midnight,
                 badge: pendingRequests > 0 ? "$pendingRequests" : null,
                 onTap: () => Navigator.push(
                   context,
@@ -394,7 +399,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                 _menuCard(
                   icon: Icons.receipt_long,
                   label: "Talepler",
-                  color: const Color(0xFF102E4A),
+                  color: AppColors.midnight,
                   badge: pendingRequests > 0 ? "$pendingRequests" : null,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeCareProviderRequestsPage())),
                 ),
@@ -690,7 +695,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
                             padding: const EdgeInsets.only(bottom: 12),
                             child: TextField(
                               controller: e.value,
-                              maxLength: maxLengths[e.key] as int?,
+                              maxLength: maxLengths[e.key],
                               maxLines: e.key == 'description' ? 3 : 1,
                               keyboardType: (e.key == 'phone' || e.key == 'providerPhone') ? TextInputType.phone : TextInputType.text,
                               decoration: InputDecoration(

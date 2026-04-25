@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/home_care_panel_api_service.dart';
 import '../Models/home_care_models.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class HomeCareProviderRequestsPage extends StatefulWidget {
@@ -120,7 +121,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
     return Scaffold(
       appBar: AppBar(
         title: const Text("Talepler"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,

@@ -27,6 +27,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   List<NotificationModel> _notifications = [];
   bool _loading = true;
+  // ignore: unused_field
   String? _userRole;
 
   @override
@@ -182,23 +183,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgGradient = isDark
         ? AppColors.darkGradient
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.pearlWarm, AppColors.pearl],
-          );
+        : AppColors.lightPageGradient;
     final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
     final subColor =
         isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightBlueSoft.withValues(alpha: 0.6);
     final unreadBg = isDark
         ? AppColors.midnightSoft.withValues(alpha: 0.35)
-        : AppColors.pearlWarm;
+        : AppColors.lightBlueSoft.withValues(alpha: 0.5);
 
     return Scaffold(
       bottomNavigationBar:
           const HealzyBottomNav(current: HealzyNavTab.notifications),
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text("Bildirimler"),
         actions: [
@@ -239,8 +235,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: ListView.separated(
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+                      padding: const EdgeInsets.only(
+                        top: 4,
                         left: 16,
                         right: 16,
                         bottom: 24,

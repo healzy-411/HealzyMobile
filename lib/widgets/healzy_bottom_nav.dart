@@ -55,19 +55,23 @@ class HealzyBottomNav extends StatelessWidget {
     final active = isDark ? AppColors.pearl : AppColors.midnight;
 
     const double barHeight = 72;
-    const double mapSize = 52;
+    const double mapSize = 70;
+    final double mapOverflow = (mapSize - barHeight) / 2 + 8;
 
     return SafeArea(
       top: false,
       child: SizedBox(
         height: barHeight,
-        child: ClipRect(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
               decoration: BoxDecoration(
-                color: (isDark ? AppColors.darkSurface : AppColors.pearl)
-                    .withValues(alpha: 0.55),
+                color: (isDark ? AppColors.darkSurface : AppColors.lightBlueSoft)
+                    .withValues(alpha: 0.75),
                 border: Border(
                   top: BorderSide(
                     color: border.withValues(alpha: 0.3),
@@ -95,16 +99,7 @@ class HealzyBottomNav extends StatelessWidget {
                     inactiveColor: inactive,
                     onTap: () => _go(context, HealzyNavTab.reminder),
                   ),
-                  Expanded(
-                    child: Center(
-                      child: _MapButton(
-                        size: mapSize,
-                        selected: current == HealzyNavTab.map,
-                        isDark: isDark,
-                        onTap: () => _go(context, HealzyNavTab.map),
-                      ),
-                    ),
-                  ),
+                  const Expanded(child: SizedBox()),
                   _NavItem(
                     icon: Icons.notifications_outlined,
                     activeIcon: Icons.notifications_rounded,
@@ -127,6 +122,22 @@ class HealzyBottomNav extends StatelessWidget {
               ),
             ),
           ),
+          ),
+            // Map button — taşan
+            Positioned(
+              top: -mapOverflow,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _MapButton(
+                  size: mapSize,
+                  selected: current == HealzyNavTab.map,
+                  isDark: isDark,
+                  onTap: () => _go(context, HealzyNavTab.map),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -182,7 +193,6 @@ class _MapButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = isDark ? AppColors.pearl : AppColors.midnight;
-    final fg = isDark ? AppColors.midnight : AppColors.pearl;
 
     return GestureDetector(
       onTap: onTap,
@@ -191,12 +201,9 @@ class _MapButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [AppColors.pearl, const Color(0xFFD4EAF7)]
-                : [AppColors.midnight, AppColors.midnightSoft],
+          border: Border.all(
+            color: accent.withValues(alpha: selected ? 0.8 : 0.3),
+            width: selected ? 3 : 2,
           ),
           boxShadow: [
             BoxShadow(
@@ -207,29 +214,13 @@ class _MapButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              top: size * 0.18,
-              child: Icon(
-                Icons.location_on_rounded,
-                size: size * 0.38,
-                color: fg.withValues(alpha: 0.9),
-              ),
-            ),
-            Positioned(
-              bottom: size * 0.22,
-              child: Container(
-                width: size * 0.16,
-                height: size * 0.06,
-                decoration: BoxDecoration(
-                  color: fg.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ],
+        child: ClipOval(
+          child: Image.asset(
+            'assets/images/map-icon.jpg',
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );

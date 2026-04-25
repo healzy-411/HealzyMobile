@@ -107,9 +107,18 @@ class _BentoTileState extends State<BentoTile> {
                 decoration: BoxDecoration(
                   color: widget.featured
                       ? bg
-                      : (isDark ? AppColors.darkSurface : AppColors.pearl)
-                          .withValues(alpha: 0.35),
+                      : (isDark ? AppColors.darkSurface : AppColors.lightBlueSoft)
+                          .withValues(alpha: 0.45),
                   gradient: gradient,
+                  border: widget.featured
+                      ? null
+                      : Border.all(
+                          color: isDark
+                              ? AppColors.darkBorder.withValues(alpha: 0.4)
+                              : AppColors.midnight.withValues(alpha: 0.15),
+                          width: 1.2,
+                        ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
           child: Stack(
             children: [

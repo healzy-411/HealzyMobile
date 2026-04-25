@@ -4,6 +4,7 @@ import '../Models/order_model.dart';
 import '../services/order_api_service.dart';
 import 'order_detail_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class OrdersHistoryPage extends StatefulWidget {
   final String baseUrl;
@@ -48,13 +49,19 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: const Text("Geçmiş Siparişlerim"),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
           child: _loading
@@ -214,6 +221,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                           },
                         ),
         ),
+      ),
       ),
     );
   }

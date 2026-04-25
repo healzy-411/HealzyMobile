@@ -43,7 +43,7 @@ class AppColors {
   static const LinearGradient pearlGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [pearl, pearlWarm],
+    colors: [pearl, lightBlueSoft],
   );
 
   static const LinearGradient accentGradient = LinearGradient(
@@ -57,4 +57,47 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [darkBg, Color(0xFF0F2237)],
   );
+
+  // Light mode sayfa arka plan gradient (geçişli mavi)
+  static const Color lightBlueSoft = Color(0xFFD4EAF7);
+  static const LinearGradient lightPageGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [pearl, lightBlueSoft, Color(0xFFB8D8EB)],
+  );
+
+  static const LinearGradient darkPageGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [darkBg, darkSurface, darkSurfaceElevated],
+  );
+
+  // Context-aware helper'lar (panel ekranları için)
+  static Color primary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkSurfaceElevated : midnight;
+
+  static Color primaryFg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkTextPrimary : pearl;
+
+  static Color cardBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkSurface.withValues(alpha: 0.85)
+          : pearl.withValues(alpha: 0.9);
+
+  static Color cardBorder(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withValues(alpha: 0.12)
+          : border;
+
+  static Color fg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkTextPrimary : midnight;
+
+  static Color sub(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkTextSecondary : textSecondary;
+
+  static BoxDecoration pageDecoration(BuildContext context) =>
+      BoxDecoration(
+        gradient: Theme.of(context).brightness == Brightness.dark ? null : lightPageGradient,
+        color: Theme.of(context).brightness == Brightness.dark ? darkBg : null,
+      );
 }

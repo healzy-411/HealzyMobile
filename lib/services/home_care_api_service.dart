@@ -78,6 +78,20 @@ class HomeCareApiService {
     return [];
   }
 
+  /// Slot availability: kapasite ve doluluk bilgisi
+  Future<List<Map<String, dynamic>>> getSlotAvailability(int providerId, String date) async {
+    final uri = Uri.parse('$baseUrl/api/home-care/requests/providers/$providerId/slot-availability?date=$date');
+    final res = await http.get(uri, headers: _authHeaders());
+    await _check401(res);
+    if (_ok(res.statusCode)) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is List) {
+        return decoded.cast<Map<String, dynamic>>();
+      }
+    }
+    return [];
+  }
+
   Future<HomeCareRequestModel> createRequest({
     required int providerId,
     required int addressId,

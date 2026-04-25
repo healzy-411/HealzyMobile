@@ -98,7 +98,7 @@ class AddressDto {
       "$city/$district",
       neighborhood,
     ]
-        .where((x) => x != null && x!.trim().isNotEmpty)
+        .where((x) => x != null && x.trim().isNotEmpty)
         .map((x) => x!.trim())
         .toList();
 

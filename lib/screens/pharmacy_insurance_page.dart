@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyInsurancePage extends StatefulWidget {
@@ -160,7 +161,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Sigorta Yonetimi"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton.extended(

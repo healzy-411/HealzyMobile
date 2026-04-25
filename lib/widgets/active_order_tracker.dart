@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../Models/order_model.dart';
 import '../screens/order_detail_page.dart';
+import '../theme/app_colors.dart';
 
 class ActiveOrderTracker extends StatefulWidget {
   final List<OrderDto> activeOrders;
@@ -116,12 +117,11 @@ class AnimatedBuilder extends StatelessWidget {
     final statusInfo = _getStatusInfo(order.status);
     final estimate = _estimateDelivery(order, userLat, userLng);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
 
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
-      color: bg,
+      color: statusInfo.color.withValues(alpha: 0.35),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -129,7 +129,9 @@ class AnimatedBuilder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: statusInfo.color.withValues(alpha: 0.1),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: expanded
                   ? const BorderRadius.vertical(top: Radius.circular(16))
                   : BorderRadius.circular(16),
@@ -210,7 +212,13 @@ class AnimatedBuilder extends StatelessWidget {
           // Expandable content
           SizeTransition(
             sizeFactor: animation,
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.85),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              ),
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Column(
                 children: [
@@ -309,12 +317,12 @@ class AnimatedBuilder extends StatelessWidget {
                       if (onDismiss != null) const SizedBox(width: 12),
                       GestureDetector(
                         onTap: onDetailTap,
-                        child: const Text(
+                        child: Text(
                           "Detay >",
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue,
+                            color: isDark ? Colors.white : Colors.blue,
                           ),
                         ),
                       ),
@@ -329,19 +337,67 @@ class AnimatedBuilder extends StatelessWidget {
     );
   }
 
+  // Asset image paths for custom icons (null = use Flutter icon)
+  static const _stepAssets = <int, String>{
+    0: 'assets/images/alindi.jpg',       // Pending - Alındı
+    1: 'assets/images/hazirlaniyor.jpg', // Preparing
+    2: 'assets/images/hazirlandi.jpg',   // Ready
+    3: 'assets/images/yolda.jpg',        // Dispatched
+    4: 'assets/images/teslimedildi.png', // Delivered
+  };
+
+  static const _stepIconSizes = <int, double>{
+    0: 32, // Alindi
+    1: 32, // Hazirlaniyor - biraz küçük
+    2: 32, // Hazirlandi
+    3: 32, // Yolda
+    4: 32, // Teslim Edildi
+  };
+
+  static const _stepPulseIconSizes = <int, double>{
+    0: 34, // Alindi
+    1: 34, // Hazirlaniyor - biraz küçük
+    2: 34, // Hazirlandi
+    3: 34, // Yolda
+    4: 34, // Teslim Edildi
+  };
+
+  static const _stepFallbackIcons = <int, IconData>{
+    0: Icons.receipt_long_rounded,  // Pending
+  };
+
+  static const _fallbackIconSizes = <int, double>{
+    0: 22, // Pending - normal
+  };
+  static const _fallbackPulseIconSizes = <int, double>{
+    0: 24, // Pending - pulse
+  };
+
+  Widget _buildStepIcon(int stepIndex, bool done, Color doneColor, Color idleColor) {
+    final asset = _stepAssets[stepIndex];
+    if (asset != null) {
+      return ClipOval(
+        child: ColorFiltered(
+          colorFilter: done
+              ? ColorFilter.mode(doneColor.withValues(alpha: 0.15), BlendMode.srcATop)
+              : ColorFilter.mode(idleColor.withValues(alpha: 0.3), BlendMode.srcATop),
+          child: Image.asset(asset, width: 22, height: 22, fit: BoxFit.contain),
+        ),
+      );
+    }
+    return Icon(
+      done ? Icons.check_rounded : (_stepFallbackIcons[stepIndex] ?? Icons.circle),
+      size: 16,
+      color: Colors.white,
+    );
+  }
+
   Widget _buildProgressBar(String status) {
     final steps = ["Pending", "Preparing", "Ready", "Dispatched", "Delivered"];
-    final labels = ["Alındı", "Hazırlanıyor", "Hazır", "Yolda", "Teslim"];
-    final icons = [
-      Icons.receipt_long,
-      Icons.local_pharmacy,
-      Icons.check_circle_outline,
-      Icons.delivery_dining,
-      Icons.home_outlined,
-    ];
+    final labels = ["Siparis\nAlindi", "Hazirlaniyor", "Hazirlandi", "Yolda", "Teslim\nEdildi"];
     final currentIndex = steps.indexOf(status).clamp(0, steps.length - 1);
-    const Color doneColor = Color(0xFF00B894);
-    final Color idleColor = Colors.grey.shade400;
+    const Color doneColor = AppColors.midnight;
+    final Color idleColor = Colors.grey.shade300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,7 +408,9 @@ class AnimatedBuilder extends StatelessWidget {
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 18),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
                 height: 4,
                 decoration: BoxDecoration(
                   color: active ? doneColor : idleColor,
@@ -366,39 +424,46 @@ class AnimatedBuilder extends StatelessWidget {
         final stepIndex = i ~/ 2;
         final done = stepIndex <= currentIndex;
         final isCurrent = stepIndex == currentIndex;
+        final hasAsset = _stepAssets.containsKey(stepIndex);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: isCurrent ? 40 : 34,
-              height: isCurrent ? 40 : 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: done ? doneColor : idleColor,
-                border: isCurrent
-                    ? Border.all(
-                        color: doneColor.withValues(alpha: 0.35), width: 4)
-                    : null,
-                boxShadow: isCurrent
-                    ? [
-                        BoxShadow(
-                          color: doneColor.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Icon(
-                icons[stepIndex],
-                size: isCurrent ? 20 : 16,
-                color: Colors.white,
-              ),
-            ),
+            isCurrent
+                ? _PulseImageIcon(
+                    stepIndex: stepIndex,
+                    color: doneColor,
+                  )
+                : AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOut,
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: done ? doneColor : idleColor,
+                    ),
+                    child: Center(
+                      child: hasAsset
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(17),
+                              child: Image.asset(
+                                _stepAssets[stepIndex]!,
+                                width: _stepIconSizes[stepIndex] ?? 32,
+                                height: _stepIconSizes[stepIndex] ?? 32,
+                                fit: BoxFit.contain,
+                              ),
+                            )
+                          : Icon(
+                              done ? Icons.check_rounded : (_stepFallbackIcons[stepIndex] ?? Icons.circle),
+                              size: _fallbackIconSizes[stepIndex] ?? 16,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
             const SizedBox(height: 6),
             SizedBox(
-              width: 54,
+              width: 58,
               child: Text(
                 labels[stepIndex],
                 textAlign: TextAlign.center,
@@ -406,6 +471,7 @@ class AnimatedBuilder extends StatelessWidget {
                   fontSize: 14,
                   color: done ? doneColor : idleColor,
                   fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                  height: 1.2,
                 ),
               ),
             ),
@@ -510,3 +576,93 @@ double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
 }
 
 double _toRad(double deg) => deg * pi / 180;
+
+class _PulseImageIcon extends StatefulWidget {
+  final int stepIndex;
+  final Color color;
+
+  const _PulseImageIcon({required this.stepIndex, required this.color});
+
+  @override
+  State<_PulseImageIcon> createState() => _PulseImageIconState();
+}
+
+class _PulseImageIconState extends State<_PulseImageIcon> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  static const _assets = AnimatedBuilder._stepAssets;
+  static const _fallbackIcons = AnimatedBuilder._stepFallbackIcons;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+    _scale = Tween<double>(begin: 1.0, end: 1.15).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _opacity = Tween<double>(begin: 0.4, end: 0.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = _assets[widget.stepIndex];
+    final hasAsset = asset != null;
+
+    return ListenableBuilder(
+      listenable: _ctrl,
+      builder: (context, child) {
+        return SizedBox(
+          width: 48,
+          height: 48,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Pulse ring
+              Transform.scale(
+                scale: _scale.value * 1.3,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: widget.color.withValues(alpha: _opacity.value), width: 3),
+                  ),
+                ),
+              ),
+              // Icon circle
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.color,
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: hasAsset
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(asset!, width: AnimatedBuilder._stepPulseIconSizes[widget.stepIndex] ?? 34, height: AnimatedBuilder._stepPulseIconSizes[widget.stepIndex] ?? 34, fit: BoxFit.contain),
+                        )
+                      : Icon(_fallbackIcons[widget.stepIndex] ?? Icons.circle, size: AnimatedBuilder._fallbackPulseIconSizes[widget.stepIndex] ?? 20, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

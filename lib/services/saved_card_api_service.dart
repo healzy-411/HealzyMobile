@@ -84,17 +84,22 @@ class SavedCardApiService {
     required int expiryMonth,
     required int expiryYear,
     bool isDefault = false,
+    String? cardNumber,
   }) async {
+    final body = <String, dynamic>{
+      'cardName': cardName,
+      'cardholderName': cardholderName,
+      'expiryMonth': expiryMonth,
+      'expiryYear': expiryYear,
+      'isDefault': isDefault,
+    };
+    if (cardNumber != null && cardNumber.isNotEmpty) {
+      body['cardNumber'] = cardNumber;
+    }
     final res = await http.put(
       Uri.parse('$baseUrl/api/saved-cards/$id'),
       headers: _headers(),
-      body: jsonEncode({
-        'cardName': cardName,
-        'cardholderName': cardholderName,
-        'expiryMonth': expiryMonth,
-        'expiryYear': expiryYear,
-        'isDefault': isDefault,
-      }),
+      body: jsonEncode(body),
     );
     await _check401(res);
     if (_isSuccess(res.statusCode)) {

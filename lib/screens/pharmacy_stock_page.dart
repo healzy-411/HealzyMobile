@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/pharmacy_panel_api_service.dart';
+import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyStockPage extends StatefulWidget {
@@ -87,7 +88,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Stok Yonetimi"),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -98,7 +99,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddStockDialog(),
-        backgroundColor: const Color(0xFF102E4A),
+        backgroundColor: AppColors.midnight,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text("Urun Ekle", style: TextStyle(color: Colors.white)),
       ),
@@ -136,10 +137,10 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Row(
         children: [
-          _miniCard("Urun", "$_totalProducts", Icons.medication, Colors.blue),
+          _miniCard("Ürün", "$_totalProducts", Icons.medication, Colors.blue),
           const SizedBox(width: 8),
           _miniCard(
-              "Toplam Stok", "$_totalQuantity", Icons.inventory, const Color(0xFF102E4A)),
+              "Toplam Stok", "$_totalQuantity", Icons.inventory, AppColors.midnight),
           const SizedBox(width: 8),
           _miniCard("Dusuk Stok", "$_lowStockCount", Icons.warning_amber,
               Colors.orange),
@@ -271,7 +272,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                                 color: Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text("Receteli",
+                              child: const Text("Reçeteli",
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.red)),
                             ),
@@ -291,7 +292,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   decoration: BoxDecoration(
                     color: isLowStock
                         ? Colors.red.shade50
-                        : const Color(0xFF102E4A).withValues(alpha: 0.1),
+                        : AppColors.midnight.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -302,13 +303,13 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                               fontWeight: FontWeight.bold,
                               color: isLowStock
                                   ? Colors.red
-                                  : const Color(0xFF102E4A))),
+                                  : AppColors.midnight)),
                       Text("adet",
                           style: TextStyle(
                               fontSize: 14,
                               color: isLowStock
                                   ? Colors.red
-                                  : const Color(0xFF102E4A))),
+                                  : AppColors.midnight)),
                     ],
                   ),
                 ),
@@ -358,7 +359,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text("Duzenle"),
                   style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF102E4A)),
+                      foregroundColor: AppColors.midnight),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
@@ -563,7 +564,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF102E4A),
+                          backgroundColor: AppColors.midnight,
                           foregroundColor: Colors.white,
                         ),
                         child: const Text("Stoga Ekle"),
@@ -651,7 +652,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF102E4A),
+                backgroundColor: AppColors.midnight,
                 foregroundColor: Colors.white,
               ),
               child: const Text("Kaydet"),

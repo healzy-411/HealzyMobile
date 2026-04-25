@@ -55,6 +55,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
   List<Neighborhood> _neighborhoods = [];
 
   District? _selectedDistrict;
+  // ignore: unused_field
   Neighborhood? _selectedNeighborhood;
 
   @override

@@ -296,14 +296,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Odeme Bilgileri",
+                    "Ödeme Bilgileri",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
                   _infoRow(
                     Icons.payment,
-                    "Odeme Yontemi",
-                    o.paymentMethod == "CreditCard" ? "Kredi Karti" : "Kapida Odeme",
+                    "Ödeme Yöntemi",
+                    o.paymentMethod == "CreditCard" ? "Kredi Kartı" : "Kapıda Ödeme",
                   ),
                   if (o.paymentMethod == "CreditCard" && o.cardNameSnapshot != null) ...[
                     const SizedBox(height: 4),

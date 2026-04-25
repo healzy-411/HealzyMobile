@@ -123,6 +123,7 @@ class AuthService {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     final url = Uri.parse('$baseUrl/api/auth/login');
     final res = await http.post(
@@ -131,6 +132,7 @@ class AuthService {
       body: jsonEncode({
         "email": email,
         "password": password,
+        "rememberMe": rememberMe,
       }),
     );
 
@@ -190,6 +192,57 @@ class AuthService {
     }
 
     throw Exception(body["message"] ?? "Me failed (${res.statusCode})");
+  }
+
+  Future<MeDto> updateProfile({String? firstName, String? lastName, String? phone}) async {
+    final token = TokenStore.get();
+    if (token == null || token.isEmpty) {
+      throw Exception("Token bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+
+    final url = Uri.parse('$baseUrl/api/auth/profile');
+    final body = <String, dynamic>{};
+    if (firstName != null) body['firstName'] = firstName;
+    if (lastName != null) body['lastName'] = lastName;
+    if (phone != null) body['phone'] = phone;
+
+    final res = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return MeDto.fromJson(jsonDecode(res.body));
+    }
+
+    final data = _decode(res);
+    throw Exception(data["message"] ?? "Profil güncellenemedi (${res.statusCode})");
+  }
+
+  Future<void> deleteAccount(String confirmation) async {
+    final token = TokenStore.get();
+    if (token == null || token.isEmpty) {
+      throw Exception("Token bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+
+    final url = Uri.parse('$baseUrl/api/auth/account');
+    final res = await http.delete(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"confirmation": confirmation}),
+    );
+
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+
+    final body = _decode(res);
+    throw Exception(body["message"] ?? "Hesap silinemedi (${res.statusCode})");
   }
 
   Map<String, dynamic> _decode(http.Response res) {

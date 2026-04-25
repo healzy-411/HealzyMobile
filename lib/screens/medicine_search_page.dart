@@ -5,9 +5,11 @@ import '../services/api_service.dart';
 import '../services/cart_api_service.dart';
 import '../services/cart_helper.dart';
 import '../services/token_store.dart';
+import 'cart_page.dart';
 import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class MedicineSearchPage extends StatefulWidget {
   const MedicineSearchPage({super.key});
@@ -151,11 +153,14 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("${pharmacy.lines.length} ilac sepete eklendi"),
+          content: Text("${pharmacy.lines.length} ürün sepete eklendi"),
           backgroundColor: const Color(0xFF102E4A),
         ),
       );
-      _goToPharmacy(pharmacy);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CartPage()),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -175,12 +180,18 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
-        title: const Text("Ilac Ara"),
+        title: const Text("Ürün Ara"),
       ),
-      body: _loadingMedicines
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loadingMedicines
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF102E4A)))
           : Column(
               children: [
@@ -191,7 +202,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                     controller: _searchController,
                     onChanged: _onFilterChanged,
                     decoration: InputDecoration(
-                      hintText: "Ilac adi yazin...",
+                      hintText: "Ürün adı yazın...",
                       prefixIcon: const Icon(Icons.search, color: Color(0xFF102E4A)),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -218,7 +229,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                   height: _compared ? 120 : 240,
                   child: _filteredMedicines.isEmpty
                       ? const Center(
-                          child: Text("Ilac bulunamadi", style: TextStyle(color: Colors.grey)),
+                          child: Text("Ürün bulunamadı", style: TextStyle(color: Colors.grey)),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -228,24 +239,59 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                             final selected = _selectedIds.contains(med.id);
                             final isDark = Theme.of(context).brightness ==
                                 Brightness.dark;
-                            return CheckboxListTile(
-                              value: selected,
-                              onChanged: (_) => _toggleSelection(med.id),
-                              title: Text(med.name),
-                              subtitle: Text("${med.price.toStringAsFixed(2)} TL"),
-                              activeColor:
-                                  isDark ? Colors.white : const Color(0xFF102E4A),
-                              checkColor:
-                                  isDark ? const Color(0xFF102E4A) : Colors.white,
-                              side: BorderSide(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : const Color(0xFF102E4A)
-                                        .withValues(alpha: 0.6),
-                                width: 1.4,
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 2),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? (isDark ? AppColors.darkSurface : Colors.white)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              dense: true,
-                              controlAffinity: ListTileControlAffinity.leading,
+                              child: CheckboxListTile(
+                                value: selected,
+                                onChanged: (_) => _toggleSelection(med.id),
+                                title: Text(med.name, style: TextStyle(
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.midnight,
+                                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                )),
+                                subtitle: Text("${med.price.toStringAsFixed(2)} TL", style: TextStyle(
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                )),
+                                secondary: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: med.imageUrl != null && med.imageUrl!.isNotEmpty
+                                      ? Image.network(
+                                          med.imageUrl!.startsWith('http')
+                                              ? med.imageUrl!
+                                              : '${ApiConfig.baseUrl}${med.imageUrl}',
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(
+                                            Icons.medication,
+                                            size: 32,
+                                            color: Colors.grey,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.medication,
+                                          size: 32,
+                                          color: Colors.grey,
+                                        ),
+                                ),
+                                activeColor:
+                                    isDark ? Colors.white : AppColors.midnight,
+                                checkColor:
+                                    isDark ? AppColors.midnight : Colors.white,
+                                side: BorderSide(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : AppColors.midnight.withValues(alpha: 0.6),
+                                  width: 1.4,
+                                ),
+                                dense: true,
+                                controlAffinity: ListTileControlAffinity.leading,
+                              ),
                             );
                           },
                         ),
@@ -259,7 +305,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "Secilenler:",
+                          "Seçilenler:",
                           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         const SizedBox(height: 6),
@@ -304,7 +350,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                               ),
                             )
                           : const Icon(Icons.search),
-                      label: Text(_comparing ? "Aranıyor..." : "Eczaneleri Karsilastir"),
+                      label: Text(_comparing ? "Aranıyor..." : "Eczaneleri Karşılaştır"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF102E4A),
                         foregroundColor: Colors.white,
@@ -328,7 +374,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                                 Icon(Icons.search_off, size: 64, color: Colors.grey),
                                 SizedBox(height: 12),
                                 Text(
-                                  "Bu ilaclari birlikte bulunduran\neczane bulunamadi",
+                                  "Bu ürünleri birlikte bulunduran\neczane bulunamadı",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.grey, fontSize: 16),
                                 ),
@@ -352,7 +398,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                           Icon(Icons.medication_outlined, size: 64, color: Colors.grey),
                           SizedBox(height: 12),
                           Text(
-                            "Ilac secip fiyatlari\nkarsilastirin",
+                            "Ürün seçip fiyatları\nkarşılaştırın",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.grey, fontSize: 16),
                           ),
@@ -362,10 +408,12 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                   ),
               ],
             ),
+      ),
     );
   }
 
   Widget _buildPharmacyCard(PharmacyCompareResult pharmacy) {
+    final isClosed = !pharmacy.isOpen;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -378,8 +426,11 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF102E4A).withValues(alpha: 0.15),
-                  child: const Icon(Icons.local_pharmacy, color: Color(0xFF102E4A)),
+                  backgroundColor: isClosed
+                      ? Colors.red.withValues(alpha: 0.15)
+                      : const Color(0xFF102E4A).withValues(alpha: 0.15),
+                  child: Icon(Icons.local_pharmacy,
+                      color: isClosed ? Colors.red : const Color(0xFF102E4A)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -397,6 +448,22 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                     ],
                   ),
                 ),
+                if (isClosed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "Kapalı",
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
               ],
             ),
             const Divider(height: 20),
@@ -438,12 +505,12 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _goToPharmacy(pharmacy),
+                    onPressed: isClosed ? null : () => _goToPharmacy(pharmacy),
                     icon: const Icon(Icons.storefront, size: 18),
-                    label: const Text("Eczaneye Git"),
+                    label: Text(isClosed ? "Kapalı" : "Eczaneye Git"),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF102E4A),
-                      side: const BorderSide(color: Color(0xFF102E4A)),
+                      side: BorderSide(color: isClosed ? Colors.grey : const Color(0xFF102E4A)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -453,12 +520,14 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _addToCartAndGo(pharmacy),
+                    onPressed: isClosed ? null : () => _addToCartAndGo(pharmacy),
                     icon: const Icon(Icons.add_shopping_cart, size: 18),
-                    label: const Text("Sepete Ekle"),
+                    label: Text(isClosed ? "Kapalı" : "Sepete Ekle"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF102E4A),
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade400,
+                      disabledForegroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

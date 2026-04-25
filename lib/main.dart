@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 import 'services/auth_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/token_store.dart';
 import 'screens/auth_page.dart';
+import 'screens/get_started_page.dart';
 import 'screens/home_page.dart';
 import 'screens/pharmacy_panel_home_page.dart';
 import 'screens/home_care_provider_panel_home_page.dart';
@@ -17,6 +19,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Ekran yönünü dikey olarak kilitle
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Local Notification init
   await LocalNotificationService.I.init();
@@ -53,10 +61,7 @@ class HealzyApp extends StatelessWidget {
       }
     }
 
-    return AuthPage(
-      authService: authService,
-      customerHome: const HomePage(),
-    );
+    return GetStartedPage(authService: authService);
   }
 
   @override
@@ -92,6 +97,11 @@ class _HealzyScrollBehavior extends MaterialScrollBehavior {
   @override
   Widget buildScrollbar(
       BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
+    return Scrollbar(
+      controller: details.controller,
+      thickness: 5,
+      radius: const Radius.circular(8),
+      child: child,
+    );
   }
 }

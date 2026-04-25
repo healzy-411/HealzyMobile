@@ -9,6 +9,7 @@ import 'cart_page.dart';
 import 'product_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class ProductsPage extends StatefulWidget {
   final int pharmacyId;
@@ -163,7 +164,12 @@ class _ProductsPageState extends State<ProductsPage> {
       appBar: AppBar(
         title: Text(widget.categoryName),
       ),
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: Padding(
         padding: const EdgeInsets.only(top: 12),
         child: Column(
           children: [
@@ -195,7 +201,7 @@ class _ProductsPageState extends State<ProductsPage> {
                             ? ListView(
                                 children: const [
                                   SizedBox(height: 40),
-                                  Center(child: Text("Bu kategoride urun yok")),
+                                  Center(child: Text("Bu kategoride ürün yok")),
                                 ],
                               )
                             : GridView.builder(
@@ -216,6 +222,7 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
           ],
         ),
+      ),
       ),
 
       // CART BUTTON
@@ -285,17 +292,22 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   Widget _buildProductCard(OtcMedicine product) {
+    final isOutOfStock = product.quantity == 0;
+    final isLowStock = product.quantity > 0 && product.quantity < 5;
+
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProductDetailPage(
-            product: product,
-            categoryName: widget.categoryName,
-            onAddToCart: adding ? null : () => _addToCart(product),
-          ),
-        ),
-      ),
+      onTap: isOutOfStock
+          ? null
+          : () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductDetailPage(
+                  product: product,
+                  categoryName: widget.categoryName,
+                  onAddToCart: adding ? null : () => _addToCart(product),
+                ),
+              ),
+            ),
       child: Builder(builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final cardBg = isDark
@@ -305,7 +317,9 @@ class _ProductsPageState extends State<ProductsPage> {
             ? Colors.white.withValues(alpha: 0.12)
             : Colors.white.withValues(alpha: 0.55);
         final fg = isDark ? Colors.white : const Color(0xFF102E4A);
-        return Container(
+        return Opacity(
+        opacity: isOutOfStock ? 0.5 : 1.0,
+        child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: cardBg,
@@ -335,22 +349,65 @@ class _ProductsPageState extends State<ProductsPage> {
               ),
             ),
             Text(
-              "${product.price.toStringAsFixed(0)} TL",
+              "${product.price.toStringAsFixed(2)} TL",
               style: TextStyle(color: fg.withValues(alpha: 0.7), fontSize: 14),
             ),
-            GestureDetector(
-              onTap: adding ? null : () => _addToCart(product),
-              child: Container(
-                width: 36,
-                height: 36,
+            if (isOutOfStock)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: adding ? Colors.grey.shade400 : Colors.green,
-                  shape: BoxShape.circle,
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 22),
+                child: Text(
+                  "Stokta Yok",
+                  style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 11),
+                ),
+              )
+            else if (isLowStock)
+              Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "Tükenmek Üzere",
+                      style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold, fontSize: 10),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: adding ? null : () => _addToCart(product),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: adding ? Colors.grey.shade400 : Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white, size: 22),
+                    ),
+                  ),
+                ],
+              )
+            else
+              GestureDetector(
+                onTap: adding ? null : () => _addToCart(product),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: adding ? Colors.grey.shade400 : Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 22),
+                ),
               ),
-            ),
           ],
+        ),
         ),
         );
       }),

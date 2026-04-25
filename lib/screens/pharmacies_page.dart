@@ -5,10 +5,12 @@ import '../Models/district_model.dart';
 import '../Models/insurance_model.dart';
 import '../Models/otcmedicine_model.dart';
 import '../services/api_service.dart';
+import 'package:healzy_app/config/api_config.dart';
 import '../widgets/pharmacy_map_view.dart';
 import 'categories_page.dart';
 import 'pharmacy_detail_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class PharmaciesPage extends StatefulWidget {
   const PharmaciesPage({super.key});
@@ -107,10 +109,12 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark
         ? const Color(0xFF132B44).withValues(alpha: 0.85)
-        : Colors.white.withValues(alpha: 0.55);
+        : AppColors.lightBlueSoft.withValues(alpha: 0.6);
     final cardBorder = isDark
         ? Colors.white.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.55);
+        : AppColors.midnight.withValues(alpha: 0.1);
+    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
@@ -146,7 +150,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
         actions: [
           IconButton(
             icon: Icon(_showMap ? Icons.list : Icons.map),
-            tooltip: _showMap ? "Liste gorunumu" : "Harita gorunumu",
+            tooltip: _showMap ? "Liste görünümü" : "Harita görünümü",
             onPressed: () => setState(() => _showMap = !_showMap),
           ),
           Builder(
@@ -159,7 +163,12 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
       ),
 
       // ================= BODY =================
-      body: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -283,12 +292,27 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                       colorFilter: isClosed
                                           ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
                                           : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                      child: Image.asset(
-                                        'assets/images/pharmacy.jpeg',
-                                        height: 160,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: p.imageUrl.isNotEmpty
+                                          ? Image.network(
+                                              p.imageUrl.startsWith('http')
+                                                  ? p.imageUrl
+                                                  : '${ApiConfig.baseUrl}${p.imageUrl}',
+                                              height: 160,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Image.asset(
+                                                'assets/images/pharmacy.jpeg',
+                                                height: 160,
+                                                width: double.infinity,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            )
+                                          : Image.asset(
+                                              'assets/images/pharmacy.jpeg',
+                                              height: 160,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                   ),
                                   if (isClosed)
@@ -305,7 +329,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                           children: [
                                             Icon(Icons.lock_outline, size: 14, color: Colors.white),
                                             SizedBox(width: 4),
-                                            Text("Kapali", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                            Text("Kapalı", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ),
@@ -341,9 +365,10 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                       Expanded(
                                         child: Text(
                                           p.name,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
+                                            color: textPrimary,
                                           ),
                                         ),
                                       ),
@@ -378,8 +403,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                       Expanded(
                                         child: Text(
                                           "${p.district} / ${p.address}",
-                                          style: const TextStyle(
-                                              color: Colors.grey),
+                                          style: TextStyle(color: textSecondary),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -391,7 +415,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                       const Icon(Icons.access_time,
                                           size: 16, color: Colors.red),
                                       const SizedBox(width: 6),
-                                      Text(p.workingHours),
+                                      Text(p.workingHours, style: TextStyle(color: textPrimary)),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
@@ -400,7 +424,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
                                       const Icon(Icons.phone,
                                           size: 16, color: Colors.green),
                                       const SizedBox(width: 6),
-                                      Text(p.phone),
+                                      Text(p.phone, style: TextStyle(color: textPrimary)),
                                     ],
                                   ),
                                 ],
@@ -421,6 +445,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -433,7 +458,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF132B44).withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.55),
+            : AppColors.lightBlueSoft.withValues(alpha: 0.7),
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -457,7 +482,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF132B44).withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.55),
+            : AppColors.lightBlueSoft.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(16),
       ),
       child: ExpansionTile(
@@ -469,24 +494,51 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     );
   }
 
+  String _districtFilterQuery = '';
+
   Widget _buildDistrictFilterSection() {
+    final sortedKeys = districtFilters.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final filtered = _districtFilterQuery.isEmpty
+        ? sortedKeys
+        : sortedKeys.where((k) => k.toLowerCase().contains(_districtFilterQuery)).toList();
+
     return _filterCard(
       icon: Icons.location_on,
       title: "İlçe",
-      children: districtFilters.keys.map((key) {
-        return CheckboxListTile(
-          activeColor: const Color(0xFF102E4A),
-          title: Text(key),
-          value: districtFilters[key],
-          onChanged: (val) {
-            setState(() {
-              districtFilters.updateAll((k, v) => false);
-              districtFilters[key] = val!;
-              _applyFilters();
-            });
-          },
-        );
-      }).toList(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: "İlçe ara...",
+              prefixIcon: const Icon(Icons.search, size: 20),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+            onChanged: (v) => setState(() => _districtFilterQuery = v.toLowerCase()),
+          ),
+        ),
+        ...filtered.map((key) {
+          return CheckboxListTile(
+            activeColor: const Color(0xFF102E4A),
+            title: Text(key),
+            value: districtFilters[key],
+            onChanged: (val) {
+              setState(() {
+                districtFilters.updateAll((k, v) => false);
+                districtFilters[key] = val!;
+                _applyFilters();
+              });
+            },
+          );
+        }),
+      ],
     );
   }
 
@@ -510,29 +562,55 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     );
   }
 
+  String _medicineFilterQuery = '';
+
   Widget _buildMedicineFilterSection() {
     return FutureBuilder<List<OtcMedicine>>(
       future: futureMedicines,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox();
 
-        final medicines = snapshot.data!;
+        final allMedicines = snapshot.data!;
+        allMedicines.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+        final filtered = _medicineFilterQuery.isEmpty
+            ? allMedicines
+            : allMedicines.where((m) => m.name.toLowerCase().contains(_medicineFilterQuery)).toList();
+
         return _filterCard(
           icon: Icons.medication,
-          title: "İlaç",
-          children: medicines.map((m) {
-            return CheckboxListTile(
-              activeColor: const Color(0xFF102E4A),
-              title: Text(m.name),
-              value: medicineFilters[m.id] ?? false,
-              onChanged: (val) {
-                setState(() {
-                  medicineFilters[m.id] = val ?? false;
-                  _applyFilters();
-                });
-              },
-            );
-          }).toList(),
+          title: "Ürün Ara",
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Ürün adı yazın...",
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                onChanged: (v) => setState(() => _medicineFilterQuery = v.toLowerCase()),
+              ),
+            ),
+            ...filtered.map((m) {
+              return CheckboxListTile(
+                activeColor: const Color(0xFF102E4A),
+                title: Text(m.name),
+                value: medicineFilters[m.id] ?? false,
+                onChanged: (val) {
+                  setState(() {
+                    medicineFilters[m.id] = val ?? false;
+                    _applyFilters();
+                  });
+                },
+              );
+            }),
+          ],
         );
       },
     );

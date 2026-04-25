@@ -217,7 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   MaterialPageRoute(
                                     builder: (_) => AuthPage(
                                       authService: AuthService(baseUrl: widget.baseUrl),
-                                      customerHome: const SizedBox(),
+                                      customerHome: const HomePage(),
                                     ),
                                   ),
                                   (route) => false,
@@ -269,7 +269,9 @@ import '../Models/me_model.dart';
 import 'orders_history_page.dart';
 import 'saved_cards_page.dart';
 import 'auth_page.dart';
+import 'home_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class ProfilePage extends StatefulWidget {
   final String baseUrl;
@@ -281,8 +283,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   // --- RENK PALETİ ---
-  static const Color pearl = Color(0xFFF8F5F0);
-  static const Color creamBackground = Color.fromARGB(255, 228, 220, 194);
   static const Color midnight = Color(0xFF1B4965);
   static const Color subTextColor = Color(0xFF5A5A5A);
 
@@ -326,11 +326,7 @@ class _ProfilePageState extends State<ProfilePage> {
             end: Alignment.bottomRight,
             colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
           )
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [pearl, creamBackground],
-          );
+        : AppColors.lightPageGradient;
     return Scaffold(
       bottomNavigationBar:
           const HealzyBottomNav(current: HealzyNavTab.profile),
@@ -391,7 +387,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 Text(
-                  "Standart Üye",
+                  "Müşteri",
                   style: TextStyle(color: _sub, fontSize: 14),
                 ),
               ],
@@ -402,7 +398,13 @@ class _ProfilePageState extends State<ProfilePage> {
           _buildSectionTitle("Kişisel Bilgiler"),
           _glassInfoTile(Icons.alternate_email_rounded, "E-posta", me.email, isVerified: true),
           _glassInfoTile(Icons.phone_iphone_rounded, "Telefon", me.phoneNumber),
-          
+          const SizedBox(height: 12),
+          _glassMenuButton(
+            icon: Icons.edit_rounded,
+            title: "Profili Düzenle",
+            onTap: _handleEditProfile,
+          ),
+
           const SizedBox(height: 28),
 
           _buildSectionTitle("Hesap İşlemleri"),
@@ -424,13 +426,22 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           const SizedBox(height: 10),
-          
+
           TextButton.icon(
             onPressed: _handleLogout,
             icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
             label: const Text(
-              "Hesaptan Çıkış Yap", 
+              "Hesaptan Çıkış Yap",
               style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 16)
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _handleDeleteAccount,
+            icon: Icon(Icons.delete_forever_rounded, color: Colors.red.shade700),
+            label: Text(
+              "Hesabımı Sil",
+              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600, fontSize: 16),
             ),
           ),
           const SizedBox(height: 40),
@@ -554,6 +565,215 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _handleEditProfile() async {
+    final me = _me!;
+    final nameParts = me.fullName.split(' ');
+    final firstNameCtrl = TextEditingController(text: nameParts.isNotEmpty ? nameParts.first : '');
+    final lastNameCtrl = TextEditingController(text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '');
+    final phoneCtrl = TextEditingController(text: me.phoneNumber);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        String? formError;
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF132B44) : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text("Profili Düzenle", style: TextStyle(color: _fg, fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: firstNameCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Ad",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: lastNameCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Soyad",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: phoneCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Telefon",
+                        hintText: "05xx xxx xx xx",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      maxLength: 11,
+                    ),
+                    if (formError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(formError!, style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text("İptal", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final firstName = firstNameCtrl.text.trim();
+                          final lastName = lastNameCtrl.text.trim();
+                          final phone = phoneCtrl.text.trim();
+
+                          if (firstName.isEmpty || lastName.isEmpty) {
+                            setDialogState(() => formError = "Ad ve soyad zorunludur.");
+                            return;
+                          }
+
+                          setDialogState(() {
+                            saving = true;
+                            formError = null;
+                          });
+
+                          try {
+                            await _api.updateProfile(
+                              firstName: firstName,
+                              lastName: lastName,
+                              phone: phone.isNotEmpty ? phone : null,
+                            );
+                            if (ctx.mounted) Navigator.pop(ctx, true);
+                          } catch (e) {
+                            setDialogState(() {
+                              saving = false;
+                              formError = e.toString().replaceFirst("Exception: ", "");
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: midnight,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(saving ? "Kaydediliyor..." : "Kaydet"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      await _load();
+    }
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final confirmController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF132B44) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            "Hesabı Kalıcı Olarak Sil",
+            style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Hesabınızı kalıcı olarak silmek istiyorsanız aşağıdaki kutucuğa \"onaylıyorum\" yazın.",
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Bu işlem geri alınamaz. Tüm verileriniz (siparişler, adresler, kartlar, hatırlatıcılar) silinecektir.",
+                style: TextStyle(color: Colors.red.shade400, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: "onaylıyorum",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text("İptal", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text("Hesabımı Sil"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final confirmation = confirmController.text.trim();
+    if (confirmation != "onaylıyorum") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Onay metni hatalı. 'onaylıyorum' yazmalısınız.")),
+      );
+      return;
+    }
+
+    try {
+      await _api.deleteAccount(confirmation);
+      await TokenStore.clear();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AuthPage(
+            authService: AuthService(baseUrl: widget.baseUrl),
+            customerHome: const HomePage(),
+          ),
+        ),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Hesabınız kalıcı olarak silindi.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+      );
+    }
+  }
+
   Future<void> _handleLogout() async {
     await TokenStore.clear();
     if (!mounted) return;
@@ -562,7 +782,7 @@ class _ProfilePageState extends State<ProfilePage> {
       MaterialPageRoute(
         builder: (_) => AuthPage(
           authService: AuthService(baseUrl: widget.baseUrl), 
-          customerHome: const SizedBox()
+          customerHome: const HomePage()
         )
       ), 
       (route) => false

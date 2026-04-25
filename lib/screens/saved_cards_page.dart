@@ -5,6 +5,7 @@ import '../Models/saved_card_model.dart';
 import '../services/saved_card_api_service.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../theme/app_colors.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -75,6 +76,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     final cardNameCtrl = TextEditingController(text: editing?.cardName ?? '');
     final nameCtrl = TextEditingController(text: editing?.cardholderName ?? '');
     final numberCtrl = TextEditingController();
+    final cvvCtrl = TextEditingController();
     final monthCtrl = TextEditingController(
         text: editing != null ? editing.expiryMonth.toString().padLeft(2, '0') : '');
     final yearCtrl = TextEditingController(
@@ -85,7 +87,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor:
-          isDark ? const Color(0xFF132B44) : const Color(0xFFFFFFFF),
+          isDark ? const Color(0xFF132B44) : AppColors.pearl,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -107,14 +109,18 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(editing == null ? "Yeni Kart Ekle" : "Kartı Düzenle",
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextPrimary : AppColors.midnight)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: cardNameCtrl,
                       decoration: InputDecoration(
                         labelText: "Kart Adı",
                         hintText: "Örn: İş Kartım, Garanti Kartım",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
                       ),
                       textCapitalization: TextCapitalization.sentences,
                     ),
@@ -123,32 +129,40 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                       controller: nameCtrl,
                       decoration: InputDecoration(
                         labelText: "Kart Sahibi",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
                       ),
                       textCapitalization: TextCapitalization.words,
+                      maxLength: 50,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-zÇĞİÖŞÜçğıöşü ]')),
+                        LengthLimitingTextInputFormatter(50),
                       ],
                     ),
-                    if (editing == null) ...[
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: numberCtrl,
-                        decoration: InputDecoration(
-                          labelText: "Kart Numarası",
-                          hintText: "1234 5678 9012 3456",
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          counterText: '',
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 19,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(16),
-                          _CardNumberFormatter(),
-                        ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: numberCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Kart Numarası",
+                        hintText: "1234 5678 9012 3456",
+                        filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
+                        counterText: '',
                       ),
-                    ],
+                      keyboardType: TextInputType.number,
+                      maxLength: 19,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(16),
+                        _CardNumberFormatter(),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -158,7 +172,11 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                             decoration: InputDecoration(
                               labelText: "Ay",
                               hintText: "MM",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
                               counterText: '',
                             ),
                             keyboardType: TextInputType.number,
@@ -173,7 +191,11 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                             decoration: InputDecoration(
                               labelText: "Yıl",
                               hintText: "YYYY",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
                               counterText: '',
                             ),
                             keyboardType: TextInputType.number,
@@ -181,6 +203,27 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: cvvCtrl,
+                      decoration: InputDecoration(
+                        labelText: "CVV",
+                        hintText: "123",
+                        filled: true,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.pearl,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.midnight.withValues(alpha: 0.35), width: 1.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: isDark ? AppColors.pearl : AppColors.midnight, width: 2)),
+                        counterText: '',
+                      ),
+                      keyboardType: TextInputType.number,
+                      maxLength: 3,
+                      obscureText: true,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
                       ],
                     ),
                     if (formError != null) ...[
@@ -203,7 +246,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                       height: 50,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                          backgroundColor: isDark ? AppColors.darkSurfaceElevated : AppColors.midnight,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: saving ? null : () async {
@@ -218,13 +261,17 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                           String? err;
                           if (cardName.isEmpty) err = "Kart adı zorunlu.";
                           else if (name.isEmpty) err = "Kart sahibi zorunlu.";
-                          else if (editing == null && numberDigits.length != 16) {
+                          else if (numberDigits.isNotEmpty && numberDigits.length != 16) {
                             err = "Kart numarası 16 haneli olmalı.";
+                          } else if (editing == null && numberDigits.isEmpty) {
+                            err = "Kart numarası zorunlu.";
                           } else if (month < 1 || month > 12) err = "Geçersiz ay.";
                           else if (year < now.year || year > now.year + 20) {
                             err = "Geçersiz yıl.";
                           } else if (year == now.year && month < now.month) {
                             err = "Kartın son kullanma tarihi geçmiş.";
+                          } else if (cvvCtrl.text.trim().length != 3) {
+                            err = "CVV 3 haneli olmalı.";
                           }
 
                           if (err != null) {
@@ -253,6 +300,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                                 expiryMonth: month,
                                 expiryYear: year,
                                 isDefault: editing.isDefault,
+                                cardNumber: numberDigits.isNotEmpty ? numberDigits : null,
                               );
                             }
                             if (ctx.mounted) Navigator.pop(ctx);
@@ -283,6 +331,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
@@ -295,7 +344,12 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
-      body: _loading
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
@@ -398,6 +452,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                         );
                       },
                     ),
+      ),
     );
   }
 }

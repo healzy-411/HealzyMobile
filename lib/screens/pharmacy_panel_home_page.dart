@@ -13,8 +13,10 @@ import 'pharmacy_stock_page.dart';
 import 'pharmacy_insurance_page.dart';
 import 'notifications_page.dart';
 import 'auth_page.dart';
+import 'home_page.dart';
 import '../services/auth_service.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../theme/app_colors.dart';
 
 class PharmacyPanelHomePage extends StatefulWidget {
   const PharmacyPanelHomePage({super.key});
@@ -234,7 +236,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       MaterialPageRoute(
         builder: (_) => AuthPage(
           authService: AuthService(baseUrl: ApiConfig.baseUrl),
-          customerHome: const SizedBox(),
+          customerHome: const HomePage(),
         ),
       ),
       (route) => false,
@@ -246,8 +248,8 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Eczane Paneli"),
-        backgroundColor: const Color(0xFF102E4A),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.midnight,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : Colors.white,
         actions: [
           Stack(
             children: [
@@ -284,11 +286,16 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
-            tooltip: "Cikis Yap",
+            tooltip: "Çıkış Yap",
           ),
         ],
       ),
-      body: _loading
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: Theme.of(context).brightness == Brightness.dark ? null : AppColors.lightPageGradient,
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBg : null,
+        ),
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
@@ -302,6 +309,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   ),
                 )
               : _buildContent(),
+      ),
     );
   }
 
@@ -334,7 +342,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: isOpen ? const Color(0xFF102E4A) : Colors.grey,
+                        backgroundColor: isOpen ? AppColors.midnight : Colors.grey,
                         child: const Icon(Icons.local_pharmacy, color: Colors.white),
                       ),
                       const SizedBox(width: 12),
@@ -379,7 +387,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  isApproved ? "Onayli" : "Onay Bekliyor",
+                                  isApproved ? "Onaylı" : "Onay Bekliyor",
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: isApproved ? Colors.green : Colors.orange,
@@ -409,7 +417,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            isOpen ? "Eczane Acik" : "Eczane Kapali",
+                            isOpen ? "Eczane Açık" : "Eczane Kapalı",
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: isOpen ? Colors.green : Colors.red,
@@ -470,7 +478,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           children: [
             _menuCard(icon: Icons.dashboard, label: "Dashboard", color: Colors.blue,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyDashboardPage()))),
-            _menuCard(icon: Icons.receipt_long, label: "Siparisler", color: const Color(0xFF102E4A),
+            _menuCard(icon: Icons.receipt_long, label: "Siparisler", color: AppColors.midnight,
               badge: pendingOrders > 0 ? "$pendingOrders" : null,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyOrdersPage()))),
             _menuCard(icon: Icons.inventory_2, label: "Stok Yonetimi", color: Colors.purple,
@@ -489,15 +497,15 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
           children: [
             _summaryBadge("$pendingOrders", "Bekleyen", Icons.hourglass_top, pendingOrders > 0 ? Colors.orange : Colors.grey),
             const SizedBox(width: 8),
-            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.currency_lira, const Color(0xFF102E4A)),
+            _summaryBadge("${todayRevenue.toStringAsFixed(0)} TL", "Bugun", Icons.currency_lira, AppColors.midnight),
             const SizedBox(width: 8),
-            _summaryBadge("$todayOrders", "Siparis", Icons.receipt, Colors.blue),
+            _summaryBadge("$todayOrders", "Sipariş", Icons.receipt, Colors.blue),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            _summaryBadge("$totalProducts", "Urun", Icons.medication, Colors.purple),
+            _summaryBadge("$totalProducts", "Ürün", Icons.medication, Colors.purple),
             const SizedBox(width: 8),
             _summaryBadge("$lowStock", "Dusuk Stok", Icons.warning_amber, lowStock > 0 ? Colors.red : Colors.grey),
             const SizedBox(width: 8),

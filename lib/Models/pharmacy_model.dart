@@ -45,8 +45,7 @@ class Pharmacy {
       latitude: (json['latitude'] ?? json['Latitude'] ?? 0).toDouble(),
       longitude: (json['longitude'] ?? json['Longitude'] ?? 0).toDouble(),
       
-      // Eğer backend resim yollamazsa varsayılan bir eczane resmi koyuyoruz
-      imageUrl: json['imageUrl'] ?? json['ImageUrl'] ?? 'https://img.freepik.com/free-photo/pharmacy-store-interior-blur-background_1484-1596.jpg',
+      imageUrl: json['imageUrl'] ?? json['ImageUrl'] ?? '',
       averageRating: (json['averageRating'] ?? json['AverageRating'] ?? 0).toDouble(),
       reviewCount: (json['reviewCount'] ?? json['ReviewCount'] ?? 0) as int,
       isOpen: (json['isOpen'] ?? json['IsOpen'] ?? true) as bool,

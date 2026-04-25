@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -7,6 +8,7 @@ import '../services/address_api_service.dart';
 import '../services/home_care_api_service.dart';
 import '../services/local_notification_service.dart';
 import '../theme/app_colors.dart';
+import 'package:healzy_app/config/api_config.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_shadows.dart';
 import '../widgets/healzy_bottom_nav.dart';
@@ -147,7 +149,7 @@ class _HomeCarePageState extends State<HomeCarePage>
       return;
     }
 
-    DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
+    DateTime selectedDate = DateTime.now();
     String? selectedTimeSlot;
     final noteController = TextEditingController();
     String? error;
@@ -156,11 +158,51 @@ class _HomeCarePageState extends State<HomeCarePage>
     // ✅ Dolu slot'ları disable etmek için
     final disabledSlots = <String>{};
 
-    // ✅ Sağlayıcının admin panelinden tanımladığı zaman slotları (fallback yok)
+    // ✅ Sağlayıcının admin panelinden tanımladığı zaman slotları
     List<String> timeSlots = [];
-    try {
-      timeSlots = await _api.getProviderTimeSlots(provider.id);
-    } catch (_) {}
+    List<Map<String, dynamic>> slotAvailability = [];
+
+    Future<void> loadSlotAvailability(DateTime date) async {
+      try {
+        final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        slotAvailability = await _api.getSlotAvailability(provider.id, dateStr);
+        timeSlots = slotAvailability.map((s) => (s['label'] ?? '').toString()).where((s) => s.isNotEmpty).toList();
+        disabledSlots.clear();
+        final now = DateTime.now();
+        final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+
+        for (final s in slotAvailability) {
+          final label = (s['label'] ?? '').toString();
+
+          // Dolu slot
+          if (s['isFull'] == true) {
+            disabledSlots.add(label);
+            continue;
+          }
+
+          // Bugünse ve saat geçmişse devre dışı bırak
+          if (isToday && label.isNotEmpty) {
+            // "08:00 - 09:00" veya "08:00" formatından saati parse et
+            final timePart = label.split('-').first.trim();
+            final parts = timePart.split(':');
+            if (parts.length == 2) {
+              final hour = int.tryParse(parts[0]) ?? 0;
+              final minute = int.tryParse(parts[1]) ?? 0;
+              if (hour < now.hour || (hour == now.hour && minute <= now.minute)) {
+                disabledSlots.add(label);
+              }
+            }
+          }
+        }
+      } catch (_) {
+        // Fallback: eski yöntem
+        try {
+          timeSlots = await _api.getProviderTimeSlots(provider.id);
+        } catch (_) {}
+      }
+    }
+
+    await loadSlotAvailability(selectedDate);
 
     if (!mounted) return;
     if (timeSlots.isEmpty) {
@@ -187,7 +229,10 @@ class _HomeCarePageState extends State<HomeCarePage>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
-            return Padding(
+            return GestureDetector(
+              onTap: () => FocusScope.of(ctx).unfocus(),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
@@ -235,28 +280,32 @@ class _HomeCarePageState extends State<HomeCarePage>
                   GestureDetector(
                     onTap: () async {
                       final now = DateTime.now();
-                      final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+                      final today = DateTime(now.year, now.month, now.day);
                       final picked = await showDatePicker(
                         context: ctx,
-                        initialDate: tomorrow,
-                        firstDate: tomorrow,
+                        initialDate: selectedDate.isBefore(today) ? today : selectedDate,
+                        firstDate: today,
                         lastDate: now.add(const Duration(days: 30)),
                         builder: (context, child) {
                           return Theme(
                             data: Theme.of(context).copyWith(
                               colorScheme: ColorScheme.fromSeed(
-                                seedColor: const Color(0xFF102E4A),
+                                seedColor: AppColors.midnight,
                                 brightness: isDark
                                     ? Brightness.dark
                                     : Brightness.light,
+                                primary: isDark ? AppColors.pearl : AppColors.midnight,
                                 surface: isDark
-                                    ? const Color(0xFF132B44)
-                                    : Colors.white,
+                                    ? AppColors.darkSurface
+                                    : AppColors.lightBlueSoft,
+                                onSurface: isDark
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.midnight,
                               ),
                               dialogTheme: DialogThemeData(
                                 backgroundColor: isDark
-                                    ? const Color(0xFF132B44)
-                                    : Colors.white,
+                                    ? AppColors.darkSurface
+                                    : AppColors.lightBlueSoft,
                               ),
                             ),
                             child: child!,
@@ -264,14 +313,12 @@ class _HomeCarePageState extends State<HomeCarePage>
                         },
                       );
                       if (picked != null) {
-                        setModalState(() {
-                          selectedDate = picked;
-
-                          // ✅ tarih değişince: slot/hata/disabled reset
-                          selectedTimeSlot = null;
-                          disabledSlots.clear();
-                          error = null;
-                        });
+                        selectedDate = picked;
+                        selectedTimeSlot = null;
+                        error = null;
+                        // Tarih değişince slot availability yeniden yükle
+                        await loadSlotAvailability(picked);
+                        setModalState(() {});
                       }
                     },
                     child: Container(
@@ -475,6 +522,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                   ),
                 ],
               ),
+            ),
             );
           },
         );
@@ -627,11 +675,7 @@ class _HomeCarePageState extends State<HomeCarePage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgGradient = isDark
         ? AppColors.darkGradient
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.pearlWarm, AppColors.pearl],
-          );
+        : AppColors.lightPageGradient;
 
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
@@ -677,6 +721,7 @@ class _HomeCarePageState extends State<HomeCarePage>
         await _loadProviders();
       },
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
         padding: const EdgeInsets.all(16),
         children: [
           if (_loadingAddresses) ...[
@@ -760,7 +805,6 @@ class _HomeCarePageState extends State<HomeCarePage>
 
   Widget _buildProviderCard(HomeCareProviderModel p) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
     final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
     final subColor =
         isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
@@ -770,15 +814,32 @@ class _HomeCarePageState extends State<HomeCarePage>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: cardBg,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkBorder
-              : AppColors.border.withValues(alpha: 0.6),
-        ),
-        boxShadow: AppShadows.soft(isDark),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : AppColors.midnight).withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.darkSurface.withValues(alpha: 0.7)
+                  : Colors.white.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppColors.midnight.withValues(alpha: 0.1),
+                width: 0.8,
+              ),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -787,10 +848,11 @@ class _HomeCarePageState extends State<HomeCarePage>
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
               child: Image.network(
-                p.imageUrl!,
+                p.imageUrl!.startsWith('http') ? p.imageUrl! : '${ApiConfig.baseUrl}${p.imageUrl}',
                 height: 140,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                cacheHeight: 280,
                 errorBuilder: (_, __, ___) => Container(
                   height: 80,
                   color: isDark
@@ -898,6 +960,9 @@ class _HomeCarePageState extends State<HomeCarePage>
           ),
         ],
       ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -905,6 +970,7 @@ class _HomeCarePageState extends State<HomeCarePage>
     return RefreshIndicator(
       onRefresh: _loadRequests,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
         padding: const EdgeInsets.all(16),
         itemCount: _requests.length + 1,
         itemBuilder: (context, index) {

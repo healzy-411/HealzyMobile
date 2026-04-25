@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../services/token_store.dart';
 import 'home_care_provider_panel_home_page.dart';
@@ -19,6 +20,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
   static const Color midnight = Color(0xFF102E4A);
 
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
   bool _loading = false;
   String? _error;
 
@@ -40,6 +42,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _firstName.dispose(); _lastName.dispose(); _email.dispose();
     _nationalId.dispose(); _phone.dispose(); _password.dispose();
     _providerName.dispose(); _providerPhone.dispose();
@@ -137,7 +140,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                     gradient: const LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [pearl, Color.fromARGB(255, 255, 248, 232)],
+                      colors: [Color(0xFFFFFFFF), Color(0xFFD4EAF7), Color(0xFFB8D8EB)],
                     ),
                     borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
                     boxShadow: [
@@ -147,11 +150,13 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
                     child: Scrollbar(
+                      controller: _scrollController,
                       thumbVisibility: true,
                       thickness: 6,
                       child: Form(
                         key: _formKey,
                         child: ListView(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
                           children: [
                             _sectionHeader("Kişisel Bilgiler"),
@@ -164,9 +169,22 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                               return null;
                             }),
                             const SizedBox(height: 12),
-                            _buildInput(_nationalId, "TC Kimlik No", Icons.badge, isNum: true, validator: (v) => (v?.length != 11) ? "11 haneli olmalı" : null),
+                            _buildInput(_nationalId, "TC Kimlik No", Icons.badge, isNum: true, maxLength: 11, validator: (v) {
+                              if (v == null || v.trim().isEmpty) return "Zorunlu alan";
+                              final tc = v.trim();
+                              if (tc.length != 11) return "11 haneli olmalı";
+                              if (!RegExp(r'^\d{11}$').hasMatch(tc)) return "Sadece rakam giriniz";
+                              if (tc.startsWith('0')) return "TC kimlik no 0 ile başlayamaz";
+                              final lastDigit = int.parse(tc[10]);
+                              if (lastDigit % 2 != 0) return "TC kimlik no çift sayı ile bitmeli";
+                              return null;
+                            }),
                             const SizedBox(height: 12),
-                            _buildInput(_phone, "Telefon (5xx...)", Icons.phone, isNum: true, validator: _req),
+                            _buildInput(_phone, "Telefon (0xxx xxx xx xx)", Icons.phone, isNum: true, maxLength: 11, validator: (v) {
+                              final digits = v?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+                              if (!RegExp(r'^0\d{10}$').hasMatch(digits)) return "0 ile başlayan 11 hane girin";
+                              return null;
+                            }),
                             const SizedBox(height: 12),
                             _buildInput(_password, "Şifre", Icons.lock, obscure: true, validator: (v) {
                               if (v == null || v.length < 7) return "En az 7 karakter";
@@ -186,7 +204,11 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                             _sectionHeader("Sağlayıcı Bilgileri"),
                             _buildInput(_providerName, "Sağlayıcı / Kurum Adı", Icons.medical_services, validator: _req),
                             const SizedBox(height: 12),
-                            _buildInput(_providerPhone, "Kurum Telefon", Icons.phone_in_talk, isNum: true, validator: _req),
+                            _buildInput(_providerPhone, "Kurum Telefon (0xxx xxx xx xx)", Icons.phone_in_talk, isNum: true, maxLength: 11, validator: (v) {
+                              final digits = v?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+                              if (!RegExp(r'^0\d{10}$').hasMatch(digits)) return "0 ile başlayan 11 hane girin";
+                              return null;
+                            }),
                             const SizedBox(height: 12),
                             Row(
                               children: [
@@ -232,7 +254,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     );
   }
 
-  Widget _buildInput(TextEditingController controller, String label, IconData icon, {bool obscure = false, bool isNum = false, String? Function(String?)? validator}) {
+  Widget _buildInput(TextEditingController controller, String label, IconData icon, {bool obscure = false, bool isNum = false, int? maxLength, String? Function(String?)? validator}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
@@ -253,12 +275,19 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
               obscureText: obscure,
               style: const TextStyle(fontSize: 15, color: midnight),
               keyboardType: isNum ? TextInputType.number : TextInputType.emailAddress,
+              maxLength: maxLength,
+              inputFormatters: [
+                if (isNum) FilteringTextInputFormatter.digitsOnly,
+                if (isNum) FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+              ],
               decoration: InputDecoration(
                 hintText: label,
                 hintStyle: TextStyle(color: midnight.withOpacity(0.4), fontSize: 14),
                 prefixIcon: Icon(icon, color: midnight.withOpacity(0.7), size: 22),
                 contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                counterText: '',
               ),
               validator: validator,
             ),

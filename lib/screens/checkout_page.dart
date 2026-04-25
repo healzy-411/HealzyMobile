@@ -14,6 +14,7 @@ import '../services/token_store.dart';
 import 'saved_cards_page.dart';
 import '../utils/distance_utils.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../theme/app_colors.dart';
 
 class CheckoutPage extends StatefulWidget {
   final CartResponse cart;
@@ -292,12 +293,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Odeme"),
+        title: const Text("Ödeme"),
         elevation: 0.5,
       ),
-      body: _loading
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
@@ -340,6 +347,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 _buildBottomButton(),
               ],
             ),
+      ),
     );
   }
 
@@ -464,7 +472,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 3. Sipariş Notu
   Widget _buildOrderNoteSection() {
     return _sectionCard(
-      title: "Siparis Notu",
+      title: "Sipariş Notu",
       icon: Icons.note_alt_outlined,
       child: TextField(
         controller: _orderNoteController,
