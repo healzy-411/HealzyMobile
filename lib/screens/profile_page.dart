@@ -268,6 +268,7 @@ import '../services/token_store.dart';
 import '../Models/me_model.dart';
 import 'orders_history_page.dart';
 import 'saved_cards_page.dart';
+import 'my_addresses_page.dart';
 import 'auth_page.dart';
 import 'home_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
@@ -396,7 +397,13 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 40),
 
           _buildSectionTitle("Kişisel Bilgiler"),
-          _glassInfoTile(Icons.alternate_email_rounded, "E-posta", me.email, isVerified: true),
+          _glassInfoTile(
+            Icons.alternate_email_rounded,
+            "E-posta",
+            me.email,
+            isVerified: true,
+            onEdit: _handleChangeEmail,
+          ),
           _glassInfoTile(Icons.phone_iphone_rounded, "Telefon", me.phoneNumber),
           const SizedBox(height: 12),
           _glassMenuButton(
@@ -420,8 +427,18 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.credit_card_rounded,
             title: "Kayıtlı Kartlarım",
             onTap: () => Navigator.push(
-              context, 
+              context,
               MaterialPageRoute(builder: (_) => const SavedCardsPage())
+            ),
+          ),
+          _glassMenuButton(
+            icon: Icons.location_on_outlined,
+            title: "Kayıtlı Adreslerim",
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MyAddressesPage(baseUrl: widget.baseUrl),
+              ),
             ),
           ),
 
@@ -489,7 +506,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _glassInfoTile(IconData icon, String label, String value, {bool isVerified = false}) {
+  Widget _glassInfoTile(
+    IconData icon,
+    String label,
+    String value, {
+    bool isVerified = false,
+    VoidCallback? onEdit,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: _glassDecoration(),
@@ -509,6 +532,22 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             if (isVerified) const Icon(Icons.verified, color: Colors.green, size: 20),
+            if (onEdit != null) ...[
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: Icon(Icons.edit_outlined, size: 16, color: _fg),
+                label: Text(
+                  "Değiştir",
+                  style: TextStyle(color: _fg, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -563,6 +602,283 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ],
     );
+  }
+
+  Future<void> _handleChangeEmail() async {
+    final me = _me;
+    if (me == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF132B44) : Colors.white;
+    final borderC =
+        isDark ? Colors.white.withValues(alpha: 0.18) : Colors.grey.shade400;
+    final fieldFill =
+        isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.shade50;
+
+    // --- Adım 1: mevcut e-postaya kod gönder onayı
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        bool sending = false;
+        return StatefulBuilder(builder: (ctx, setDialog) {
+          return AlertDialog(
+            backgroundColor: dialogBg,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text("E-posta Değiştir", style: TextStyle(color: _fg)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Mevcut e-posta adresinize 6 haneli bir doğrulama kodu göndereceğiz.",
+                  style: TextStyle(color: _sub, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: fieldFill,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: borderC),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.alternate_email_rounded, size: 16, color: _sub),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          me.email,
+                          style: TextStyle(
+                              color: _fg, fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: sending ? null : () => Navigator.pop(ctx, false),
+                child: Text("İptal", style: TextStyle(color: _sub)),
+              ),
+              ElevatedButton.icon(
+                onPressed: sending
+                    ? null
+                    : () async {
+                        setDialog(() => sending = true);
+                        try {
+                          await _api.requestEmailChange();
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx, true);
+                        } catch (e) {
+                          setDialog(() => sending = false);
+                          if (!ctx.mounted) return;
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  e.toString().replaceFirst("Exception: ", "")),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                icon: sending
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send_outlined, size: 16),
+                label: Text(sending ? "Gönderiliyor..." : "Kodu Gönder"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F766E),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          );
+        });
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // --- Adım 2: kod + yeni e-posta
+    final codeCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        String? err;
+        bool saving = false;
+        bool resending = false;
+        return StatefulBuilder(builder: (ctx, setDialog) {
+          InputDecoration dec(String label, String hint) => InputDecoration(
+                labelText: label,
+                hintText: hint,
+                labelStyle: TextStyle(color: _sub),
+                hintStyle: TextStyle(color: _sub.withValues(alpha: 0.7)),
+                filled: true,
+                fillColor: fieldFill,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: borderC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: borderC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              );
+          return AlertDialog(
+            backgroundColor: dialogBg,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text("E-posta Değiştir", style: TextStyle(color: _fg)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${me.email} adresine gönderilen 6 haneli kodu girin ve yeni e-posta adresinizi yazın.",
+                    style: TextStyle(color: _sub, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: codeCtrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: TextStyle(color: _fg, letterSpacing: 4),
+                    decoration: dec("Doğrulama Kodu", "123456"),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: _fg),
+                    decoration: dec("Yeni E-posta", "yeni@ornek.com"),
+                  ),
+                  if (err != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.4)),
+                      ),
+                      child: Text(err!,
+                          style: const TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: (saving || resending)
+                          ? null
+                          : () async {
+                              setDialog(() {
+                                resending = true;
+                                err = null;
+                              });
+                              try {
+                                await _api.requestEmailChange();
+                                if (!ctx.mounted) return;
+                                setDialog(() => resending = false);
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(content: Text("Yeni kod gönderildi.")),
+                                );
+                              } catch (e) {
+                                setDialog(() {
+                                  resending = false;
+                                  err = e
+                                      .toString()
+                                      .replaceFirst("Exception: ", "");
+                                });
+                              }
+                            },
+                      child: Text(
+                        resending ? "Gönderiliyor..." : "Kodu tekrar gönder",
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(ctx, false),
+                child: Text("İptal", style: TextStyle(color: _sub)),
+              ),
+              ElevatedButton.icon(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final code = codeCtrl.text.trim();
+                        final newEmail = emailCtrl.text.trim();
+                        if (code.length != 6) {
+                          setDialog(() => err = "Kod 6 haneli olmalı.");
+                          return;
+                        }
+                        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(newEmail)) {
+                          setDialog(() => err = "Geçerli bir e-posta girin.");
+                          return;
+                        }
+                        setDialog(() {
+                          saving = true;
+                          err = null;
+                        });
+                        try {
+                          await _api.confirmEmailChange(
+                              code: code, newEmail: newEmail);
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx, true);
+                        } catch (e) {
+                          setDialog(() {
+                            saving = false;
+                            err =
+                                e.toString().replaceFirst("Exception: ", "");
+                          });
+                        }
+                      },
+                icon: saving
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check, size: 16),
+                label: Text(saving ? "Güncelleniyor..." : "Onayla"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F766E),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          );
+        });
+      },
+    );
+
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("E-posta adresiniz güncellendi.")),
+      );
+      _load();
+    }
   }
 
   Future<void> _handleEditProfile() async {
@@ -775,7 +1091,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _handleLogout() async {
-    await TokenStore.clear();
+    await _api.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context, 

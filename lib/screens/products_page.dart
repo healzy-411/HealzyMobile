@@ -9,6 +9,7 @@ import 'cart_page.dart';
 import 'product_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../widgets/skeleton_shimmer.dart';
 import '../theme/app_colors.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -151,18 +152,45 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark
-        ? const Color(0xFF132B44).withValues(alpha: 0.85)
-        : Colors.white.withValues(alpha: 0.55);
-    final cardBorder = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.55);
     final fg = isDark ? Colors.white : const Color(0xFF102E4A);
 
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: Text(widget.categoryName),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Sepet',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CartPage()),
+                ).then((_) => _refreshCartCount());
+              },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.shopping_basket_outlined, color: fg, size: 26),
+                  if (cartCount > 0)
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: CircleAvatar(
+                        radius: 9,
+                        backgroundColor: Colors.red,
+                        child: Text(
+                          '$cartCount',
+                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -178,7 +206,21 @@ class _ProductsPageState extends State<ProductsPage> {
               child: RefreshIndicator(
                 onRefresh: _loadProducts,
                 child: _loadingProducts
-                    ? const Center(child: CircularProgressIndicator())
+                    ? GridView.count(
+                        padding: const EdgeInsets.all(12),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.72,
+                        children: const [
+                          ProductCardSkeleton(),
+                          ProductCardSkeleton(),
+                          ProductCardSkeleton(),
+                          ProductCardSkeleton(),
+                          ProductCardSkeleton(),
+                          ProductCardSkeleton(),
+                        ],
+                      )
                     : _productError != null
                         ? ListView(
                             children: [
@@ -223,42 +265,6 @@ class _ProductsPageState extends State<ProductsPage> {
           ],
         ),
       ),
-      ),
-
-      // CART BUTTON
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: cardBg,
-        foregroundColor: fg,
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: cardBorder, width: 0.8),
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CartPage()),
-          ).then((_) => _refreshCartCount());
-        },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(Icons.shopping_basket_outlined, color: fg, size: 28),
-            if (cartCount > 0)
-              Positioned(
-                right: -8,
-                top: -8,
-                child: CircleAvatar(
-                  radius: 10,
-                  backgroundColor: Colors.red,
-                  child: Text(
-                    '$cartCount',
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
-                  ),
-                ),
-              )
-          ],
-        ),
       ),
     );
   }

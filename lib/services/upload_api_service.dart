@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'session_guard.dart';
 import 'token_store.dart';
 
 class UploadApiService {
@@ -22,10 +23,7 @@ class UploadApiService {
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;

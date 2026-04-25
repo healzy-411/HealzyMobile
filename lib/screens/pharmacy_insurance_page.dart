@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
@@ -158,11 +159,28 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleC = isDark ? Colors.white : AppColors.midnight;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
+    final fg = titleC;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBg : null,
       appBar: AppBar(
-        title: const Text("Sigorta Yonetimi"),
-        backgroundColor: AppColors.midnight,
-        foregroundColor: Colors.white,
+        title: const Text("Sigorta Yönetimi"),
+        backgroundColor: Colors.transparent,
+        foregroundColor: fg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+        ),
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddDialog,
@@ -170,61 +188,99 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text("Sigorta Ekle", style: TextStyle(color: Colors.white)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(onPressed: _load, child: const Text("Tekrar Dene")),
-                    ],
-                  ),
-                )
-              : _myInsurances.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.health_and_safety, size: 64, color: Colors.grey),
-                          SizedBox(height: 12),
-                          Text("Henuz sigorta sirketi eklenmemis.",
-                              style: TextStyle(color: Colors.grey, fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text("Asagidaki butondan ekleyebilirsiniz.",
-                              style: TextStyle(color: Colors.grey, fontSize: 14)),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                        itemCount: _myInsurances.length,
-                        itemBuilder: (context, i) {
-                          final ins = _myInsurances[i];
-                          final name = ins["insuranceCompanyName"] ?? "";
-                          final id = ins["insuranceCompanyId"] as int;
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: const CircleAvatar(
-                                backgroundColor: Colors.teal,
-                                child: Icon(Icons.health_and_safety, color: Colors.white, size: 20),
-                              ),
-                              title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => _confirmRemove(id, name),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(onPressed: _load, child: const Text("Tekrar Dene")),
+                      ],
                     ),
+                  )
+                : _myInsurances.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.health_and_safety, size: 64, color: muted),
+                            const SizedBox(height: 12),
+                            Text("Henüz sigorta şirketi eklenmemiş.",
+                                style: TextStyle(color: titleC, fontSize: 16, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text("Aşağıdaki butondan ekleyebilirsiniz.",
+                                style: TextStyle(color: muted, fontSize: 13)),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                          itemCount: _myInsurances.length,
+                          itemBuilder: (context, i) {
+                            final ins = _myInsurances[i];
+                            final name = ins["insuranceCompanyName"] ?? "";
+                            final id = ins["insuranceCompanyId"] as int;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF132B44).withValues(alpha: 0.6)
+                                    : Colors.white.withValues(alpha: 0.68),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : AppColors.midnight.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.health_and_safety,
+                                        color: Colors.white, size: 22),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Text(name,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 15,
+                                            color: titleC)),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete_outline,
+                                        color: isDark ? Colors.red.shade300 : Colors.red),
+                                    onPressed: () => _confirmRemove(id, name),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+      ),
     );
   }
 }

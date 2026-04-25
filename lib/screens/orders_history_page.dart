@@ -4,6 +4,7 @@ import '../Models/order_model.dart';
 import '../services/order_api_service.dart';
 import 'order_detail_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../widgets/skeleton_shimmer.dart';
 import '../theme/app_colors.dart';
 
 class OrdersHistoryPage extends StatefulWidget {
@@ -65,7 +66,15 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: const [
+                    OrderCardSkeleton(),
+                    OrderCardSkeleton(),
+                    OrderCardSkeleton(),
+                    OrderCardSkeleton(),
+                  ],
+                )
               : (_error != null)
                   ? ListView(
                       children: [

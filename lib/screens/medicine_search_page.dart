@@ -232,6 +232,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                           child: Text("Ürün bulunamadı", style: TextStyle(color: Colors.grey)),
                         )
                       : ListView.builder(
+                          primary: false,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           itemCount: _filteredMedicines.length,
                           itemBuilder: (context, index) {
@@ -382,6 +383,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                             ),
                           )
                         : ListView.builder(
+                            primary: false,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: _compareResults.length,
                             itemBuilder: (context, index) {

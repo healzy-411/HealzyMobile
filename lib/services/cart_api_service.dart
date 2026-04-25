@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../Models/cart_model.dart';
-import 'token_store.dart';
+import 'session_guard.dart';
 
 class CartApiService {
   final String baseUrl;
@@ -23,10 +23,7 @@ class CartApiService {
   Future<CartResponse> getMyCart() async {
     final uri = Uri.parse('$baseUrl/api/cart/me');
     final res = await http.get(uri, headers: await _headers());
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return CartResponse.fromJson(jsonDecode(res.body));
     }
@@ -48,10 +45,7 @@ class CartApiService {
         "quantity": quantity,
       }),
     );
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return CartResponse.fromJson(jsonDecode(res.body));
     }
@@ -68,10 +62,7 @@ class CartApiService {
       headers: await _headers(),
       body: jsonEncode({"quantity": quantity}),
     );
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return CartResponse.fromJson(jsonDecode(res.body));
     }
@@ -81,10 +72,7 @@ class CartApiService {
   Future<CartResponse> removeItem(int itemId) async {
     final uri = Uri.parse('$baseUrl/api/cart/items/$itemId');
     final res = await http.delete(uri, headers: await _headers());
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return CartResponse.fromJson(jsonDecode(res.body));
     }
@@ -94,10 +82,7 @@ class CartApiService {
   Future<void> clearCart() async {
     final uri = Uri.parse('$baseUrl/api/cart/me');
     final res = await http.delete(uri, headers: await _headers());
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
     if (res.statusCode == 204) return;
     throw Exception('Clear cart failed: ${res.statusCode} ${res.body}');
   }

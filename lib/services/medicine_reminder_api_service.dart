@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../Models/medicine_reminder_model.dart';
+import 'session_guard.dart';
 import 'token_store.dart';
 
 class MedicineReminderApiService {
@@ -32,12 +33,7 @@ class MedicineReminderApiService {
 
   bool _ok(int code) => code >= 200 && code < 300;
 
-  Future<void> _check401(http.Response res) async {
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
-  }
+  Future<void> _check401(http.Response res) => SessionGuard.handle401(res);
 
   /// Tüm reminder'lar (kullanıcının tüm planları)
   Future<List<MedicineReminderDto>> getMyReminders() async {

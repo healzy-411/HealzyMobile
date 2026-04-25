@@ -123,7 +123,7 @@ class HealzyBottomNav extends StatelessWidget {
             ),
           ),
           ),
-            // Map button — taşan
+            // Map button — tasan
             Positioned(
               top: -mapOverflow,
               left: 0,
@@ -143,6 +143,7 @@ class HealzyBottomNav extends StatelessWidget {
     );
   }
 }
+
 
 class _NavItem extends StatelessWidget {
   final IconData icon;

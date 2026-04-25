@@ -8,7 +8,7 @@ import '../Models/insurance_model.dart';
 import '../Models/otcmedicine_model.dart';
 import '../Models/duty_pharmacy_model.dart';
 import '../Models/medicine_search_model.dart';
-import 'token_store.dart';
+import 'session_guard.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyCategoryItem {
@@ -46,10 +46,7 @@ class ApiService {
       headers: {'Accept': 'application/json'},
     );
 
-    if (response.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(response);
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
@@ -92,10 +89,7 @@ final response = await http.post(
 //debugPrint("📥 STATUS: ${response.statusCode}");
 //debugPrint("📥 RESPONSE: ${response.body}");
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List data = jsonDecode(response.body);
@@ -114,10 +108,7 @@ final response = await http.post(
 
     final response = await http.get(url);
 
-    if (response.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(response);
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
@@ -136,10 +127,7 @@ final response = await http.post(
 
     final response = await http.get(url);
 
-    if (response.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(response);
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
@@ -164,10 +152,7 @@ final response = await http.post(
       headers: {'Accept': 'application/json'},
     );
 
-    if (response.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(response);
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
@@ -208,10 +193,7 @@ final response = await http.post(
     headers: {'Accept': 'application/json'},
   );
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List<dynamic> jsonList = jsonDecode(response.body);
@@ -233,10 +215,7 @@ Future<List<DutyPharmacyModel>> getDutyPharmacies() async {
     headers: {'Accept': 'application/json'},
   );
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List<dynamic> jsonList = jsonDecode(response.body);
@@ -259,10 +238,7 @@ Future<List<OtcMedicine>> getAllMedicines() async {
   //debugPrint("⬅️ STATUS: ${response.statusCode}");
   //debugPrint("⬅️ BODY: ${response.body}");
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List<dynamic> jsonList = jsonDecode(response.body);
@@ -286,10 +262,7 @@ Future<List<MedicineSearchResult>> searchOtcMedicines(String query) async {
     headers: {'Accept': 'application/json'},
   );
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List<dynamic> jsonList = jsonDecode(response.body);
@@ -315,10 +288,7 @@ Future<List<PharmacyCompareResult>> compareMedicines(List<int> medicineIds) asyn
     body: jsonEncode(medicineIds),
   );
 
-  if (response.statusCode == 401) {
-    await TokenStore.clear();
-    throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-  }
+  await SessionGuard.handle401(response);
 
   if (response.statusCode == 200) {
     final List<dynamic> jsonList = jsonDecode(response.body);

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../Models/prescription_models.dart';
 import '../Models/cart_model.dart';
+import 'session_guard.dart';
 import 'token_store.dart';
 
 class PrescriptionApiService {
@@ -41,10 +42,7 @@ class PrescriptionApiService {
       }),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -59,6 +57,7 @@ class PrescriptionApiService {
     required List<int> selectedItemIds,
     String? district,
     List<int>? insuranceCompanyIds,
+    Map<int, int>? itemQuantities,
   }) async {
     final uri = Uri.parse('$baseUrl/api/prescriptions/simulate');
 
@@ -67,6 +66,9 @@ class PrescriptionApiService {
       "selectedItemIds": selectedItemIds,
       "district": district,
       "insuranceCompanyIds": insuranceCompanyIds,
+      if (itemQuantities != null)
+        "itemQuantities":
+            itemQuantities.map((k, v) => MapEntry(k.toString(), v)),
     };
 
     final res = await http.post(
@@ -75,10 +77,7 @@ class PrescriptionApiService {
       body: jsonEncode(body),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -92,6 +91,7 @@ class PrescriptionApiService {
     required String prescriptionNumber,
     required int pharmacyId,
     required List<int> selectedItemIds,
+    Map<int, int>? itemQuantities,
   }) async {
     final uri = Uri.parse('$baseUrl/api/prescriptions/add-to-cart');
 
@@ -99,6 +99,9 @@ class PrescriptionApiService {
       "prescriptionNumber": prescriptionNumber.trim(),
       "pharmacyId": pharmacyId,
       "selectedItemIds": selectedItemIds,
+      if (itemQuantities != null)
+        "itemQuantities":
+            itemQuantities.map((k, v) => MapEntry(k.toString(), v)),
     };
 
     final res = await http.post(
@@ -107,10 +110,7 @@ class PrescriptionApiService {
       body: jsonEncode(body),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;

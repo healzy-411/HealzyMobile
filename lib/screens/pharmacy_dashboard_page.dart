@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
@@ -101,11 +102,25 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : AppColors.midnight;
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBg : null,
       appBar: AppBar(
         title: const Text("Dashboard"),
-        backgroundColor: AppColors.midnight,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        foregroundColor: fg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+        ),
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         actions: [
           IconButton(
             icon: const Icon(Icons.date_range),
@@ -114,70 +129,87 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Tarih filtreleri
-          _buildDatePresets(),
-          // İçerik
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(_error!,
-                                style: const TextStyle(color: Colors.red)),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _loadDashboard,
-                              child: const Text("Tekrar Dene"),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _buildDashboard(),
-          ),
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: Column(
+          children: [
+            _buildDatePresets(),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(_error!,
+                                  style: const TextStyle(color: Colors.red)),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _loadDashboard,
+                                child: const Text("Tekrar Dene"),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _buildDashboard(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDatePresets() {
-    return SizedBox(
-      height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        children: [
-          ..._presets.map((p) => Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  label: Text(p.label, style: const TextStyle(fontSize: 14)),
-                  selected: _selectedPreset == p.label,
-                  selectedColor: AppColors.midnight,
-                  labelStyle: TextStyle(
-                    color: _selectedPreset == p.label
-                        ? Colors.white
-                        : Colors.black87,
-                  ),
-                  onSelected: (_) => _onPresetTap(p.label),
-                ),
-              )),
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ChoiceChip(
-              label: const Text("Ozel", style: TextStyle(fontSize: 14)),
-              selected: _selectedPreset == "Ozel",
-              selectedColor: AppColors.midnight,
-              labelStyle: TextStyle(
-                color:
-                    _selectedPreset == "Ozel" ? Colors.white : Colors.black87,
-              ),
-              onSelected: (_) => _pickCustomRange(),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedTextColor = isDark ? Colors.white : AppColors.midnight;
+    final unselectedBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.6)
+        : Colors.white.withValues(alpha: 0.7);
+
+    Widget buildChip(String label, bool selected, VoidCallback onTap) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: ChoiceChip(
+          label: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : unselectedTextColor,
             ),
           ),
+          selected: selected,
+          selectedColor: AppColors.midnight,
+          backgroundColor: unselectedBg,
+          side: BorderSide(
+            color: selected
+                ? Colors.transparent
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppColors.midnight.withValues(alpha: 0.08)),
+          ),
+          showCheckmark: false,
+          onSelected: (_) => onTap(),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 52,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        children: [
+          ..._presets.map((p) => buildChip(
+                p.label,
+                _selectedPreset == p.label,
+                () => _onPresetTap(p.label),
+              )),
+          buildChip("Özel", _selectedPreset == "Ozel", _pickCustomRange),
         ],
       ),
     );
@@ -246,12 +278,17 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           if (dailySales.isEmpty &&
               categorySales.isEmpty &&
               topProducts.isEmpty)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Text(
-                  "Bu tarih araliginda veri bulunamadi.",
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  "Bu tarih aralığında veri bulunamadı.",
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.65)
+                        : Colors.grey[700]!,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -285,13 +322,15 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   Widget _summaryCard(
       String label, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
     return Container(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: color.withValues(alpha: isDark ? 0.18 : 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: isDark ? 0.35 : 0.25)),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -300,9 +339,9 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           const SizedBox(height: 6),
           Text(value,
               style: TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+                  fontSize: 18, fontWeight: FontWeight.w800, color: color, letterSpacing: -0.3)),
           Text(label,
-              style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              style: TextStyle(fontSize: 12, color: muted, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -310,17 +349,27 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   // ======== GÜNLÜK SATIŞ GRAFİĞİ (Bar Chart) ========
   Widget _buildDailySalesChart(List<Map<String, dynamic>> dailySales) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final axisColor = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
+    final barColor = isDark ? const Color(0xFF60A5FA) : AppColors.midnight;
     return Container(
       height: 220,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF132B44).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.midnight.withValues(alpha: 0.08),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
         ],
       ),
       child: BarChart(
@@ -353,8 +402,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 reservedSize: 50,
                 getTitlesWidget: (value, meta) {
                   return Text("${value.toInt()}",
-                      style:
-                          const TextStyle(fontSize: 14, color: Colors.grey));
+                      style: TextStyle(fontSize: 12, color: axisColor));
                 },
               ),
             ),
@@ -380,8 +428,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(short,
-                        style: const TextStyle(
-                            fontSize: 14, color: Colors.grey)),
+                        style: TextStyle(fontSize: 12, color: axisColor)),
                   );
                 },
               ),
@@ -396,7 +443,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
             drawVerticalLine: false,
             horizontalInterval: null,
             getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withValues(alpha: 0.15),
+              color: (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.15),
               strokeWidth: 1,
             ),
           ),
@@ -408,7 +455,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
               barRods: [
                 BarChartRodData(
                   toY: revenue,
-                  color: AppColors.midnight,
+                  color: barColor,
                   width: dailySales.length > 20 ? 6 : 14,
                   borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(4)),
@@ -438,13 +485,20 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       height: 200,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF132B44).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.midnight.withValues(alpha: 0.08),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
         ],
       ),
       child: PieChart(
@@ -505,7 +559,11 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
             ),
             const SizedBox(width: 4),
             Text("$name (${revenue.toStringAsFixed(0)} TL)",
-                style: const TextStyle(fontSize: 14)),
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : AppColors.midnight)),
           ],
         );
       }),
@@ -521,13 +579,20 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF132B44).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.midnight.withValues(alpha: 0.08),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
         ],
       ),
       child: Column(
@@ -537,21 +602,27 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
           final pct = total > 0 ? count / total : 0.0;
           final color = _statusColor(status);
 
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 SizedBox(
-                  width: 90,
+                  width: 100,
                   child: Text(_statusText(status),
-                      style: const TextStyle(fontSize: 14)),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white : AppColors.midnight,
+                          fontWeight: FontWeight.w500)),
                 ),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: pct,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey.shade200,
                       color: color,
                       minHeight: 16,
                     ),
@@ -560,7 +631,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
                 const SizedBox(width: 8),
                 Text("$count",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         fontSize: 14,
                         color: color)),
               ],
@@ -575,17 +646,27 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
   Widget _buildTopProductsList(List<Map<String, dynamic>> topProducts) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF132B44).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.midnight.withValues(alpha: 0.08),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
         ],
       ),
       child: Column(
         children: List.generate(topProducts.length, (i) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final titleC = isDark ? Colors.white : AppColors.midnight;
+          final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
           final p = topProducts[i];
           final name = p["medicineName"] ?? "";
           final cat = p["categoryName"] ?? "";
@@ -594,20 +675,21 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
           return ListTile(
             leading: CircleAvatar(
-              backgroundColor: AppColors.midnight.withValues(alpha: 0.15),
+              backgroundColor: AppColors.midnight.withValues(alpha: isDark ? 0.35 : 0.15),
               child: Text("${i + 1}",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.midnight)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.midnight)),
             ),
             title: Text(name,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text("$cat | $qty adet",
-                style: const TextStyle(fontSize: 14)),
+                style: TextStyle(fontWeight: FontWeight.w600, color: titleC)),
+            subtitle: Text("$cat · $qty adet",
+                style: TextStyle(fontSize: 12.5, color: muted)),
             trailing: Text("${revenue.toStringAsFixed(0)} TL",
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.midnight)),
+                style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: titleC,
+                    fontSize: 14)),
           );
         }),
       ),
@@ -616,9 +698,13 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
 
   // ======== HELPERS ========
   Widget _sectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(title,
-        style: const TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF004D40)));
+        style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : AppColors.midnight,
+            letterSpacing: -0.3));
   }
 
   Color _statusColor(String status) {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../Models/address_model.dart';
+import 'session_guard.dart';
 import 'token_store.dart';
 
 class AddressApiService {
@@ -31,12 +32,7 @@ class AddressApiService {
 
   bool _isSuccess(int code) => code >= 200 && code < 300;
 
-  Future<void> _check401(http.Response res) async {
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
-  }
+  Future<void> _check401(http.Response res) => SessionGuard.handle401(res);
 
   Future<List<AddressDto>> getMyAddresses() async {
     final uri = Uri.parse("$baseUrl/api/addresses/my");

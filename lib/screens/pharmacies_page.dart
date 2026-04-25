@@ -10,6 +10,7 @@ import '../widgets/pharmacy_map_view.dart';
 import 'categories_page.dart';
 import 'pharmacy_detail_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../widgets/skeleton_shimmer.dart';
 import '../theme/app_colors.dart';
 
 class PharmaciesPage extends StatefulWidget {
@@ -192,7 +193,16 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
               future: futurePharmacies,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: const [
+                      PharmacyCardSkeleton(),
+                      PharmacyCardSkeleton(),
+                      PharmacyCardSkeleton(),
+                      PharmacyCardSkeleton(),
+                      PharmacyCardSkeleton(),
+                    ],
+                  );
                 }
 
                 if (snapshot.hasError) {

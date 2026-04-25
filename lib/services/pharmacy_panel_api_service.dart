@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'session_guard.dart';
 import '../services/token_store.dart';
 import '../Models/order_model.dart';
 
@@ -13,12 +14,7 @@ class PharmacyPanelApiService {
         'Authorization': 'Bearer ${TokenStore.get()}',
       };
 
-  Future<void> _check401(http.Response res) async {
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
-  }
+  Future<void> _check401(http.Response res) => SessionGuard.handle401(res);
 
   // GET /api/pharmacy-panel/profile
   Future<Map<String, dynamic>> getProfile() async {
@@ -249,6 +245,44 @@ class PharmacyPanelApiService {
     if (res.statusCode >= 200 && res.statusCode < 300) return;
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     throw Exception(body["message"] ?? "Remove insurance failed (${res.statusCode})");
+  }
+
+  // POST /api/geocoding/geocode
+  Future<Map<String, dynamic>> geocodeAddress(String district, String? address) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/geocoding/geocode'),
+      headers: _headers,
+      body: jsonEncode({"district": district, "address": address}),
+    );
+    await _check401(res);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) return body;
+    throw Exception(body["message"] ?? "Geocode failed (${res.statusCode})");
+  }
+
+  // POST /api/geocoding/reverse-geocode
+  Future<Map<String, dynamic>> reverseGeocode(double latitude, double longitude) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/geocoding/reverse-geocode'),
+      headers: _headers,
+      body: jsonEncode({"latitude": latitude, "longitude": longitude}),
+    );
+    await _check401(res);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) return body;
+    throw Exception(body["message"] ?? "Reverse geocode failed (${res.statusCode})");
+  }
+
+  // GET /api/pharmacy-panel/registration-info
+  Future<Map<String, dynamic>> getRegistrationInfo() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/pharmacy-panel/registration-info'),
+      headers: _headers,
+    );
+    await _check401(res);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) return body;
+    throw Exception(body["message"] ?? "Registration info failed (${res.statusCode})");
   }
 
   // GET /api/insurances (tüm sigorta şirketleri)

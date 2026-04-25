@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../Models/order_model.dart';
@@ -29,6 +30,7 @@ class _ActiveOrderTrackerState extends State<ActiveOrderTracker>
   bool _expanded = true;
   late AnimationController _animController;
   late Animation<double> _expandAnim;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -42,10 +44,15 @@ class _ActiveOrderTrackerState extends State<ActiveOrderTracker>
       curve: Curves.easeInOut,
     );
     _animController.value = 1.0; // start expanded
+    // Yolda durumunda tahmini süre her 30sn'de güncellensin.
+    _countdownTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -510,12 +517,25 @@ class _DeliveryEstimate {
   final double distanceKm;
   final int prepMin;
   final int travelMin;
-  int get minutes => prepMin + travelMin;
+  final DateTime? dispatchedAt;
+
+  // Yolda ise dispatch anından bu yana geçen süreyi travelMin'den düş;
+  // diğer durumlarda prep + travel toplamını göster.
+  int get minutes {
+    if (dispatchedAt != null) {
+      final elapsedMin =
+          DateTime.now().toUtc().difference(dispatchedAt!).inSeconds / 60.0;
+      final remaining = (travelMin - elapsedMin).ceil();
+      return remaining < 1 ? 1 : remaining;
+    }
+    return prepMin + travelMin;
+  }
 
   const _DeliveryEstimate({
     required this.distanceKm,
     required this.prepMin,
     required this.travelMin,
+    this.dispatchedAt,
   });
 }
 
@@ -558,10 +578,16 @@ _DeliveryEstimate? _estimateDelivery(OrderDto order, double? userLat, double? us
   // ~25 km/h sehir ici ortalama hiz (trafik dahil)
   final travelMin = (distanceKm / 25 * 60).ceil();
 
+  // Yolda ise baseline olarak son durum güncelleme zamanını kullan,
+  // böylece kalan süre zaman geçtikçe azalsın.
+  final dispatchedAt =
+      order.status == "Dispatched" ? order.updatedAtUtc.toUtc() : null;
+
   return _DeliveryEstimate(
     distanceKm: distanceKm,
     prepMin: prepMin,
     travelMin: travelMin,
+    dispatchedAt: dispatchedAt,
   );
 }
 

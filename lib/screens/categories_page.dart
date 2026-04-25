@@ -69,6 +69,39 @@ class _CategoriesPageState extends State<CategoriesPage> {
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
         title: Text(widget.pharmacyName),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Sepet',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CartPage()),
+                ).then((_) => _refreshCartCount());
+              },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.shopping_basket_outlined, color: fg, size: 26),
+                  if (cartCount > 0)
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: CircleAvatar(
+                        radius: 9,
+                        backgroundColor: Colors.red,
+                        child: Text(
+                          '$cartCount',
+                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -129,40 +162,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
           },
         ),
       ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: cardBg,
-        foregroundColor: fg,
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: cardBorder, width: 0.8),
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CartPage()),
-          ).then((_) => _refreshCartCount());
-        },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(Icons.shopping_basket_outlined, color: fg, size: 28),
-            if (cartCount > 0)
-              Positioned(
-                right: -8,
-                top: -8,
-                child: CircleAvatar(
-                  radius: 10,
-                  backgroundColor: Colors.red,
-                  child: Text(
-                    '$cartCount',
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }

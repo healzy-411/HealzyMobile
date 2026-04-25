@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'session_guard.dart';
 import 'token_store.dart';
 import '../Models/order_model.dart';
 import '../Models/cart_model.dart';
@@ -29,10 +30,7 @@ class OrderApiService {
       body: body != null ? jsonEncode(body) : null,
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return jsonDecode(res.body) as Map<String, dynamic>;
@@ -50,10 +48,7 @@ class OrderApiService {
       headers: _headersWithAuth(),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final decoded = jsonDecode(res.body);
@@ -81,10 +76,7 @@ class OrderApiService {
       headers: _headersWithAuth(),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final decoded = jsonDecode(res.body);
@@ -109,10 +101,7 @@ class OrderApiService {
       headers: _headersWithAuth(),
     );
 
-    if (res.statusCode == 401) {
-      await TokenStore.clear();
-      throw Exception("Oturum suresi doldu. Lutfen tekrar giris yapin.");
-    }
+    await SessionGuard.handle401(res);
 
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return CartResponse.fromJson(jsonDecode(res.body));

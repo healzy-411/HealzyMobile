@@ -5,8 +5,11 @@ import '../Models/otcmedicine_model.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
 import '../theme/app_colors.dart';
+import '../services/cart_api_service.dart';
+import '../services/token_store.dart';
+import 'cart_page.dart';
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final OtcMedicine product;
   final String categoryName;
   final VoidCallback? onAddToCart;
@@ -17,6 +20,35 @@ class ProductDetailPage extends StatelessWidget {
     required this.categoryName,
     this.onAddToCart,
   });
+
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  late final CartApiService cartApi = CartApiService(
+    baseUrl: ApiConfig.baseUrl,
+    getToken: () async => TokenStore.get(),
+  );
+  int cartCount = 0;
+
+  OtcMedicine get product => widget.product;
+  String get categoryName => widget.categoryName;
+  VoidCallback? get onAddToCart => widget.onAddToCart;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshCartCount();
+  }
+
+  Future<void> _refreshCartCount() async {
+    try {
+      final c = await cartApi.getMyCart();
+      if (!mounted) return;
+      setState(() => cartCount = c.items.length);
+    } catch (_) {}
+  }
 
   String? _fullUrl(String? rel) {
     if (rel == null || rel.isEmpty) return null;
@@ -49,6 +81,39 @@ class ProductDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(product.name, overflow: TextOverflow.ellipsis),
         elevation: 0.5,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Sepet',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CartPage()),
+                ).then((_) => _refreshCartCount());
+              },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.shopping_basket_outlined, color: fg, size: 26),
+                  if (cartCount > 0)
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: CircleAvatar(
+                        radius: 9,
+                        backgroundColor: Colors.red,
+                        child: Text(
+                          '$cartCount',
+                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -245,7 +310,13 @@ class ProductDetailPage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton.icon(
-                  onPressed: product.quantity > 0 ? onAddToCart : null,
+                  onPressed: product.quantity > 0
+                      ? () {
+                          onAddToCart?.call();
+                          Future.delayed(const Duration(milliseconds: 500),
+                              _refreshCartCount);
+                        }
+                      : null,
                   icon: const Icon(Icons.add_shopping_cart),
                   label: Text(product.quantity > 0
                       ? 'Sepete Ekle'

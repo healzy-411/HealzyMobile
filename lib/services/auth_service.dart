@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../services/token_store.dart';
+import 'token_store.dart';
 import '../Models/me_model.dart';
 
 class EmailNotVerifiedException implements Exception {
@@ -158,6 +158,55 @@ class AuthService {
     throw Exception(body["message"] ?? "Login failed (${res.statusCode})");
   }
 
+  /// Refresh token ile yeni access+refresh çifti alır ve TokenStore'a yazar.
+  /// Başarısız olursa exception fırlatır; çağıran taraf logout akışını tetikler.
+  Future<void> refresh() async {
+    final rt = TokenStore.getRefreshToken();
+    if (rt == null || rt.isEmpty) {
+      throw Exception('Refresh token bulunamadi.');
+    }
+    final url = Uri.parse('$baseUrl/api/auth/refresh');
+    final res = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refreshToken': rt}),
+    );
+    final body = _decode(res);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(body['message'] ?? 'Refresh failed (${res.statusCode})');
+    }
+    final newAccess = (body['accessToken'] ?? body['token'])?.toString();
+    final newRefresh = body['refreshToken']?.toString();
+    if (newAccess == null || newAccess.isEmpty) {
+      throw Exception('Refresh response invalid.');
+    }
+    await TokenStore.set(newAccess);
+    if (newRefresh != null && newRefresh.isNotEmpty) {
+      await TokenStore.setRefreshToken(newRefresh);
+    }
+  }
+
+  /// Backend'e logout isteği yollar (refresh token revoke) ve local store'u temizler.
+  Future<void> logout() async {
+    final token = TokenStore.get();
+    final rt = TokenStore.getRefreshToken();
+    try {
+      if (token != null) {
+        await http.post(
+          Uri.parse('$baseUrl/api/auth/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({'refreshToken': rt}),
+        );
+      }
+    } catch (_) {
+      // logout best-effort; backend down olsa bile local clear yap
+    }
+    await TokenStore.clear();
+  }
+
   Future<void> sendEmailCode({required String email}) async {
     final url = Uri.parse('$baseUrl/api/auth/email/send-code');
     final res = await http.post(
@@ -184,6 +233,42 @@ class AuthService {
     if (res.statusCode >= 200 && res.statusCode < 300) return;
 
     throw Exception(body["message"] ?? "Verify failed (${res.statusCode})");
+  }
+
+  Future<void> forgotPassword({required String email}) async {
+    final url = Uri.parse('$baseUrl/api/auth/password/forgot');
+    final res = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"email": email}),
+    );
+
+    final body = _decode(res);
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+
+    throw Exception(body["message"] ?? "İstek başarısız (${res.statusCode})");
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/api/auth/password/reset');
+    final res = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "email": email,
+        "code": code,
+        "newPassword": newPassword,
+      }),
+    );
+
+    final body = _decode(res);
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+
+    throw Exception(body["message"] ?? "Şifre sıfırlama başarısız (${res.statusCode})");
   }
 
   // ✅ /api/auth/me
@@ -237,6 +322,45 @@ class AuthService {
 
     final data = _decode(res);
     throw Exception(data["message"] ?? "Profil güncellenemedi (${res.statusCode})");
+  }
+
+  Future<void> requestEmailChange() async {
+    final token = TokenStore.get();
+    if (token == null || token.isEmpty) {
+      throw Exception("Token bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+    final url = Uri.parse('$baseUrl/api/auth/email/change/request');
+    final res = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+
+    final body = _decode(res);
+    throw Exception(body["message"] ?? "Kod gönderilemedi (${res.statusCode})");
+  }
+
+  Future<void> confirmEmailChange({required String code, required String newEmail}) async {
+    final token = TokenStore.get();
+    if (token == null || token.isEmpty) {
+      throw Exception("Token bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+    final url = Uri.parse('$baseUrl/api/auth/email/change/confirm');
+    final res = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"code": code, "newEmail": newEmail}),
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+
+    final body = _decode(res);
+    throw Exception(body["message"] ?? "E-posta güncellenemedi (${res.statusCode})");
   }
 
   Future<void> deleteAccount(String confirmation) async {

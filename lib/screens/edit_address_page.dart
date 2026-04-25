@@ -70,7 +70,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
     final a = widget.address;
     _title = TextEditingController(text: a.title);
     _fullName = TextEditingController(text: a.fullName);
-    _phone = TextEditingController(text: a.phone);
+    _phone = TextEditingController(text: _normalizePhone(a.phone));
 
     // Ankara sabit dersen bunu kilitle:
     _city = TextEditingController(text: a.city.isNotEmpty ? a.city : "Ankara");
@@ -449,17 +449,19 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   TextFormField(
                     controller: _phone,
                     style: TextStyle(color: textColor),
-                    decoration: _glassDecoration(hint: "(5xx) xxx xx xx"),
+                    decoration: _glassDecoration(hint: "0xxx xxx xx xx"),
                     keyboardType: TextInputType.phone,
-                    maxLength: 15,
+                    maxLength: 11,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      _TrPhoneFormatter(),
+                      LengthLimitingTextInputFormatter(11),
                     ],
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return "Zorunlu alan";
-                      final digits = v.trim().replaceAll(RegExp(r'[^0-9]'), '');
-                      if (!RegExp(r'^(0?5)\d{9}$').hasMatch(digits)) return "5 ile başlayan 10 haneli numara girin";
+                      final digits = v.trim();
+                      if (!RegExp(r'^0\d{10}$').hasMatch(digits)) {
+                        return "0 ile başlayan 11 haneli numara girin";
+                      }
                       return null;
                     },
                   ),
@@ -567,25 +569,12 @@ class _EditAddressPageState extends State<EditAddressPage> {
   }
 }
 
-class _TrPhoneFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    var digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('0')) digits = digits.substring(1);
-    if (digits.length > 10) digits = digits.substring(0, 10);
-
-    final b = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i == 0) b.write('(');
-      b.write(digits[i]);
-      if (i == 2) b.write(') ');
-      else if (i == 5) b.write(' ');
-      else if (i == 7) b.write(' ');
-    }
-    final formatted = b.toString();
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
+String _normalizePhone(String? raw) {
+  if (raw == null) return '';
+  var digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.length == 10 && digits.startsWith('5')) {
+    digits = '0$digits';
   }
+  if (digits.length > 11) digits = digits.substring(0, 11);
+  return digits;
 }

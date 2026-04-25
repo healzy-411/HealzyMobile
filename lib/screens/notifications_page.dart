@@ -27,8 +27,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   List<NotificationModel> _notifications = [];
   bool _loading = true;
-  // ignore: unused_field
   String? _userRole;
+
+  bool get _hideBottomNav =>
+      _userRole == 'Pharmacist' ||
+      _userRole == 'HomeCareProvider' ||
+      _userRole == 'Admin';
 
   @override
   void initState() {
@@ -193,8 +197,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         : AppColors.lightBlueSoft.withValues(alpha: 0.5);
 
     return Scaffold(
-      bottomNavigationBar:
-          const HealzyBottomNav(current: HealzyNavTab.notifications),
+      bottomNavigationBar: _hideBottomNav
+          ? null
+          : const HealzyBottomNav(current: HealzyNavTab.notifications),
       appBar: AppBar(
         title: const Text("Bildirimler"),
         actions: [

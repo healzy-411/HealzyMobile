@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../Models/order_model.dart';
 import '../theme/app_colors.dart';
@@ -119,17 +120,31 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : AppColors.midnight;
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBg : null,
       appBar: AppBar(
-        title: const Text("Siparisler"),
-        backgroundColor: AppColors.midnight,
-        foregroundColor: Colors.white,
+        title: const Text("Siparişler"),
+        backgroundColor: Colors.transparent,
+        foregroundColor: fg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+        ),
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          labelColor: fg,
+          unselectedLabelColor: fg.withValues(alpha: 0.55),
+          indicatorColor: fg,
           tabs: [
             Tab(text: "Bekleyen (${_filterByStatus(["Pending"]).length})"),
             Tab(text: "Hazırlanan (${_filterByStatus(["Preparing"]).length})"),
@@ -138,50 +153,58 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
           ],
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _loadOrders,
+                          child: const Text("Tekrar Dene"),
+                        ),
+                      ],
+                    ),
+                  )
+                : TabBarView(
+                    controller: _tabController,
                     children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _loadOrders,
-                        child: const Text("Tekrar Dene"),
+                      _buildOrderList(
+                        _filterByStatus(["Pending"]),
+                        emptyText: "Bekleyen sipariş yok",
+                      ),
+                      _buildOrderList(
+                        _filterByStatus(["Preparing"]),
+                        emptyText: "Hazırlanan sipariş yok",
+                      ),
+                      _buildOrderList(
+                        _filterByStatus(["Ready"]),
+                        emptyText: "Hazır sipariş yok",
+                      ),
+                      _buildOrderList(
+                        _filterByStatus(["Delivered", "Cancelled"]),
+                        emptyText: "Tamamlanan sipariş yok",
                       ),
                     ],
                   ),
-                )
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildOrderList(
-                      _filterByStatus(["Pending"]),
-                      emptyText: "Bekleyen siparis yok",
-                    ),
-                    _buildOrderList(
-                      _filterByStatus(["Preparing"]),
-                      emptyText: "Hazirlanan siparis yok",
-                    ),
-                    _buildOrderList(
-                      _filterByStatus(["Ready"]),
-                      emptyText: "Hazir siparis yok",
-                    ),
-                    _buildOrderList(
-                      _filterByStatus(["Delivered", "Cancelled"]),
-                      emptyText: "Tamamlanan siparis yok",
-                    ),
-                  ],
-                ),
+      ),
     );
   }
 
   Widget _buildOrderList(List<OrderDto> orders, {required String emptyText}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.grey[600]!;
     if (orders.isEmpty) {
       return Center(
-        child: Text(emptyText, style: const TextStyle(color: Colors.grey)),
+        child: Text(emptyText, style: TextStyle(color: muted, fontSize: 14)),
       );
     }
 
@@ -196,227 +219,245 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
   }
 
   Widget _orderCard(OrderDto order) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleC = isDark ? Colors.white : AppColors.midnight;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
     final statusColor = _statusColor(order.status);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Üst satır: sipariş no + durum
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Siparis #${order.orderId}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.midnight.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Üst satır: sipariş no + durum
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Sipariş #${order.orderId}",
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: titleC),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: isDark ? 0.22 : 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                child: Text(
+                  _statusText(order.status),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : statusColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
-                  child: Text(
-                    _statusText(order.status),
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 6),
-
-            // Müşteri adı
-            if (order.customerName != null && order.customerName!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      order.customerName!,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                  ],
                 ),
               ),
+            ],
+          ),
 
-            // Tarih
-            Text(
-              "${order.createdAtUtc.day.toString().padLeft(2, '0')}."
-              "${order.createdAtUtc.month.toString().padLeft(2, '0')}."
-              "${order.createdAtUtc.year} "
-              "${order.createdAtUtc.hour.toString().padLeft(2, '0')}:"
-              "${order.createdAtUtc.minute.toString().padLeft(2, '0')}",
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
-            ),
+          const SizedBox(height: 6),
 
-            const SizedBox(height: 8),
-
-            // Ürünler
-            ...order.items.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text("${item.medicineName} x${item.quantity}"),
-                      ),
-                      Text("${item.lineTotal.toStringAsFixed(2)} TL"),
-                    ],
-                  ),
-                )),
-
-            const Divider(),
-
-            // Teslimat adresi
-            if (order.deliveryAddressSnapshot.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        order.deliveryAddressSnapshot,
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Ödeme bilgisi
+          if (order.customerName != null && order.customerName!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.payment, size: 16, color: Colors.grey),
+                  Icon(Icons.person, size: 16, color: muted),
                   const SizedBox(width: 4),
                   Text(
-                    order.paymentMethod == "CreditCard"
-                        ? "Kredi Karti${order.cardNameSnapshot != null ? ' - ${order.cardNameSnapshot} (**** ${order.maskedCardNumberSnapshot ?? ''})' : ''}"
-                        : "Kapida Odeme",
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    order.customerName!,
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleC),
                   ),
                 ],
               ),
             ),
 
-            // Sipariş notu
-            if (order.orderNote != null && order.orderNote!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+          Text(
+            "${order.createdAtUtc.day.toString().padLeft(2, '0')}."
+            "${order.createdAtUtc.month.toString().padLeft(2, '0')}."
+            "${order.createdAtUtc.year} "
+            "${order.createdAtUtc.hour.toString().padLeft(2, '0')}:"
+            "${order.createdAtUtc.minute.toString().padLeft(2, '0')}",
+            style: TextStyle(color: muted, fontSize: 13),
+          ),
+
+          const SizedBox(height: 8),
+
+          ...order.items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.message, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        "Siparis Notu: ${order.orderNote!}",
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        "${item.medicineName} x${item.quantity}",
+                        style: TextStyle(color: titleC, fontSize: 14),
                       ),
+                    ),
+                    Text(
+                      "${item.lineTotal.toStringAsFixed(2)} TL",
+                      style: TextStyle(color: titleC, fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
-              ),
+              )),
 
-            // Teslimat notu
-            if (order.deliveryNote != null && order.deliveryNote!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.doorbell, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        "Teslimat: ${order.deliveryNote!}",
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
+          Divider(color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08)),
+
+          if (order.deliveryAddressSnapshot.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.location_on, size: 16, color: muted),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      order.deliveryAddressSnapshot,
+                      style: TextStyle(fontSize: 13, color: muted),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
-            // Toplam
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
               children: [
-                const Text("Toplam:", style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  "${order.total.toStringAsFixed(2)} TL",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Icon(Icons.payment, size: 16, color: muted),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    order.paymentMethod == "CreditCard"
+                        ? "Kredi Kartı${order.cardNameSnapshot != null ? ' - ${order.cardNameSnapshot} (**** ${order.maskedCardNumberSnapshot ?? ''})' : ''}"
+                        : "Kapıda Ödeme",
+                    style: TextStyle(fontSize: 13, color: muted),
+                  ),
                 ),
               ],
             ),
+          ),
 
-            // Durum notu
-            if (order.statusNote != null && order.statusNote!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(6),
+          if (order.orderNote != null && order.orderNote!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.message, size: 16, color: muted),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      "Sipariş Notu: ${order.orderNote!}",
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.note, size: 14, color: Colors.blue.shade700),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          order.statusNote!,
-                          style: TextStyle(fontSize: 14, color: Colors.blue.shade900),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
+            ),
 
-            // Aksiyon butonları
-            if (_getAvailableActions(order.status).isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: _getAvailableActions(order.status).map((action) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _updateStatus(order.orderId, action.status),
-                      icon: Icon(action.icon, size: 18),
-                      label: Text(action.label),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: action.color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+          if (order.deliveryNote != null && order.deliveryNote!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.doorbell, size: 16, color: muted),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      "Teslimat: ${order.deliveryNote!}",
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Toplam:", style: TextStyle(fontWeight: FontWeight.w600, color: titleC)),
+              Text(
+                "${order.total.toStringAsFixed(2)} TL",
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: titleC),
+              ),
+            ],
+          ),
+
+          if (order.statusNote != null && order.statusNote!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.2 : 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.note, size: 14, color: Color(0xFF3B82F6)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        order.statusNote!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white : const Color(0xFF1D4ED8),
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
               ),
-            ],
+            ),
+
+          if (_getAvailableActions(order.status).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: _getAvailableActions(order.status).map((action) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _updateStatus(order.orderId, action.status),
+                    icon: Icon(action.icon, size: 18),
+                    label: Text(action.label),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: action.color,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

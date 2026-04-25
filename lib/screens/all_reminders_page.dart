@@ -675,15 +675,15 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           children: [
                             if (active.isNotEmpty) ...[
-                              _sectionHeader('Aktif Planlar', Colors.green),
+                              _sectionHeader('Aktif Hatırlatıcılar', Colors.green),
                               ...active.map((r) => _glassReminderCard(r)),
                             ],
                             if (completed.isNotEmpty) ...[
-                              _sectionHeader('Tamamlananlar', Colors.blueGrey),
+                              _sectionHeader('Tamamlanan Hatırlatıcılar', Colors.blueGrey),
                               ...completed.map((r) => _glassReminderCard(r)),
                             ],
                             if (deleted.isNotEmpty) ...[
-                              _sectionHeader('Silinenler', Colors.red),
+                              _sectionHeader('Silinen Hatırlatıcılar', Colors.red),
                               ...deleted.map((r) => _glassReminderCard(r)),
                             ],
                           ],

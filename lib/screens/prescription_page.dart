@@ -21,6 +21,8 @@ class PrescriptionPage extends StatefulWidget {
 
 class _PrescriptionPageState extends State<PrescriptionPage> {
   late Set<int> _selectedItemIds;
+  late Map<int, int> _quantities; // itemId -> current qty
+  late Map<int, int> _maxQuantities; // itemId -> prescribed max qty
   bool _loading = false;
   String? _error;
 
@@ -30,6 +32,35 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
   void initState() {
     super.initState();
     _selectedItemIds = widget.detail.items.map((e) => e.itemId).toSet();
+    _quantities = {for (final it in widget.detail.items) it.itemId: it.quantity};
+    _maxQuantities = {for (final it in widget.detail.items) it.itemId: it.quantity};
+  }
+
+  void _decrease(PrescriptionItemDto it) {
+    final current = _quantities[it.itemId] ?? 0;
+    if (current <= 0) return;
+    setState(() {
+      final next = current - 1;
+      _quantities[it.itemId] = next;
+      if (next == 0) {
+        _selectedItemIds.remove(it.itemId);
+      }
+      _result = null;
+    });
+  }
+
+  void _increase(PrescriptionItemDto it) {
+    final current = _quantities[it.itemId] ?? 0;
+    final max = _maxQuantities[it.itemId] ?? it.quantity;
+    if (current >= max) return;
+    setState(() {
+      final next = current + 1;
+      _quantities[it.itemId] = next;
+      if (next > 0) {
+        _selectedItemIds.add(it.itemId);
+      }
+      _result = null;
+    });
   }
 
   Future<void> _simulate() async {
@@ -49,6 +80,10 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
         selectedItemIds: _selectedItemIds.toList(),
         district: null,
         insuranceCompanyIds: null,
+        itemQuantities: {
+          for (final id in _selectedItemIds)
+            if ((_quantities[id] ?? 0) > 0) id: _quantities[id]!
+        },
       );
 
       if (!mounted) return;
@@ -80,29 +115,11 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               itemCount: items.length,
-              itemBuilder: (_, i) {
-                final it = items[i];
-                final selected = _selectedItemIds.contains(it.itemId);
-                return CheckboxListTile(
-                  value: selected,
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true) {
-                        _selectedItemIds.add(it.itemId);
-                      } else {
-                        _selectedItemIds.remove(it.itemId);
-                      }
-                      _result = null;
-                    });
-                  },
-                  title: Text(it.medicineName),
-                  subtitle: Text(
-                    "Adet: ${it.quantity} • Birim: ${it.unitPrice.toStringAsFixed(2)} ₺ • Satır: ${it.lineTotal.toStringAsFixed(2)} ₺",
-                  ),
-                );
-              },
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) => _buildItemTile(items[i]),
             ),
           ),
           if (_error != null)
@@ -140,6 +157,125 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
             ),
           ),
           if (_result != null) _buildResultSection(_result!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemTile(PrescriptionItemDto it) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : const Color(0xFF102E4A);
+    final sub = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
+    final qty = _quantities[it.itemId] ?? 0;
+    final maxQty = _maxQuantities[it.itemId] ?? it.quantity;
+    final lineTotal = it.unitPrice * qty;
+    final canDecrease = qty > 0;
+    final canIncrease = qty < maxQty;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  it.medicineName,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Birim: ${it.unitPrice.toStringAsFixed(2)} ₺  •  Reçete: $maxQty adet",
+                  style: TextStyle(color: sub, fontSize: 12.5),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Satır: ${lineTotal.toStringAsFixed(2)} ₺",
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFF102E4A).withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : const Color(0xFF102E4A).withValues(alpha: 0.12),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: "Azalt",
+                  iconSize: 18,
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: canDecrease ? () => _decrease(it) : null,
+                  icon: Icon(
+                    Icons.remove,
+                    color: canDecrease ? fg : fg.withValues(alpha: 0.3),
+                  ),
+                ),
+                SizedBox(
+                  width: 28,
+                  child: Text(
+                    "$qty",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: fg,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: canIncrease ? "Arttır" : "Reçete üstü ekleme yapılamaz",
+                  iconSize: 18,
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: canIncrease ? () => _increase(it) : null,
+                  icon: Icon(
+                    Icons.add,
+                    color: canIncrease ? fg : fg.withValues(alpha: 0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -203,6 +339,10 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
                           prescriptionNumber: widget.detail.prescriptionNumber,
                           pharmacyId: p.id,
                           selectedItemIds: _selectedItemIds.toList(),
+                          itemQuantities: {
+                            for (final id in _selectedItemIds)
+                              if ((_quantities[id] ?? 0) > 0) id: _quantities[id]!
+                          },
                         );
 
                         if (!mounted) return;

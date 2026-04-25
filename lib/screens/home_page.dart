@@ -31,6 +31,7 @@ import 'home_care_page.dart';
 import 'medicine_search_page.dart';
 import 'home_map_fullscreen_page.dart';
 import '../services/notification_api_service.dart';
+import '../services/cart_api_service.dart';
 import '../services/auth_service.dart';
 import 'dart:async';
 import '../services/local_notification_service.dart';
@@ -38,7 +39,9 @@ import '../services/order_api_service.dart';
 import '../Models/order_model.dart';
 import '../widgets/active_order_tracker.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../widgets/ai_assistant_fab.dart';
 import 'package:healzy_app/config/api_config.dart';
+import 'chatbot_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -59,13 +62,25 @@ class _HomePageState extends State<HomePage> {
   // Bildirim
   final _notifApi = NotificationApiService(baseUrl: ApiConfig.baseUrl);
   int _unreadCount = 0;
+  // ID bazlı push tracker: bu değerden büyük ID'li bildirimler push olarak gösterilir.
+  // İlk yüklemede en son bildirimin ID'sine set edilir ki eskiler tekrar pushlamasın.
+  int _lastPushedNotifId = 0;
+  bool _notifBaselineSet = false;
   Timer? _notifTimer;
+
+  // Sepet
+  late final CartApiService _cartApi = CartApiService(
+    baseUrl: ApiConfig.baseUrl,
+    getToken: () async => TokenStore.get(),
+  );
+  int _cartCount = 0;
 
   // Aktif siparis
   final _orderApi = OrderApiService(baseUrl: ApiConfig.baseUrl);
   List<OrderDto> _activeOrders = [];
   Timer? _activeOrderTimer;
-  bool _trackerDismissed = false;
+  // Kullanıcının gizle dediği sipariş ID'leri. Backend'den düşene kadar tracker'da görünmezler.
+  final Set<int> _dismissedOrderIds = <int>{};
   Timer? _autoHideTimer;
 
   // Harita stili
@@ -230,14 +245,15 @@ class _HomePageState extends State<HomePage> {
     _loadUnreadCount();
     _loadMapData();
     _loadActiveOrders();
+    _refreshCartCount();
     _sendHeartbeat();
-    _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
+    _notifTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadUnreadCount());
     _activeOrderTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadActiveOrders());
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) => _sendHeartbeat());
   }
 
   ActiveOrderRoute? _buildActiveRoute() {
-    if (_activeOrders.isEmpty || _trackerDismissed) return null;
+    if (_activeOrders.isEmpty) return null;
     final order = _activeOrders.first;
     if (order.pharmacyLatitude == null || order.pharmacyLongitude == null) return null;
 
@@ -255,9 +271,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _refreshCartCount() async {
+    try {
+      final c = await _cartApi.getMyCart();
+      if (!mounted) return;
+      setState(() => _cartCount = c.items.length);
+    } catch (_) {}
+  }
+
   void _dismissTracker() {
     _autoHideTimer?.cancel();
-    setState(() => _trackerDismissed = true);
+    _autoHideTimer = null;
+    setState(() {
+      // Şu an görünen tüm aktif siparişler bir daha gösterilmesin.
+      _dismissedOrderIds.addAll(_activeOrders.map((o) => o.orderId));
+      _activeOrders = [];
+    });
   }
 
   Future<void> _loadActiveOrders() async {
@@ -265,47 +294,55 @@ class _HomePageState extends State<HomePage> {
       final orders = await _orderApi.getActiveOrders();
       if (!mounted) return;
 
-      // Yeni aktif (non-delivered) siparis gelirse dismiss sifirla
-      final hasActive = orders.any((o) => o.status != "Delivered");
-      if (hasActive && _trackerDismissed) {
-        _trackerDismissed = false;
-        _autoHideTimer?.cancel();
-      }
+      // Backend'den düşen order ID'lerini dismiss set'inden de temizle
+      // (aynı ID tekrar oluşmayacağı için bu set büyümez).
+      final backendIds = orders.map((o) => o.orderId).toSet();
+      _dismissedOrderIds.removeWhere((id) => !backendIds.contains(id));
 
-      // Delivered olunca 3 dk auto-hide timer baslat
-      final allDelivered = orders.isNotEmpty && orders.every((o) => o.status == "Delivered");
-      if (allDelivered && _autoHideTimer == null && !_trackerDismissed) {
-        _autoHideTimer = Timer(const Duration(minutes: 3), () {
+      // Kullanıcının gizle dediklerini at
+      final visible = orders.where((o) => !_dismissedOrderIds.contains(o.orderId)).toList();
+
+      // Görünür siparişlerin hepsi Delivered ise 1 dakika sonra otomatik gizle
+      final allDelivered = visible.isNotEmpty && visible.every((o) => o.status == "Delivered");
+      if (allDelivered && _autoHideTimer == null) {
+        _autoHideTimer = Timer(const Duration(minutes: 1), () {
           if (!mounted) return;
           _dismissTracker();
         });
-      }
-
-      // Siparis kalmadiysa temizle
-      if (orders.isEmpty) {
-        _trackerDismissed = false;
+      } else if (!allDelivered) {
+        // Yeni bir aktif sipariş gelmişse timer'ı iptal et
         _autoHideTimer?.cancel();
         _autoHideTimer = null;
       }
 
-      setState(() => _activeOrders = orders);
+      setState(() => _activeOrders = visible);
     } catch (_) {}
   }
 
   Future<void> _loadUnreadCount() async {
     try {
       final count = await _notifApi.getUnreadCount();
+      // Son 10 bildirimi her seferinde çek; ID bazlı delta hesaplanacak.
+      final recent = await _notifApi.getMyNotifications(page: 1, pageSize: 10);
       if (!mounted) return;
 
-      // Yeni bildirim varsa local push notification göster
-      if (count > _unreadCount && _unreadCount >= 0) {
-        final notifications = await _notifApi.getMyNotifications(page: 1, pageSize: count - _unreadCount);
-        for (final n in notifications.where((n) => !n.isRead)) {
+      if (!_notifBaselineSet) {
+        // İlk yüklemede en yüksek ID'yi baseline olarak al, push atma.
+        _lastPushedNotifId = recent.isNotEmpty
+            ? recent.map((n) => n.id).reduce((a, b) => a > b ? a : b)
+            : 0;
+        _notifBaselineSet = true;
+      } else {
+        // Baseline'dan sonraki yeni bildirimler için push tetikle (eski → yeni sırayla).
+        final newOnes = recent.where((n) => n.id > _lastPushedNotifId).toList()
+          ..sort((a, b) => a.id.compareTo(b.id));
+        for (final n in newOnes) {
           await LocalNotificationService.I.showNow(
             id: n.id,
             title: n.title,
             body: n.body,
           );
+          _lastPushedNotifId = n.id;
         }
       }
 
@@ -602,6 +639,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenH = MediaQuery.of(context).size.height;
     await showModalBottomSheet(
       context: context,
       backgroundColor:
@@ -609,6 +647,7 @@ class _HomePageState extends State<HomePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      constraints: BoxConstraints(maxHeight: screenH * 0.30),
       builder: (_) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
@@ -827,7 +866,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 100),
                 ],
               ),
-              if (_activeOrders.isNotEmpty && !_trackerDismissed)
+              if (_activeOrders.isNotEmpty)
                 ActiveOrderTracker(
                   activeOrders: _activeOrders,
                   userLat: _userLat,
@@ -835,6 +874,14 @@ class _HomePageState extends State<HomePage> {
                   onRefresh: _loadActiveOrders,
                   onDismiss: _dismissTracker,
                 ),
+              Positioned.fill(
+                child: AiAssistantFab(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ChatbotPage()),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -881,10 +928,11 @@ class _HomePageState extends State<HomePage> {
           _iconButton(
             isDark: isDark,
             icon: Icons.shopping_basket_outlined,
+            badge: _cartCount,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CartPage()),
-            ),
+            ).then((_) => _refreshCartCount()),
           ),
           const SizedBox(width: 10),
           _iconButton(

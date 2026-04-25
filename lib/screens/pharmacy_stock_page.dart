@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
@@ -85,11 +86,25 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? Colors.white : AppColors.midnight;
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBg : null,
       appBar: AppBar(
-        title: const Text("Stok Yonetimi"),
-        backgroundColor: AppColors.midnight,
-        foregroundColor: Colors.white,
+        title: const Text("Stok Yönetimi"),
+        backgroundColor: Colors.transparent,
+        foregroundColor: fg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? null : AppColors.lightPageGradient,
+            color: isDark ? AppColors.darkBg : null,
+          ),
+        ),
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -101,33 +116,36 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
         onPressed: () => _showAddStockDialog(),
         backgroundColor: AppColors.midnight,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Urun Ekle", style: TextStyle(color: Colors.white)),
+        label: const Text("Ürün Ekle", style: TextStyle(color: Colors.white)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.lightPageGradient,
+          color: isDark ? AppColors.darkBg : null,
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                            onPressed: _loadStocks,
+                            child: const Text("Tekrar Dene")),
+                      ],
+                    ),
+                  )
+                : Column(
                     children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                          onPressed: _loadStocks,
-                          child: const Text("Tekrar Dene")),
+                      _buildSummaryRow(),
+                      _buildSearchAndFilter(),
+                      Expanded(child: _buildStockList()),
                     ],
                   ),
-                )
-              : Column(
-                  children: [
-                    // Özet kartlar
-                    _buildSummaryRow(),
-                    // Arama + filtre
-                    _buildSearchAndFilter(),
-                    // Liste
-                    Expanded(child: _buildStockList()),
-                  ],
-                ),
+      ),
     );
   }
 
@@ -150,13 +168,15 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
   }
 
   Widget _miniCard(String label, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          color: color.withValues(alpha: isDark ? 0.2 : 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: isDark ? 0.35 : 0.22)),
         ),
         child: Column(
           children: [
@@ -164,8 +184,8 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
             const SizedBox(height: 4),
             Text(value,
                 style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                    fontSize: 16, fontWeight: FontWeight.w800, color: color, letterSpacing: -0.3)),
+            Text(label, style: TextStyle(fontSize: 11, color: muted, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -174,6 +194,14 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
 
   // ======== ARAMA + FİLTRE ========
   Widget _buildSearchAndFilter() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fieldBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.6)
+        : Colors.white.withValues(alpha: 0.8);
+    final fieldBorder = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : AppColors.midnight.withValues(alpha: 0.08);
+    final iconColor = isDark ? Colors.white.withValues(alpha: 0.7) : AppColors.midnight;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -181,30 +209,51 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
           Expanded(
             child: TextField(
               controller: _searchController,
+              style: TextStyle(color: isDark ? Colors.white : AppColors.midnight),
               decoration: InputDecoration(
-                hintText: "Urun ara...",
-                prefixIcon: const Icon(Icons.search, size: 20),
+                hintText: "Ürün ara...",
+                hintStyle: TextStyle(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.5)
+                        : Colors.grey[600]),
+                prefixIcon: Icon(Icons.search, size: 20, color: iconColor),
                 isDense: true,
+                filled: true,
+                fillColor: fieldBg,
                 contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: fieldBorder)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: fieldBorder)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.midnight, width: 1.5)),
               ),
               onChanged: (v) => setState(() => _searchQuery = v),
             ),
           ),
           const SizedBox(width: 8),
-          PopupMenuButton<String?>(
-            icon: Badge(
-              isLabelVisible: _selectedCategory != null,
-              child: const Icon(Icons.filter_list),
+          Container(
+            decoration: BoxDecoration(
+              color: fieldBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: fieldBorder),
             ),
-            onSelected: (val) => setState(() => _selectedCategory = val),
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: null, child: Text("Tumu")),
-              ..._categories.map(
-                  (c) => PopupMenuItem(value: c, child: Text(c))),
-            ],
+            child: PopupMenuButton<String?>(
+              icon: Badge(
+                isLabelVisible: _selectedCategory != null,
+                child: Icon(Icons.filter_list, color: iconColor),
+              ),
+              onSelected: (val) => setState(() => _selectedCategory = val),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: null, child: Text("Tümü")),
+                ..._categories.map(
+                    (c) => PopupMenuItem(value: c, child: Text(c))),
+              ],
+            ),
           ),
         ],
       ),
@@ -216,8 +265,14 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
     final items = _filteredStocks;
 
     if (items.isEmpty) {
-      return const Center(
-        child: Text("Stok bulunamadi.", style: TextStyle(color: Colors.grey)),
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Center(
+        child: Text(
+          "Stok bulunamadı.",
+          style: TextStyle(
+              color: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.grey[600],
+              fontSize: 14),
+        ),
       );
     }
 
@@ -232,8 +287,12 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
   }
 
   Widget _stockCard(Map<String, dynamic> s) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleC = isDark ? Colors.white : AppColors.midnight;
+    final muted = isDark ? Colors.white.withValues(alpha: 0.65) : Colors.grey[700]!;
+
     final name = s["medicineName"] ?? "";
-    final category = s["categoryName"] ?? "Diger";
+    final category = s["categoryName"] ?? "Diğer";
     final qty = (s["quantity"] ?? 0) as int;
     final unitPrice = (s["unitPrice"] ?? 0).toDouble();
     final listPrice = (s["listPrice"] ?? 0).toDouble();
@@ -241,95 +300,108 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
     final medicineId = (s["medicineId"] ?? 0) as int;
     final isLowStock = qty <= 5;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Üst satır: isim + kategori
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 15)),
-                          ),
-                          if (isPrescription)
-                            Container(
-                              margin: const EdgeInsets.only(left: 6),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text("Reçeteli",
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.red)),
+    final cardBg = isDark
+        ? const Color(0xFF132B44).withValues(alpha: 0.6)
+        : Colors.white.withValues(alpha: 0.68);
+    final cardBorder = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : AppColors.midnight.withValues(alpha: 0.08);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(name,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: titleC)),
+                        ),
+                        if (isPrescription)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: isDark ? 0.22 : 0.12),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(category,
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.grey)),
-                    ],
-                  ),
+                            child: Text("Reçeteli",
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? Colors.white : Colors.red.shade700,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(category,
+                        style: TextStyle(fontSize: 12.5, color: muted)),
+                  ],
                 ),
-                // Stok badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isLowStock
-                        ? Colors.red.shade50
-                        : AppColors.midnight.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      Text("$qty",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isLowStock
-                                  ? Colors.red
-                                  : AppColors.midnight)),
-                      Text("adet",
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: isLowStock
-                                  ? Colors.red
-                                  : AppColors.midnight)),
-                    ],
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isLowStock
+                      ? Colors.red.withValues(alpha: isDark ? 0.22 : 0.12)
+                      : AppColors.midnight.withValues(alpha: isDark ? 0.35 : 0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Fiyat satırı
-            Row(
-              children: [
-                Text("Satis: ${unitPrice.toStringAsFixed(2)} TL",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
-                const SizedBox(width: 12),
-                Text("Liste: ${listPrice.toStringAsFixed(2)} TL",
-                    style:
-                        const TextStyle(fontSize: 14, color: Colors.grey)),
-              ],
-            ),
+                child: Column(
+                  children: [
+                    Text("$qty",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: isLowStock
+                                ? (isDark ? Colors.red.shade300 : Colors.red)
+                                : (isDark ? Colors.white : AppColors.midnight))),
+                    Text("adet",
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: isLowStock
+                                ? (isDark ? Colors.red.shade300 : Colors.red)
+                                : (isDark ? Colors.white70 : AppColors.midnight))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text("Satış: ${unitPrice.toStringAsFixed(2)} TL",
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13, color: titleC)),
+              const SizedBox(width: 12),
+              Text("Liste: ${listPrice.toStringAsFixed(2)} TL",
+                  style: TextStyle(fontSize: 13, color: muted)),
+            ],
+          ),
 
             if (isLowStock)
               Padding(
@@ -356,23 +428,22 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                 TextButton.icon(
                   onPressed: () =>
                       _showEditStockDialog(medicineId, name, qty, unitPrice),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text("Duzenle"),
+                  icon: Icon(Icons.edit, size: 16, color: isDark ? Colors.white : AppColors.midnight),
+                  label: Text("Düzenle", style: TextStyle(color: isDark ? Colors.white : AppColors.midnight)),
                   style: TextButton.styleFrom(
-                      foregroundColor: AppColors.midnight),
+                      foregroundColor: isDark ? Colors.white : AppColors.midnight),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
                   onPressed: () => _confirmRemoveStock(medicineId, name),
-                  icon: const Icon(Icons.delete_outline, size: 16),
-                  label: const Text("Kaldir"),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  icon: Icon(Icons.delete_outline, size: 16, color: isDark ? Colors.red.shade300 : Colors.red),
+                  label: Text("Kaldır", style: TextStyle(color: isDark ? Colors.red.shade300 : Colors.red)),
+                  style: TextButton.styleFrom(foregroundColor: isDark ? Colors.red.shade300 : Colors.red),
                 ),
               ],
             ),
           ],
         ),
-      ),
     );
   }
 

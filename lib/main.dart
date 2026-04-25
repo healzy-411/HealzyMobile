@@ -7,10 +7,10 @@ import 'services/auth_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/token_store.dart';
 import 'screens/auth_page.dart';
-import 'screens/get_started_page.dart';
 import 'screens/home_page.dart';
 import 'screens/pharmacy_panel_home_page.dart';
 import 'screens/home_care_provider_panel_home_page.dart';
+import 'screens/splash_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
@@ -61,7 +61,7 @@ class HealzyApp extends StatelessWidget {
       }
     }
 
-    return GetStartedPage(authService: authService);
+    return AuthPage(authService: authService, customerHome: const HomePage());
   }
 
   @override
@@ -79,7 +79,7 @@ class HealzyApp extends StatelessWidget {
         darkTheme: AppTheme.dark(),
         themeMode: ThemeController.I.mode,
         scrollBehavior: _HealzyScrollBehavior(),
-        home: _getInitialPage(authService),
+        home: SplashPage(nextPage: _getInitialPage(authService)),
       ),
     );
   }

@@ -399,7 +399,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     : Text(
                         o.isPrescriptionOrder
                             ? "Receteli siparis tekrar edilemez"
-                            : "Tekrarla",
+                            : "Siparişi Tekrarla",
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -417,7 +417,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   onPressed: _showRatingDialog,
                   icon: const Icon(Icons.star_outline),
                   label: const Text(
-                    "Degerlendir",
+                    "Siparişi Değerlendir",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(

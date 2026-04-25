@@ -76,6 +76,10 @@ class HomeCareProviderRequestModel {
   final String status;
   final String? statusNote;
   final DateTime createdAtUtc;
+  final double? earningAmount;
+  final DateTime? completedAtUtc;
+  final String? assignedEmployeeName;
+  final String? completionNote;
 
   HomeCareProviderRequestModel({
     required this.id,
@@ -89,9 +93,18 @@ class HomeCareProviderRequestModel {
     required this.status,
     required this.statusNote,
     required this.createdAtUtc,
+    this.earningAmount,
+    this.completedAtUtc,
+    this.assignedEmployeeName,
+    this.completionNote,
   });
 
   factory HomeCareProviderRequestModel.fromJson(Map<String, dynamic> j) {
+    DateTime? parseOptDate(dynamic v) {
+      if (v == null) return null;
+      try { return DateTime.parse(v.toString()).toLocal(); } catch (_) { return null; }
+    }
+    final earnRaw = j['earningAmount'] ?? j['EarningAmount'];
     return HomeCareProviderRequestModel(
       id: (j['id'] ?? j['Id'] ?? 0) as int,
       userId: (j['userId'] ?? j['UserId'] ?? '').toString(),
@@ -108,6 +121,13 @@ class HomeCareProviderRequestModel {
       createdAtUtc:
           DateTime.parse((j['createdAtUtc'] ?? j['CreatedAtUtc']).toString())
               .toLocal(),
+      earningAmount: earnRaw == null
+          ? null
+          : (earnRaw is num ? earnRaw.toDouble() : double.tryParse(earnRaw.toString())),
+      completedAtUtc: parseOptDate(j['completedAtUtc'] ?? j['CompletedAtUtc']),
+      assignedEmployeeName:
+          (j['assignedEmployeeName'] ?? j['AssignedEmployeeName'])?.toString(),
+      completionNote: (j['completionNote'] ?? j['CompletionNote'])?.toString(),
     );
   }
 }

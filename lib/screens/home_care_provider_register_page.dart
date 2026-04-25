@@ -33,11 +33,18 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
   final _passwordConfirm = TextEditingController();
   final _providerName = TextEditingController();
   final _providerPhone = TextEditingController();
-  final _city = TextEditingController();
-  final _district = TextEditingController();
   final _address = TextEditingController();
   final _licenseNumber = TextEditingController(); // ✅ Yeni eklenen alan
   final _description = TextEditingController();
+
+  static const String _city = "Ankara";
+  static const List<String> _ankaraDistricts = [
+    'Akyurt', 'Altındağ', 'Ayaş', 'Bala', 'Beypazarı', 'Çamlıdere', 'Çankaya',
+    'Çubuk', 'Elmadağ', 'Etimesgut', 'Evren', 'Gölbaşı', 'Güdül', 'Haymana',
+    'Kahramankazan', 'Kalecik', 'Keçiören', 'Kızılcahamam', 'Mamak', 'Nallıhan',
+    'Polatlı', 'Pursaklar', 'Sincan', 'Şereflikoçhisar', 'Yenimahalle',
+  ];
+  String? _selectedDistrict;
 
   @override
   void dispose() {
@@ -45,7 +52,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     _firstName.dispose(); _lastName.dispose(); _email.dispose();
     _nationalId.dispose(); _phone.dispose(); _password.dispose();
     _providerName.dispose(); _providerPhone.dispose();
-    _city.dispose(); _district.dispose(); _address.dispose();
+    _address.dispose();
     _licenseNumber.dispose(); _description.dispose();
     _passwordConfirm.dispose();
     super.dispose();
@@ -67,8 +74,8 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
         password: _password.text,
         providerName: _providerName.text.trim(),
         providerPhone: _providerPhone.text.trim(),
-        city: _city.text.trim(),
-        district: _district.text.trim(),
+        city: _city,
+        district: _selectedDistrict ?? '',
         address: _address.text.trim(),
         licenseNumber: _licenseNumber.text.trim(),
         description: _description.text.trim().isEmpty ? null : _description.text.trim(),
@@ -221,13 +228,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
                               return null;
                             }),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(child: _buildInput(_city, "İl", Icons.location_city, validator: _req)),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildInput(_district, "İlçe", Icons.map, validator: _req)),
-                              ],
-                            ),
+                            _buildDistrictDropdown(),
                             const SizedBox(height: 12),
                             _buildInput(_address, "Tam Adres", Icons.home, validator: (v) => (v == null || v.trim().length < 10) ? "En az 10 karakter" : null),
                             const SizedBox(height: 12),
@@ -262,6 +263,46 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     return Padding(
       padding: const EdgeInsets.only(bottom: 15, left: 5),
       child: Text(title, style: const TextStyle(color: midnight, fontSize: 18, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildDistrictDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: midnight.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: _selectedDistrict,
+              isExpanded: true,
+              dropdownColor: Colors.white,
+              style: const TextStyle(fontSize: 15, color: midnight),
+              decoration: InputDecoration(
+                hintText: 'İlçe (Ankara)',
+                hintStyle: TextStyle(color: midnight.withOpacity(0.4), fontSize: 14),
+                prefixIcon: Icon(Icons.map, color: midnight.withOpacity(0.7), size: 22),
+                contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+              ),
+              items: _ankaraDistricts
+                  .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedDistrict = v),
+              validator: (v) => (v == null || v.isEmpty) ? 'İlçe seçin' : null,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

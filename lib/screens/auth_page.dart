@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../services/auth_service.dart';
 import 'email_verify_page.dart';
+import 'forgot_password_page.dart';
 import 'pharmacist_register_page.dart';
 import 'pharmacy_panel_home_page.dart';
 import 'home_care_provider_panel_home_page.dart';
@@ -101,6 +102,10 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           final token = (result["accessToken"] ?? result["token"])?.toString();
           if (token == null || token.isEmpty) throw Exception("Giriş yapılamadı. Lütfen tekrar deneyin.");
           await TokenStore.set(token);
+          final refreshToken = result["refreshToken"]?.toString();
+          if (refreshToken != null && refreshToken.isNotEmpty) {
+            await TokenStore.setRefreshToken(refreshToken);
+          }
           final decoded = JwtDecoder.decode(token);
           final role = (decoded["role"] ?? decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])?.toString();
           if (!mounted) return;
@@ -238,6 +243,33 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
               ),
               const SizedBox(width: 8),
               Text("Beni Hatırla", style: TextStyle(color: isDark ? AppColors.pearl : AppColors.midnight, fontSize: 14)),
+              const Spacer(),
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ForgotPasswordPage(
+                        authService: widget.authService,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Şifremi Unuttum",
+                  style: TextStyle(
+                    color: isDark ? AppColors.pearl : AppColors.midnight,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
