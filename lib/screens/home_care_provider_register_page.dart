@@ -2,8 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
-import '../services/token_store.dart';
-import 'home_care_provider_panel_home_page.dart';
+import 'email_verify_page.dart';
 
 class HomeCareProviderRegisterPage extends StatefulWidget {
   final AuthService authService;
@@ -59,7 +58,7 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
     setState(() { _loading = true; _error = null; });
 
     try {
-      final result = await widget.authService.registerHomeCareProvider(
+      await widget.authService.registerHomeCareProvider(
         firstName: _firstName.text.trim(),
         lastName: _lastName.text.trim(),
         email: _email.text.trim(),
@@ -71,15 +70,27 @@ class _HomeCareProviderRegisterPageState extends State<HomeCareProviderRegisterP
         city: _city.text.trim(),
         district: _district.text.trim(),
         address: _address.text.trim(),
-        licenseNumber: _licenseNumber.text.trim(), // ✅ Yeni alan servise eklendi
+        licenseNumber: _licenseNumber.text.trim(),
         description: _description.text.trim().isEmpty ? null : _description.text.trim(),
       );
 
-      final token = (result["accessToken"] ?? result["token"])?.toString();
-      if (token == null || token.isEmpty) throw Exception("Kayıt tamamlanamadı. Lütfen tekrar deneyin.");
-      await TokenStore.set(token);
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeCareProviderPanelHomePage()));
+
+      final verifyResult = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EmailVerifyPage(
+            authService: widget.authService,
+            email: _email.text.trim(),
+            password: _password.text,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      if (verifyResult is Map) {
+        Navigator.pop(context, verifyResult);
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
     } finally {

@@ -4,6 +4,15 @@ import 'package:http/http.dart' as http;
 import '../services/token_store.dart';
 import '../Models/me_model.dart';
 
+class EmailNotVerifiedException implements Exception {
+  final String email;
+  final String message;
+  EmailNotVerifiedException({required this.email, required this.message});
+
+  @override
+  String toString() => message;
+}
+
 class AuthService {
   final String baseUrl;
 
@@ -138,6 +147,13 @@ class AuthService {
 
     final body = _decode(res);
     if (res.statusCode >= 200 && res.statusCode < 300) return body;
+
+    if (res.statusCode == 403 && body["requiresEmailVerification"] == true) {
+      throw EmailNotVerifiedException(
+        email: body["email"]?.toString() ?? email,
+        message: body["message"]?.toString() ?? "Hesabınız henüz doğrulanmamış.",
+      );
+    }
 
     throw Exception(body["message"] ?? "Login failed (${res.statusCode})");
   }

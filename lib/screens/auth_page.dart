@@ -96,16 +96,27 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
     try {
       if (isLogin) {
-        final result = await widget.authService.login(email: _loginEmail.text.trim(), password: _loginPassword.text, rememberMe: _rememberMe);
-        final token = (result["accessToken"] ?? result["token"])?.toString();
-        if (token == null || token.isEmpty) throw Exception("Giriş yapılamadı. Lütfen tekrar deneyin.");
-        await TokenStore.set(token);
-        final decoded = JwtDecoder.decode(token);
-        final role = (decoded["role"] ?? decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])?.toString();
-        if (!mounted) return;
-        if (role == "Customer") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => widget.customerHome));
-        else if (role == "Pharmacist") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PharmacyPanelHomePage()));
-        else if (role == "HomeCareProvider") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeCareProviderPanelHomePage()));
+        try {
+          final result = await widget.authService.login(email: _loginEmail.text.trim(), password: _loginPassword.text, rememberMe: _rememberMe);
+          final token = (result["accessToken"] ?? result["token"])?.toString();
+          if (token == null || token.isEmpty) throw Exception("Giriş yapılamadı. Lütfen tekrar deneyin.");
+          await TokenStore.set(token);
+          final decoded = JwtDecoder.decode(token);
+          final role = (decoded["role"] ?? decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])?.toString();
+          if (!mounted) return;
+          if (role == "Customer") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => widget.customerHome));
+          else if (role == "Pharmacist") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PharmacyPanelHomePage()));
+          else if (role == "HomeCareProvider") Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeCareProviderPanelHomePage()));
+        } on EmailNotVerifiedException catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.orange.shade700));
+          final verifyResult = await Navigator.push(context, MaterialPageRoute(builder: (_) => EmailVerifyPage(authService: widget.authService, email: e.email, password: _loginPassword.text)));
+          if (!mounted) return;
+          if (verifyResult is Map) {
+            _loginEmail.text = verifyResult["email"] ?? e.email;
+            _loginPassword.text = verifyResult["password"] ?? _loginPassword.text;
+          }
+        }
       } else {
         await widget.authService.registerCustomer(
           firstName: _regFirstName.text.trim(),

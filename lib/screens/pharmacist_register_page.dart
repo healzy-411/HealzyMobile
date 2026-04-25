@@ -2,9 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
-import '../services/token_store.dart';
 import '../theme/app_colors.dart';
-import 'pharmacy_panel_home_page.dart';
+import 'email_verify_page.dart';
 
 class PharmacistRegisterPage extends StatefulWidget {
   final AuthService authService;
@@ -61,7 +60,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
     setState(() { _loading = true; _error = null; });
 
     try {
-      final result = await widget.authService.registerPharmacist(
+      await widget.authService.registerPharmacist(
         firstName: _firstName.text.trim(),
         lastName: _lastName.text.trim(),
         email: _email.text.trim(),
@@ -76,11 +75,23 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
         workingHours: '08:30 - 19:00',
       );
 
-      final token = (result["accessToken"] ?? result["token"])?.toString();
-      if (token == null || token.isEmpty) throw Exception("Kayıt tamamlanamadı. Lütfen tekrar deneyin.");
-      await TokenStore.set(token);
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PharmacyPanelHomePage()));
+
+      final verifyResult = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EmailVerifyPage(
+            authService: widget.authService,
+            email: _email.text.trim(),
+            password: _password.text,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      if (verifyResult is Map) {
+        Navigator.pop(context, verifyResult);
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
     } finally {
