@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../Models/otcmedicine_model.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../widgets/cart_icon_button.dart';
 import '../theme/app_colors.dart';
 import '../services/cart_api_service.dart';
 import '../services/token_store.dart';
@@ -83,34 +84,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         elevation: 0.5,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              tooltip: 'Sepet',
-              onPressed: () {
+            padding: const EdgeInsets.only(right: 12, top: 6, bottom: 6),
+            child: CartIconButton(
+              badge: cartCount,
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CartPage()),
                 ).then((_) => _refreshCartCount());
               },
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(Icons.shopping_basket_outlined, color: fg, size: 26),
-                  if (cartCount > 0)
-                    Positioned(
-                      right: -6,
-                      top: -6,
-                      child: CircleAvatar(
-                        radius: 9,
-                        backgroundColor: Colors.red,
-                        child: Text(
-                          '$cartCount',
-                          style: const TextStyle(fontSize: 11, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
           ),
         ],

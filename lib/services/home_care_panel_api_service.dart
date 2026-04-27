@@ -117,6 +117,21 @@ class HomeCarePanelApiService {
     throw Exception(body["message"] ?? "Employees failed (${res.statusCode})");
   }
 
+  // GET /api/home-care-panel/employees/available?requestId=
+  Future<List<Map<String, dynamic>>> getAvailableEmployees(int requestId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/home-care-panel/employees/available?requestId=$requestId'),
+      headers: _headers,
+    );
+    await _check401(res);
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final list = jsonDecode(res.body) as List;
+      return list.cast<Map<String, dynamic>>();
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception(body["message"] ?? "Available employees failed (${res.statusCode})");
+  }
+
   // PUT /api/home-care-panel/requests/{requestId}/accept-with-employee
   Future<Map<String, dynamic>> acceptRequestWithEmployee(
     int requestId,

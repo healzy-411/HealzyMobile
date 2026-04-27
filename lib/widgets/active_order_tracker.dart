@@ -128,9 +128,7 @@ class AnimatedBuilder extends StatelessWidget {
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
-      color: expanded
-          ? (isDark ? const Color(0xFF132B44) : Colors.white)
-          : statusInfo.color.withValues(alpha: 0.35),
+      color: statusInfo.color.withValues(alpha: 0.35),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -138,11 +136,9 @@ class AnimatedBuilder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: expanded
-                  ? (isDark ? const Color(0xFF132B44) : Colors.white)
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.85)),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: expanded
                   ? const BorderRadius.vertical(top: Radius.circular(16))
                   : BorderRadius.circular(16),
@@ -225,13 +221,15 @@ class AnimatedBuilder extends StatelessWidget {
             sizeFactor: animation,
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF132B44) : Colors.white,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.85),
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               ),
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Column(
                 children: [
-                  _buildProgressBar(context, order.status),
+                  _buildProgressBar(order.status),
                   const SizedBox(height: 16),
 
                   // Mesafe ve sure detayi
@@ -346,7 +344,7 @@ class AnimatedBuilder extends StatelessWidget {
     );
   }
 
-  // Asset image paths for custom icons (null = use Flutter icon)
+  // Asset image paths for custom icons (null = use Flutter icon)flu
   static const _stepAssets = <int, String>{
     0: 'assets/images/alindi.jpg',       // Pending - Alındı
     1: 'assets/images/hazirlaniyor.jpg', // Preparing
@@ -401,14 +399,12 @@ class AnimatedBuilder extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressBar(BuildContext context, String status) {
+  Widget _buildProgressBar(String status) {
     final steps = ["Pending", "Preparing", "Ready", "Dispatched", "Delivered"];
-    final labels = ["Siparis\nAlindi", "Hazirlaniyor", "Hazirlandi", "Yolda", "Teslim\nEdildi"];
+    final labels = ["Sipariş\nAlındı", "Hazırlanıyor", "Hazırlandı", "Yolda", "Teslim\nEdildi"];
     final currentIndex = steps.indexOf(status).clamp(0, steps.length - 1);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color doneColor = isDark ? Colors.white : AppColors.midnight;
-    final Color idleColor =
-        isDark ? Colors.white.withValues(alpha: 0.25) : Colors.grey.shade300;
+    const Color doneColor = AppColors.midnight;
+    final Color idleColor = Colors.grey.shade300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,17 +499,17 @@ class _StatusInfo {
 _StatusInfo _getStatusInfo(String status) {
   switch (status) {
     case "Pending":
-      return const _StatusInfo("Siparis Alindi", Icons.access_time, Colors.orange);
+      return const _StatusInfo("Sipariş Alındı", Icons.access_time, Colors.orange);
     case "Preparing":
-      return const _StatusInfo("Hazirlaniyor", Icons.local_pharmacy, Colors.blue);
+      return const _StatusInfo("Hazırlanıyor", Icons.local_pharmacy, Colors.blue);
     case "Ready":
-      return const _StatusInfo("Teslimata Hazir", Icons.check_circle_outline, Colors.teal);
+      return const _StatusInfo("Teslimata Hazır", Icons.check_circle_outline, Colors.teal);
     case "Dispatched":
-      return const _StatusInfo("Siparis Yolda", Icons.delivery_dining, Colors.green);
+      return const _StatusInfo("Sipariş Yolda", Icons.delivery_dining, Colors.green);
     case "Delivered":
       return const _StatusInfo("Teslim Edildi", Icons.check_circle, Colors.green);
     default:
-      return const _StatusInfo("Siparis", Icons.shopping_bag_outlined, Colors.grey);
+      return const _StatusInfo("Sipariş", Icons.shopping_bag_outlined, Colors.grey);
   }
 }
 

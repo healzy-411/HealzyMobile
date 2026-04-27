@@ -6,7 +6,8 @@ import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class PharmacyOrdersPage extends StatefulWidget {
-  const PharmacyOrdersPage({super.key});
+  final int initialTabIndex;
+  const PharmacyOrdersPage({super.key, this.initialTabIndex = 0});
 
   @override
   State<PharmacyOrdersPage> createState() => _PharmacyOrdersPageState();
@@ -24,7 +25,11 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 5,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 4),
+    );
     _loadOrders();
   }
 
@@ -58,50 +63,8 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
   }
 
   Future<void> _updateStatus(int orderId, String newStatus) async {
-    // Not girişi dialog'u göster
-    final noteController = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Durum: ${_statusText(newStatus)}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Musteriye iletilecek not ekleyebilirsiniz (opsiyonel):"),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteController,
-              decoration: const InputDecoration(
-                hintText: "Ornegin: Stokta yok, yarin hazir olacak...",
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-              maxLength: 500,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Iptal"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _statusColor(newStatus),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Onayla"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
     try {
-      final note = noteController.text.trim().isEmpty ? null : noteController.text.trim();
-      await _api.updateOrderStatus(orderId, newStatus, note: note);
+      await _api.updateOrderStatus(orderId, newStatus, note: null);
       await _loadOrders();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,9 +110,10 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
           indicatorColor: fg,
           tabs: [
             Tab(text: "Bekleyen (${_filterByStatus(["Pending"]).length})"),
-            Tab(text: "Hazırlanan (${_filterByStatus(["Preparing"]).length})"),
+            Tab(text: "Hazırlanıyor (${_filterByStatus(["Preparing"]).length})"),
             Tab(text: "Hazır (${_filterByStatus(["Ready"]).length})"),
-            Tab(text: "Tamamlanan (${_filterByStatus(["Dispatched","Delivered"]).length})"),
+            Tab(text: "Yolda (${_filterByStatus(["Dispatched"]).length})"),
+            Tab(text: "Tamamlanan (${_filterByStatus(["Delivered"]).length})"),
           ],
         ),
       ),
@@ -188,6 +152,10 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
                       _buildOrderList(
                         _filterByStatus(["Ready"]),
                         emptyText: "Hazır sipariş yok",
+                      ),
+                      _buildOrderList(
+                        _filterByStatus(["Dispatched"]),
+                        emptyText: "Yolda sipariş yok",
                       ),
                       _buildOrderList(
                         _filterByStatus(["Delivered", "Cancelled"]),
@@ -440,19 +408,27 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: _getAvailableActions(order.status).map((action) {
+                final style = ElevatedButton.styleFrom(
+                  backgroundColor: action.color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                );
+                final onPressed = () => _updateStatus(order.orderId, action.status);
                 return Padding(
                   padding: const EdgeInsets.only(left: 8),
-                  child: ElevatedButton.icon(
-                    onPressed: () => _updateStatus(order.orderId, action.status),
-                    icon: Icon(action.icon, size: 18),
-                    label: Text(action.label),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: action.color,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                    ),
-                  ),
+                  child: action.icon == null
+                      ? ElevatedButton(
+                          onPressed: onPressed,
+                          style: style,
+                          child: Text(action.label),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: onPressed,
+                          icon: Icon(action.icon, size: 18),
+                          label: Text(action.label),
+                          style: style,
+                        ),
                 );
               }).toList(),
             ),
@@ -466,7 +442,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
     switch (status) {
       case "Pending":
         return [
-          _OrderAction("Preparing", "Hazirlaniyor", Icons.restaurant, Colors.blue),
+          _OrderAction("Preparing", "Onayla", null, Colors.blue),
           _OrderAction("Cancelled", "Iptal", Icons.cancel, Colors.red),
         ];
       case "Preparing":
@@ -505,7 +481,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
       case "Pending":
         return "Bekliyor";
       case "Preparing":
-        return "Hazirlaniyor";
+        return "Hazırlanıyor";
       case "Ready":
         return "Hazir";
       case "Delivered":
@@ -521,7 +497,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
 class _OrderAction {
   final String status;
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final Color color;
 
   _OrderAction(this.status, this.label, this.icon, this.color);

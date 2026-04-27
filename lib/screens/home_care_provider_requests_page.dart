@@ -6,7 +6,8 @@ import '../widgets/accept_with_employee_dialog.dart';
 import 'package:healzy_app/config/api_config.dart';
 
 class HomeCareProviderRequestsPage extends StatefulWidget {
-  const HomeCareProviderRequestsPage({super.key});
+  final int initialTabIndex;
+  const HomeCareProviderRequestsPage({super.key, this.initialTabIndex = 0});
 
   @override
   State<HomeCareProviderRequestsPage> createState() => _HomeCareProviderRequestsPageState();
@@ -32,7 +33,11 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabStatuses.length, vsync: this);
+    _tabController = TabController(
+      length: _tabStatuses.length,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, _tabStatuses.length - 1),
+    );
     _loadRequests();
   }
 
@@ -271,8 +276,10 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
         : Colors.grey;
     final noteBg = isDark
         ? Colors.white.withValues(alpha: 0.06)
-        : Colors.grey.shade100;
-    final noteFg = isDark ? Colors.white.withValues(alpha: 0.85) : Colors.grey.shade900;
+        : Colors.white.withValues(alpha: 0.7);
+    final noteFg = isDark
+        ? Colors.white.withValues(alpha: 0.85)
+        : AppColors.midnight.withValues(alpha: 0.85);
     final statusNoteBg = isDark
         ? const Color(0xFF3B82F6).withValues(alpha: 0.18)
         : Colors.blue.shade50;
@@ -280,18 +287,29 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
         ? const Color(0xFF93C5FD)
         : Colors.blue.shade900;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      color: isDark ? const Color(0xFF132B44).withValues(alpha: 0.9) : null,
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isDark
-            ? BorderSide(color: Colors.white.withValues(alpha: 0.08))
-            : BorderSide.none,
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF132B44).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.4),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -870,7 +888,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                       ),
                       row("Adres", r.addressSnapshot),
                       row("Müşteri Notu", r.note),
-                      row("Oluşturulma", fmtDateTime(r.createdAtUtc)),
+                      row("Oluşturulma Tarihi", fmtDateTime(r.createdAtUtc)),
                       row("Atanan Çalışan", r.assignedEmployeeName),
                       if (r.status == 'Completed') ...[
                         row(

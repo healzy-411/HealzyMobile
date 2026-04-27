@@ -176,7 +176,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
             width: double.infinity,
             decoration: BoxDecoration(
               color: headerColor,
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(60)),
             ),
             child: SafeArea(
               child: Column(

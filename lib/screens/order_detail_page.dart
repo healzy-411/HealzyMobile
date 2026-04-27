@@ -320,7 +320,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Urunler",
+                    "Ürünler",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
@@ -455,13 +455,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       case "Pending":
         return "Bekliyor";
       case "Preparing":
-        return "Hazirlaniyor";
+        return "Hazırlanıyor";
       case "Ready":
-        return "Hazir";
+        return "Hazır";
       case "Delivered":
         return "Teslim Edildi";
       case "Cancelled":
-        return "Iptal Edildi";
+        return "İptal Edildi";
       default:
         return status;
     }

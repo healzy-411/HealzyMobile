@@ -204,7 +204,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : null,
       appBar: AppBar(
-        title: const Text('Saglayici Bilgileri'),
+        title: const Text('Sağlayıcı Bilgileri'),
         backgroundColor: appBarBg,
         foregroundColor: appBarFg,
         elevation: 0,
@@ -214,7 +214,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () => setState(() => _editing = true),
-              tooltip: 'Duzenle',
+              tooltip: 'Düzenle',
             ),
         ],
       ),
@@ -256,7 +256,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                                   )
                                 : Icon(Icons.photo_camera, color: accent),
                             label: Text(
-                              _uploading ? 'Yukleniyor...' : 'Fotograf Sec',
+                              _uploading ? 'Yükleniyor...' : 'Fotoğraf Seç',
                               style: TextStyle(color: accent),
                             ),
                           ),
@@ -269,7 +269,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                                 _imageUrl = '';
                               }),
                               icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                              label: const Text('Fotografi Kaldir', style: TextStyle(color: Colors.red)),
+                              label: const Text('Fotoğrafı Kaldır', style: TextStyle(color: Colors.red)),
                             ),
                           ),
                       ],
@@ -318,25 +318,25 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
           Expanded(child: _editField('Soyad', _lastName, Icons.person_outline, isDark)),
         ],
       ),
-      _editField('Telefon', _phone, Icons.phone, isDark, keyboardType: TextInputType.phone, maxLength: 11),
-      _editField('Sicil Numarasi (degistirilemez)', TextEditingController(text: _licenseNumber ?? '-'),
+      _editField('Telefon Numarası', _phone, Icons.phone, isDark, keyboardType: TextInputType.phone, maxLength: 11),
+      _editField('Sicil Numarası (değiştirilemez)', TextEditingController(text: _licenseNumber ?? '-'),
           Icons.badge_outlined, isDark, enabled: false),
       Row(
         children: [
-          Expanded(child: _editField('Saglayici Adi', _providerName, Icons.medical_services, isDark)),
+          Expanded(child: _editField('Sağlayıcı Adı', _providerName, Icons.medical_services, isDark)),
           const SizedBox(width: 12),
-          Expanded(child: _editField('Saglayici Telefonu', _providerPhone, Icons.call, isDark, keyboardType: TextInputType.phone, maxLength: 11)),
+          Expanded(child: _editField('Sağlayıcı Telefonu', _providerPhone, Icons.call, isDark, keyboardType: TextInputType.phone, maxLength: 11)),
         ],
       ),
       Row(
         children: [
-          Expanded(child: _editField('Sehir', _city, Icons.location_city, isDark)),
+          Expanded(child: _editField('Şehir', _city, Icons.location_city, isDark)),
           const SizedBox(width: 12),
-          Expanded(child: _editField('Ilce', _district, Icons.location_on, isDark)),
+          Expanded(child: _editField('İlçe', _district, Icons.location_on, isDark)),
         ],
       ),
       _editField('Adres', _address, Icons.home, isDark, maxLines: 2),
-      _editField('Aciklama', _description, Icons.description, isDark, maxLines: 3),
+      _editField('Açıklama', _description, Icons.description, isDark, maxLines: 3),
       const SizedBox(height: 16),
       Row(
         children: [
@@ -357,7 +357,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                       : AppColors.midnight.withValues(alpha: 0.3),
                 ),
               ),
-              child: const Text('Iptal'),
+              child: const Text('İptal'),
             ),
           ),
           const SizedBox(width: 12),
@@ -380,14 +380,14 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     final fullName = [_firstName.text, _lastName.text].where((s) => s.isNotEmpty).join(' ');
     return [
       _infoTile(Icons.person, 'Ad Soyad', fullName, isDark),
-      _infoTile(Icons.phone, 'Telefon', _phone.text, isDark),
+      _infoTile(Icons.phone, 'Telefon Numarası', _phone.text, isDark),
       _infoTile(Icons.badge_outlined, 'Sicil Numarasi', _licenseNumber ?? '-', isDark),
-      _infoTile(Icons.medical_services, 'Saglayici Adi', _providerName.text, isDark),
-      _infoTile(Icons.call, 'Saglayici Telefonu', _providerPhone.text, isDark),
-      _infoTile(Icons.location_city, 'Sehir', _city.text, isDark),
-      _infoTile(Icons.location_on, 'Ilce', _district.text, isDark),
+      _infoTile(Icons.medical_services, 'Sağlayıcı Adı', _providerName.text, isDark),
+      _infoTile(Icons.call, 'Sağlayıcı Telefon Numarası', _providerPhone.text, isDark),
+      _infoTile(Icons.location_city, 'Şehir', _city.text, isDark),
+      _infoTile(Icons.location_on, 'İlçe', _district.text, isDark),
       _infoTile(Icons.home, 'Adres', _address.text, isDark),
-      _infoTile(Icons.description, 'Aciklama', _description.text, isDark),
+      _infoTile(Icons.description, 'Açıklama', _description.text, isDark),
     ];
   }
 

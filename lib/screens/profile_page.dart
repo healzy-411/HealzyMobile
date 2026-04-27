@@ -406,19 +406,106 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 40),
 
           _buildSectionTitle("Kişisel Bilgiler"),
-          _glassInfoTile(
-            Icons.alternate_email_rounded,
-            "E-posta",
-            me.email,
-            isVerified: true,
-            onEdit: _handleChangeEmail,
-          ),
-          _glassInfoTile(Icons.phone_iphone_rounded, "Telefon", me.phoneNumber),
-          const SizedBox(height: 12),
-          _glassMenuButton(
-            icon: Icons.edit_rounded,
-            title: "Profili Düzenle",
-            onTap: _handleEditProfile,
+          Container(
+            decoration: _glassDecoration(),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // E-posta
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.alternate_email_rounded, color: _fg, size: 22),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("E-posta", style: TextStyle(fontSize: 14, color: _sub)),
+                            Text(
+                              me.email,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: _fg,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.verified, color: Colors.green, size: 20),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: _handleChangeEmail,
+                        icon: Icon(Icons.edit_outlined, size: 16, color: _fg),
+                        label: Text(
+                          "Değiştir",
+                          style: TextStyle(color: _fg, fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, thickness: 1, color: _fg.withValues(alpha: 0.08)),
+                // Telefon
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.phone_iphone_rounded, color: _fg, size: 22),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Telefon", style: TextStyle(fontSize: 14, color: _sub)),
+                            Text(
+                              me.phoneNumber,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: _fg,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, thickness: 1, color: _fg.withValues(alpha: 0.08)),
+                // Profili Düzenle
+                InkWell(
+                  onTap: _handleEditProfile,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_rounded, color: _fg, size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            "Profili Düzenle",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: _fg,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _fg),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 28),
@@ -451,23 +538,65 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 18),
 
-          TextButton.icon(
-            onPressed: _handleLogout,
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            label: const Text(
-              "Hesaptan Çıkış Yap",
-              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 16)
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: _handleDeleteAccount,
-            icon: Icon(Icons.delete_forever_rounded, color: Colors.red.shade700),
-            label: Text(
-              "Hesabımı Sil",
-              style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600, fontSize: 16),
+          Container(
+            decoration: _glassDecoration(),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: _handleLogout,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 22),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Text(
+                            "Hesaptan Çıkış Yap",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _fg.withValues(alpha: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: _fg.withValues(alpha: 0.08),
+                ),
+                InkWell(
+                  onTap: _handleDeleteAccount,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_forever_rounded, color: Colors.red.shade700, size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            "Hesabımı Sil",
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _fg.withValues(alpha: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 40),

@@ -6,7 +6,6 @@ import '../services/home_care_panel_api_service.dart';
 import '../services/token_store.dart';
 import '../theme/app_colors.dart';
 import '../services/notification_api_service.dart';
-import '../services/local_notification_service.dart';
 import 'home_care_provider_requests_page.dart';
 import 'home_care_provider_profile_page.dart';
 import 'home_page.dart';
@@ -34,8 +33,6 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
   bool _loading = true;
   String? _error;
   int _unreadCount = 0;
-  int _lastPushedNotifId = 0;
-  bool _notifBaselineSet = false;
   Timer? _notifTimer;
   Timer? _heartbeatTimer;
 
@@ -138,27 +135,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
   Future<void> _loadUnreadCount() async {
     try {
       final count = await _notifApi.getUnreadCount();
-      final recent = await _notifApi.getMyNotifications(page: 1, pageSize: 10);
       if (!mounted) return;
-
-      if (!_notifBaselineSet) {
-        _lastPushedNotifId = recent.isNotEmpty
-            ? recent.map((n) => n.id).reduce((a, b) => a > b ? a : b)
-            : 0;
-        _notifBaselineSet = true;
-      } else {
-        final newOnes = recent.where((n) => n.id > _lastPushedNotifId).toList()
-          ..sort((a, b) => a.id.compareTo(b.id));
-        for (final n in newOnes) {
-          await LocalNotificationService.I.showNow(
-            id: n.id,
-            title: n.title,
-            body: n.body,
-          );
-          _lastPushedNotifId = n.id;
-        }
-      }
-
       setState(() => _unreadCount = count);
     } catch (_) {}
   }
@@ -367,7 +344,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
             icon: Icons.notifications_outlined,
             bg: iconBg,
             fg: titleC,
-            badge: _unreadCount > 0,
+            badgeCount: _unreadCount,
             onTap: () async {
               await Navigator.push(
                 context,
@@ -430,7 +407,7 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
     required Color bg,
     required Color fg,
     required VoidCallback onTap,
-    bool badge = false,
+    int badgeCount = 0,
   }) {
     return Material(
       color: bg,
@@ -446,16 +423,29 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
             alignment: Alignment.center,
             children: [
               Icon(icon, color: fg, size: 20),
-              if (badge)
+              if (badgeCount > 0)
                 Positioned(
-                  top: 6,
-                  right: 6,
+                  top: 2,
+                  right: 2,
                   child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: bg, width: 2),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

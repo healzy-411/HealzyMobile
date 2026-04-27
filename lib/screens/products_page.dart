@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../Models/otcmedicine_model.dart';
+import '../Models/cart_model.dart';
 import '../services/api_service.dart';
 import '../services/cart_api_service.dart';
 import '../services/cart_helper.dart';
@@ -10,6 +11,7 @@ import 'product_detail_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
 import '../widgets/skeleton_shimmer.dart';
+import '../widgets/cart_icon_button.dart';
 import '../theme/app_colors.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -41,6 +43,10 @@ class _ProductsPageState extends State<ProductsPage> {
 
   int cartCount = 0;
   bool adding = false;
+  // medicineId -> CartItem (sadece bu pharmacy'nin sepetteki kalemleri)
+  Map<int, CartItem> _cartByMedicine = {};
+  // qty butonu basili kalmasin
+  final Set<int> _qtyBusyMedicineIds = {};
 
   @override
   void initState() {
@@ -74,7 +80,13 @@ class _ProductsPageState extends State<ProductsPage> {
     try {
       final c = await cartApi.getMyCart();
       if (!mounted) return;
-      setState(() => cartCount = c.items.length);
+      setState(() {
+        cartCount = c.items.length;
+        _cartByMedicine = {
+          for (final item in c.items)
+            if (item.pharmacyId == widget.pharmacyId) item.medicineId: item,
+        };
+      });
     } catch (_) {
       // token yoksa sessiz geç
     }
@@ -126,7 +138,13 @@ class _ProductsPageState extends State<ProductsPage> {
           "ADD SUCCESS -> cartId=${updated.cartId} items=${updated.items.length}");
 
       if (!mounted) return;
-      setState(() => cartCount = updated.items.length);
+      setState(() {
+        cartCount = updated.items.length;
+        _cartByMedicine = {
+          for (final item in updated.items)
+            if (item.pharmacyId == widget.pharmacyId) item.medicineId: item,
+        };
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -149,6 +167,33 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
+  Future<void> _changeCartQty(CartItem item, int newQty) async {
+    if (_qtyBusyMedicineIds.contains(item.medicineId)) return;
+    setState(() => _qtyBusyMedicineIds.add(item.medicineId));
+    try {
+      final updated = newQty <= 0
+          ? await cartApi.removeItem(item.id)
+          : await cartApi.updateItemQty(itemId: item.id, quantity: newQty);
+      if (!mounted) return;
+      setState(() {
+        cartCount = updated.items.length;
+        _cartByMedicine = {
+          for (final it in updated.items)
+            if (it.pharmacyId == widget.pharmacyId) it.medicineId: it,
+        };
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Miktar guncellenemedi: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _qtyBusyMedicineIds.remove(item.medicineId));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -160,34 +205,15 @@ class _ProductsPageState extends State<ProductsPage> {
         title: Text(widget.categoryName),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              tooltip: 'Sepet',
-              onPressed: () {
+            padding: const EdgeInsets.only(right: 12, top: 6, bottom: 6),
+            child: CartIconButton(
+              badge: cartCount,
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CartPage()),
                 ).then((_) => _refreshCartCount());
               },
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(Icons.shopping_basket_outlined, color: fg, size: 26),
-                  if (cartCount > 0)
-                    Positioned(
-                      right: -6,
-                      top: -6,
-                      child: CircleAvatar(
-                        radius: 9,
-                        backgroundColor: Colors.red,
-                        child: Text(
-                          '$cartCount',
-                          style: const TextStyle(fontSize: 11, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
           ),
         ],
@@ -297,6 +323,70 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
+  Widget _buildAddOrQty(OtcMedicine product, bool isDark, Color fg) {
+    final cartItem = _cartByMedicine[product.id];
+    final busy = _qtyBusyMedicineIds.contains(product.id);
+    if (cartItem == null) {
+      return GestureDetector(
+        onTap: adding ? null : () => _addToCart(product),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: adding ? Colors.grey.shade400 : Colors.green,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.add, color: Colors.white, size: 22),
+        ),
+      );
+    }
+
+    final pillBorder = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.12);
+    final maxReached = cartItem.quantity >= 99 || cartItem.quantity >= product.quantity;
+    final canIncrement = !busy && !maxReached;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: pillBorder, width: 1.4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: busy ? null : () => _changeCartQty(cartItem, cartItem.quantity - 1),
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Icon(Icons.remove, size: 16, color: fg),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              cartItem.quantity.toString(),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: fg),
+            ),
+          ),
+          InkWell(
+            onTap: canIncrement ? () => _changeCartQty(cartItem, cartItem.quantity + 1) : null,
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Icon(
+                Icons.add,
+                size: 16,
+                color: canIncrement ? fg : fg.withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductCard(OtcMedicine product) {
     final isOutOfStock = product.quantity == 0;
     final isLowStock = product.quantity > 0 && product.quantity < 5;
@@ -385,33 +475,11 @@ class _ProductsPageState extends State<ProductsPage> {
                       style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold, fontSize: 10),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: adding ? null : () => _addToCart(product),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: adding ? Colors.grey.shade400 : Colors.green,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 22),
-                    ),
-                  ),
+                  _buildAddOrQty(product, isDark, fg),
                 ],
               )
             else
-              GestureDetector(
-                onTap: adding ? null : () => _addToCart(product),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: adding ? Colors.grey.shade400 : Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 22),
-                ),
-              ),
+              _buildAddOrQty(product, isDark, fg),
           ],
         ),
         ),

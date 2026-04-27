@@ -14,7 +14,7 @@ Future<bool> showAcceptWithEmployeeDialog({
   List<Map<String, dynamic>> employees = [];
   String? loadError;
   try {
-    employees = await api.getEmployees();
+    employees = await api.getAvailableEmployees(requestId);
   } catch (e) {
     loadError = e.toString().replaceFirst('Exception: ', '');
   }
@@ -85,7 +85,7 @@ Future<bool> showAcceptWithEmployeeDialog({
                             color: Colors.amber.withValues(alpha: 0.4)),
                       ),
                       child: Text(
-                        'Henuz calisan eklemediniz. Web panelden Calisanlar sekmesini kullanarak once bir calisan olusturun.',
+                        'Bu tarih ve saatte musait calisan bulunmuyor. Tum calisanlarinizin bu saatte baska bir atamasi var.',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark

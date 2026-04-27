@@ -1009,7 +1009,9 @@ class _HomeCarePageState extends State<HomeCarePage>
               '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
 
           final isDark = Theme.of(context).brightness == Brightness.dark;
-          final cardBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+          final cardBg = isDark
+              ? AppColors.darkSurface
+              : AppColors.lightBlueSoft.withValues(alpha: 0.55);
           final titleColor =
               isDark ? AppColors.darkTextPrimary : AppColors.midnight;
           final subColor =
@@ -1029,7 +1031,7 @@ class _HomeCarePageState extends State<HomeCarePage>
               border: Border.all(
                 color: isDark
                     ? AppColors.darkBorder
-                    : AppColors.border.withValues(alpha: 0.6),
+                    : AppColors.midnight.withValues(alpha: 0.10),
               ),
               boxShadow: AppShadows.soft(isDark),
             ),

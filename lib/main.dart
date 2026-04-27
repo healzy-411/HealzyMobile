@@ -101,16 +101,39 @@ class _HealzyAppState extends State<HealzyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: ThemeController.I,
-      builder: (context, _) => MaterialApp(
-        navigatorKey: navigatorKey,
-        debugShowCheckedModeBanner: false,
-        title: 'Healzy',
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeController.I.mode,
-        scrollBehavior: _HealzyScrollBehavior(),
-        home: const SplashPage(nextPage: AuthGate()),
-      ),
+      builder: (context, _) {
+        final mode = ThemeController.I.mode;
+        final platformDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+        final isDark = mode == ThemeMode.dark ||
+            (mode == ThemeMode.system && platformDark);
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          ),
+        );
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'Healzy',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: mode,
+          scrollBehavior: _HealzyScrollBehavior(),
+          builder: (context, child) {
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          home: const SplashPage(nextPage: AuthGate()),
+        );
+      },
     );
   }
 }

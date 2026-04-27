@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../config/api_config.dart';
 import 'notification_api_service.dart';
+import 'notification_router.dart';
 import 'token_store.dart';
 
 @pragma('vm:entry-point')
@@ -46,6 +47,22 @@ class PushNotificationService {
     // iOS foreground gosterimini setForegroundNotificationPresentationOptions
     // hallediyor; ayrica showNow cagirmiyoruz, yoksa cift bildirim olur.
     FirebaseMessaging.onMessage.listen((_) {});
+
+    // Background'dan bildirime tıklayarak açıldığında
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      NotificationRouter.route(Map<String, dynamic>.from(message.data));
+    });
+
+    // Terminated state'den bildirime tıklayarak açıldığında
+    try {
+      final initial = await _fm.getInitialMessage();
+      if (initial != null) {
+        // İlk frame'den sonra navigate et — navigatorKey hazır olsun
+        Future<void>.delayed(const Duration(milliseconds: 500), () {
+          NotificationRouter.route(Map<String, dynamic>.from(initial.data));
+        });
+      }
+    } catch (_) {}
 
     _fm.onTokenRefresh.listen((newToken) {
       _currentToken = newToken;

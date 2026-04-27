@@ -335,8 +335,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         const SizedBox(height: 16),
                         _buildPaymentMethodSection(),
                         const SizedBox(height: 16),
-                        _buildCampaignsSection(),
-                        const SizedBox(height: 16),
                         _buildPaymentSummarySection(),
                         const SizedBox(height: 100),
                       ],
@@ -439,7 +437,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 2. Sepet İçeriği
   Widget _buildCartSummarySection() {
     return _sectionCard(
-      title: "Sepet Icerigi (${widget.cart.items.length} urun)",
+      title: "Sepet İçeriği (${widget.cart.items.length} ürün)",
       icon: Icons.shopping_bag_outlined,
       child: Column(
         children: widget.cart.items.map((item) {
@@ -505,7 +503,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           CheckboxListTile(
             value: _dontRingBell,
             onChanged: (v) => setState(() => _dontRingBell = v ?? false),
-            title: const Text("Zili Calma"),
+            title: const Text("Zili Çalma"),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: Colors.orange,
@@ -513,7 +511,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           CheckboxListTile(
             value: _leaveAtDoor,
             onChanged: (v) => setState(() => _leaveAtDoor = v ?? false),
-            title: const Text("Siparisi Kapiya Birak"),
+            title: const Text("Siparişi Kapıya Bırak"),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: Colors.orange,
@@ -545,7 +543,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: _changeAddress,
-                  child: const Text("Degistir",
+                  child: const Text("Değiştir",
                       style: TextStyle(
                           color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
@@ -557,27 +555,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 6. Teslimat Yöntemi
   Widget _buildDeliveryMethodSection() {
     return _sectionCard(
-      title: "Teslimat Yontemi",
+      title: "Teslimat Yöntemi",
       icon: Icons.delivery_dining,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.delivery_dining, color: Colors.orange, size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Eczane Kurye",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                _estimatedMinutes != null
-                    ? Text("Tahmini teslimat: ~$_estimatedMinutes dakika",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14))
-                    : Text("Tahmini sure hesaplanamadi",
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14)),
-              ],
-            ),
-          ),
+          const Text("Eczane Kurye",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 4),
+          _estimatedMinutes != null
+              ? Text("Tahmini teslimat: ~$_estimatedMinutes dakika",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14))
+              : Text("Tahmini süre hesaplanamadı",
+                  style: TextStyle(color: Colors.grey[400], fontSize: 14)),
         ],
       ),
     );
@@ -586,7 +576,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 7. Ödeme Yöntemi
   Widget _buildPaymentMethodSection() {
     return _sectionCard(
-      title: "Odeme Yontemi",
+      title: "Ödeme Yöntemi",
       icon: Icons.payment,
       child: Column(
         children: [
@@ -597,7 +587,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               _paymentMethod = v!;
               _selectedCardId = null;
             }),
-            title: const Text("Kapida Odeme"),
+            title: const Text("Kapıda Ödeme"),
             secondary: const Icon(Icons.money, color: Colors.green),
             contentPadding: EdgeInsets.zero,
             activeColor: Colors.orange,
@@ -611,7 +601,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               final defaultCard = _savedCards.where((c) => c.isDefault).firstOrNull;
               _selectedCardId = defaultCard?.id ?? _savedCards.firstOrNull?.id;
             }),
-            title: const Text("Kredi Karti"),
+            title: const Text("Kredi Kartı"),
             secondary: const Icon(Icons.credit_card, color: Colors.blue),
             contentPadding: EdgeInsets.zero,
             activeColor: Colors.orange,
@@ -664,26 +654,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  // 8. Kampanyalar (Placeholder)
-  Widget _buildCampaignsSection() {
-    return _sectionCard(
-      title: "Kampanyalar",
-      icon: Icons.local_offer_outlined,
-      child: Row(
-        children: [
-          Icon(Icons.campaign_outlined, color: Colors.grey[400], size: 28),
-          const SizedBox(width: 12),
-          Text("Henuz kampanya bulunmuyor.",
-              style: TextStyle(color: Colors.grey[400], fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  // 9. Ödeme Özeti
+  // 8. Ödeme Özeti
   Widget _buildPaymentSummarySection() {
     return _sectionCard(
-      title: "Odeme Ozeti",
+      title: "Ödeme Özeti",
       icon: Icons.receipt_long,
       child: Column(
         children: [
@@ -748,7 +722,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text("Odemeyi Tamamla",
+                : const Text("Ödemeyi Tamamla",
                     style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ),

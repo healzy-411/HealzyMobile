@@ -241,7 +241,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
 
                   // Degerlendirmeler
                   const Text(
-                    "Degerlendirmeler",
+                    "Değerlendirmeler",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),

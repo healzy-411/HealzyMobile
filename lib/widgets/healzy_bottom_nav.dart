@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
+import '../services/notification_api_service.dart';
+import '../services/token_store.dart';
 import '../theme/app_colors.dart';
 import '../screens/medicine_reminder_page.dart';
 import '../screens/notifications_page.dart';
@@ -10,17 +13,63 @@ import '../screens/home_map_fullscreen_page.dart';
 
 enum HealzyNavTab { home, reminder, map, notifications, profile }
 
-class HealzyBottomNav extends StatelessWidget {
+class HealzyBottomNav extends StatefulWidget {
   final HealzyNavTab? current;
-  final int notificationBadge;
+  final int? notificationBadge; // override icin opsiyonel
   const HealzyBottomNav({
     super.key,
     this.current,
-    this.notificationBadge = 0,
+    this.notificationBadge,
   });
 
-  void _go(BuildContext ctx, HealzyNavTab tab) {
-    if (current == tab) return;
+  @override
+  State<HealzyBottomNav> createState() => _HealzyBottomNavState();
+}
+
+class _HealzyBottomNavState extends State<HealzyBottomNav>
+    with WidgetsBindingObserver {
+  final _notifApi = NotificationApiService(baseUrl: ApiConfig.baseUrl);
+  int _unreadCount = 0;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadUnread();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _loadUnread(),
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUnread();
+    }
+  }
+
+  Future<void> _loadUnread() async {
+    if (TokenStore.get() == null) return;
+    try {
+      final count = await _notifApi.getUnreadCount();
+      if (!mounted) return;
+      setState(() => _unreadCount = count);
+    } catch (_) {
+      // sessiz: token süresi dolmuş olabilir
+    }
+  }
+
+  Future<void> _go(BuildContext ctx, HealzyNavTab tab) async {
+    if (widget.current == tab) return;
 
     if (tab == HealzyNavTab.home) {
       Navigator.of(ctx).popUntil((r) => r.isFirst);
@@ -45,7 +94,7 @@ class HealzyBottomNav extends StatelessWidget {
         return;
     }
 
-    Navigator.of(ctx).pushAndRemoveUntil(
+    await Navigator.of(ctx).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => page),
       (r) => r.isFirst || r.settings.name == '/',
     );
@@ -108,7 +157,7 @@ class HealzyBottomNav extends StatelessWidget {
                             icon: Icons.home_outlined,
                             activeIcon: Icons.home_rounded,
                             label: 'Ana Sayfa',
-                            selected: current == HealzyNavTab.home,
+                            selected: widget.current == HealzyNavTab.home,
                             activeColor: activeColor,
                             inactiveColor: idleColor,
                             onTap: () => _go(context, HealzyNavTab.home),
@@ -117,7 +166,7 @@ class HealzyBottomNav extends StatelessWidget {
                             icon: Icons.access_alarm_outlined,
                             activeIcon: Icons.access_alarm_rounded,
                             label: 'Hatırlatıcı',
-                            selected: current == HealzyNavTab.reminder,
+                            selected: widget.current == HealzyNavTab.reminder,
                             activeColor: activeColor,
                             inactiveColor: idleColor,
                             onTap: () => _go(context, HealzyNavTab.reminder),
@@ -128,18 +177,20 @@ class HealzyBottomNav extends StatelessWidget {
                             icon: Icons.notifications_outlined,
                             activeIcon: Icons.notifications_rounded,
                             label: 'Bildirim',
-                            selected: current == HealzyNavTab.notifications,
+                            selected: widget.current == HealzyNavTab.notifications,
                             activeColor: activeColor,
                             inactiveColor: idleColor,
-                            badge: notificationBadge,
-                            onTap: () =>
-                                _go(context, HealzyNavTab.notifications),
+                            badge: widget.notificationBadge ?? _unreadCount,
+                            onTap: () async {
+                              await _go(context, HealzyNavTab.notifications);
+                              if (mounted) _loadUnread();
+                            },
                           ),
                           _NavItem(
                             icon: Icons.person_outline_rounded,
                             activeIcon: Icons.person_rounded,
                             label: 'Profil',
-                            selected: current == HealzyNavTab.profile,
+                            selected: widget.current == HealzyNavTab.profile,
                             activeColor: activeColor,
                             inactiveColor: idleColor,
                             onTap: () => _go(context, HealzyNavTab.profile),
@@ -154,7 +205,7 @@ class HealzyBottomNav extends StatelessWidget {
               Positioned(
                 top: 0,
                 child: _MapFab(
-                  selected: current == HealzyNavTab.map,
+                  selected: widget.current == HealzyNavTab.map,
                   onTap: () => _go(context, HealzyNavTab.map),
                 ),
               ),
@@ -206,24 +257,24 @@ class _NavItem extends StatelessWidget {
                   Icon(selected ? activeIcon : icon, size: 22, color: color),
                   if (badge > 0)
                     Positioned(
-                      right: -6,
-                      top: -4,
+                      right: -8,
+                      top: -6,
                       child: Container(
                         constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
+                          minWidth: 18,
+                          minHeight: 18,
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
                         decoration: BoxDecoration(
                           color: AppColors.error,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           badge > 9 ? '9+' : '$badge',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 9,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

@@ -82,6 +82,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
   }
 
   void _toggleSelection(int medicineId) {
+    final wasCompared = _compared;
     setState(() {
       if (_selectedIds.contains(medicineId)) {
         _selectedIds.remove(medicineId);
@@ -89,6 +90,18 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
         _selectedIds.add(medicineId);
       }
     });
+    // Hiç seçim kalmadıysa listeyi temizle
+    if (_selectedIds.isEmpty) {
+      setState(() {
+        _compareResults = [];
+        _compared = false;
+      });
+      return;
+    }
+    // Daha önce karşılaştırma yapılmışsa kalan seçimle otomatik yenile
+    if (wasCompared) {
+      _compare();
+    }
   }
 
   Future<void> _compare() async {
@@ -427,27 +440,10 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: isClosed
-                      ? Colors.red.withValues(alpha: 0.15)
-                      : const Color(0xFF102E4A).withValues(alpha: 0.15),
-                  child: Icon(Icons.local_pharmacy,
-                      color: isClosed ? Colors.red : const Color(0xFF102E4A)),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pharmacy.pharmacyName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      Text(
-                        pharmacy.district,
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
+                  child: Text(
+                    pharmacy.pharmacyName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
                 if (isClosed)

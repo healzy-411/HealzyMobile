@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../theme/app_colors.dart';
 import '../Models/cart_model.dart';
@@ -124,7 +125,24 @@ class _CartPageState extends State<CartPage> {
       setState(() => cart = updated);
     } catch (e) {
       if (!mounted) return;
-      setState(() => error = e.toString());
+      final msg = e.toString();
+      if (msg.contains('400')) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Stok yetersiz'),
+            content: const Text('Bu ürün için eczanede yeterli stok bulunmuyor.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Tamam'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        setState(() => error = msg);
+      }
     } finally {
       if (!mounted) return;
       setState(() => loading = false);
@@ -204,112 +222,49 @@ class _CartPageState extends State<CartPage> {
                         ],
                       ),
                     )
-                  : ListView.builder(
+                  : ListView.separated(
                       padding: const EdgeInsets.all(20),
                       itemCount: items.length,
+                      separatorBuilder: (context, _) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.06),
+                          ),
+                        );
+                      },
                       itemBuilder: (context, index) {
                         final item = items[index];
                         final isPrescriptionItem =
                             widget.prescriptionItemIds?.contains(item.id) ?? false;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        return Slidable(
+                          key: ValueKey(item.id),
+                          endActionPane: ActionPane(
+                            motion: const DrawerMotion(),
+                            extentRatio: 0.22,
                             children: [
-                              // Fotoğraf
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: item.medicineImageUrl != null && item.medicineImageUrl!.isNotEmpty
-                                    ? Image.network(
-                                        item.medicineImageUrl!.startsWith('http')
-                                            ? item.medicineImageUrl!
-                                            : '${ApiConfig.baseUrl}${item.medicineImageUrl}',
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          width: 50,
-                                          height: 50,
-                                          color: Colors.grey.shade200,
-                                          child: const Icon(Icons.medication, size: 28, color: Colors.grey),
-                                        ),
-                                      )
-                                    : Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: const Icon(Icons.medication, size: 28, color: Colors.grey),
-                                      ),
+                              SlidableAction(
+                                onPressed: (_) => _removeItem(item.id),
+                                backgroundColor: Colors.red.shade600,
+                                foregroundColor: Colors.white,
+                                icon: Icons.delete_outline,
+                                label: 'Sil',
+                                borderRadius: BorderRadius.circular(14),
+                                padding: EdgeInsets.zero,
                               ),
-                              const SizedBox(width: 12),
-                              // Sol: Ürün adı + eczane
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.medicineName,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item.pharmacyName,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                            : Colors.grey[700],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Sağ: quantity + fiyat + delete
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline),
-                                    onPressed: loading
-                                        ? null
-                                        : () => _setQty(item, item.quantity - 1),
-                                  ),
-                                  Text(
-                                    item.quantity.toString(),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    onPressed: (loading || item.quantity >= 99 || isPrescriptionItem)
-                                        ? null
-                                        : () => _setQty(item, item.quantity + 1),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    "${item.lineTotal.toStringAsFixed(2)} TL",
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    onPressed: loading ? null : () => _removeItem(item.id),
-                                  )
-                                ],
-                              )
                             ],
+                          ),
+                          child: _CartItemTile(
+                            item: item,
+                            loading: loading,
+                            canIncrement: !loading && item.quantity < 99 && !isPrescriptionItem,
+                            onDecrement: () => _setQty(item, item.quantity - 1),
+                            onIncrement: () => _setQty(item, item.quantity + 1),
                           ),
                         );
                       },
@@ -381,6 +336,147 @@ class _CartPageState extends State<CartPage> {
           ],
       ),
       ),
+    );
+  }
+}
+
+class _CartItemTile extends StatelessWidget {
+  final CartItem item;
+  final bool loading;
+  final bool canIncrement;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+
+  const _CartItemTile({
+    required this.item,
+    required this.loading,
+    required this.canIncrement,
+    required this.onDecrement,
+    required this.onIncrement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final subText = isDark ? Colors.white70 : Colors.grey.shade600;
+    final pillBorder = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.12);
+    final placeholderBg = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.grey.shade200;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Ürün resmi
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: item.medicineImageUrl != null && item.medicineImageUrl!.isNotEmpty
+              ? Image.network(
+                  item.medicineImageUrl!.startsWith('http')
+                      ? item.medicineImageUrl!
+                      : '${ApiConfig.baseUrl}${item.medicineImageUrl}',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 64,
+                    height: 64,
+                    color: placeholderBg,
+                    child: Icon(Icons.medication, size: 28, color: subText),
+                  ),
+                )
+              : Container(
+                  width: 64,
+                  height: 64,
+                  color: placeholderBg,
+                  child: Icon(Icons.medication, size: 28, color: subText),
+                ),
+        ),
+        const SizedBox(width: 14),
+
+        // Orta: ad + eczane + miktar pili
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.medicineName,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: primaryText,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.pharmacyName,
+                style: TextStyle(fontSize: 12, color: subText),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: pillBorder, width: 1.4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: loading ? null : onDecrement,
+                      borderRadius: BorderRadius.circular(30),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        child: Icon(Icons.remove, size: 18, color: primaryText),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        item.quantity.toString(),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: primaryText,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: canIncrement ? onIncrement : null,
+                      borderRadius: BorderRadius.circular(30),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        child: Icon(
+                          Icons.add,
+                          size: 18,
+                          color: canIncrement ? primaryText : subText.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+
+        // Sağ: fiyat
+        Text(
+          "${item.lineTotal.toStringAsFixed(2)} TL",
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: primaryText,
+          ),
+        ),
+      ],
     );
   }
 }
