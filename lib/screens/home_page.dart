@@ -334,16 +334,11 @@ class _HomePageState extends State<HomePage> {
             : 0;
         _notifBaselineSet = true;
       } else {
-        // Baseline'dan sonraki yeni bildirimler için push tetikle (eski → yeni sırayla).
-        final newOnes = recent.where((n) => n.id > _lastPushedNotifId).toList()
-          ..sort((a, b) => a.id.compareTo(b.id));
-        for (final n in newOnes) {
-          await LocalNotificationService.I.showNow(
-            id: n.id,
-            title: n.title,
-            body: n.body,
-          );
-          _lastPushedNotifId = n.id;
+        // FCM push notification zaten iOS sistemi tarafından gosteriliyor.
+        // Polling sadece baseline ID'yi guncelliyor, ekrana bildirim basmiyor.
+        if (recent.isNotEmpty) {
+          final maxId = recent.map((n) => n.id).reduce((a, b) => a > b ? a : b);
+          if (maxId > _lastPushedNotifId) _lastPushedNotifId = maxId;
         }
       }
 

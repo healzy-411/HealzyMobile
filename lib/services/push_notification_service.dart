@@ -3,7 +3,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/api_config.dart';
-import 'local_notification_service.dart';
 import 'notification_api_service.dart';
 import 'token_store.dart';
 
@@ -44,18 +43,9 @@ class PushNotificationService {
       sound: true,
     );
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      // Foreground'da gelen mesaji local notification ile yedekle
-      // (iOS foreground default'ta sessizdir; presentation options da
-      // yardim ediyor ama local notification daha guvenli.)
-      final n = message.notification;
-      if (n == null) return;
-      LocalNotificationService.I.showNow(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(1 << 30),
-        title: n.title ?? 'Healzy',
-        body: n.body ?? '',
-      );
-    });
+    // iOS foreground gosterimini setForegroundNotificationPresentationOptions
+    // hallediyor; ayrica showNow cagirmiyoruz, yoksa cift bildirim olur.
+    FirebaseMessaging.onMessage.listen((_) {});
 
     _fm.onTokenRefresh.listen((newToken) {
       _currentToken = newToken;
