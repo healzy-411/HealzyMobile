@@ -1,17 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 
-import 'services/auth_service.dart';
 import 'services/local_notification_service.dart';
+import 'services/push_notification_service.dart';
 import 'services/token_store.dart';
-import 'screens/auth_page.dart';
-import 'screens/home_page.dart';
-import 'screens/pharmacy_panel_home_page.dart';
-import 'screens/home_care_provider_panel_home_page.dart';
+import 'screens/auth_gate.dart';
 import 'screens/splash_page.dart';
-import 'package:healzy_app/config/api_config.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 
@@ -33,42 +29,76 @@ Future<void> main() async {
   // Load persisted token
   await TokenStore.load();
 
+  // Firebase + FCM push notifications
+  try {
+    await Firebase.initializeApp();
+    await PushNotificationService.I.init();
+  } catch (e) {
+    debugPrint('Firebase init skipped: $e');
+  }
+
   // Load theme preference
   await ThemeController.I.load();
 
   runApp(const HealzyApp());
 }
 
-class HealzyApp extends StatelessWidget {
+class HealzyApp extends StatefulWidget {
   const HealzyApp({super.key});
 
-  Widget _getInitialPage(AuthService authService) {
-    final token = TokenStore.get();
-    if (token != null && token.isNotEmpty) {
-      try {
-        if (!JwtDecoder.isExpired(token)) {
-          final decoded = JwtDecoder.decode(token);
-          final role = (decoded["role"] ??
-                  decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])
-              ?.toString();
+  @override
+  State<HealzyApp> createState() => _HealzyAppState();
+}
 
-          if (role == "Customer") return const HomePage();
-          if (role == "Pharmacist") return const PharmacyPanelHomePage();
-          if (role == "HomeCareProvider") return const HomeCareProviderPanelHomePage();
-        }
-      } catch (_) {
-        // Token decode failed, go to login
-      }
+class _HealzyAppState extends State<HealzyApp> with WidgetsBindingObserver {
+  DateTime? _backgroundedAt;
+
+  // App background'a alındıktan sonra bu süreyi geçmişse foreground'a
+  // dönüşte splash'i tekrar göster. Hızlı tab değişimlerinde splash gelmez.
+  static const Duration _resumeSplashThreshold = Duration(seconds: 2);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _backgroundedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      // Login sonrasi veya resume'da FCM token'i backend'e kaydetmeyi dene
+      PushNotificationService.I.tryRegisterToken();
+      final bg = _backgroundedAt;
+      _backgroundedAt = null;
+      if (bg == null) return;
+      final away = DateTime.now().difference(bg);
+      if (away < _resumeSplashThreshold) return;
+      // Yeterince uzun süre arka planda kaldı → splash'i baştan göster.
+      // AuthGate de yeniden token doğrulaması yapacak.
+      final nav = navigatorKey.currentState;
+      if (nav == null) return;
+      nav.pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              const SplashPage(nextPage: AuthGate()),
+          transitionDuration: Duration.zero,
+        ),
+        (route) => false,
+      );
     }
-
-    return AuthPage(authService: authService, customerHome: const HomePage());
   }
 
   @override
   Widget build(BuildContext context) {
-    final baseUrl = ApiConfig.baseUrl;
-    final authService = AuthService(baseUrl: baseUrl);
-
     return AnimatedBuilder(
       animation: ThemeController.I,
       builder: (context, _) => MaterialApp(
@@ -79,7 +109,7 @@ class HealzyApp extends StatelessWidget {
         darkTheme: AppTheme.dark(),
         themeMode: ThemeController.I.mode,
         scrollBehavior: _HealzyScrollBehavior(),
-        home: SplashPage(nextPage: _getInitialPage(authService)),
+        home: const SplashPage(nextPage: AuthGate()),
       ),
     );
   }

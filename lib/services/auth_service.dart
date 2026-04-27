@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'token_store.dart';
+import 'session_guard.dart';
 import '../Models/me_model.dart';
 
 class EmailNotVerifiedException implements Exception {
@@ -275,6 +276,8 @@ class AuthService {
   Future<MeDto> me() async {
     final token = TokenStore.get();
     if (token == null || token.isEmpty) {
+      // Token zaten yok → logout + AuthPage
+      await SessionGuard.forceLogout();
       throw Exception("Oturumunuz sona erdi. Lütfen tekrar giriş yapın.");
     }
 
@@ -290,6 +293,14 @@ class AuthService {
     final body = _decode(res);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return MeDto.fromJson(body);
+    }
+
+    // 401 → SessionGuard refresh dener; başarısız ise zaten logout edecek.
+    // 403/404 → hesap silinmiş veya pasif. Direkt logout.
+    if (res.statusCode == 401) {
+      await SessionGuard.handle401(res);
+    } else if (res.statusCode == 403 || res.statusCode == 404) {
+      await SessionGuard.forceLogout();
     }
 
     throw Exception(body["message"] ?? "Me failed (${res.statusCode})");

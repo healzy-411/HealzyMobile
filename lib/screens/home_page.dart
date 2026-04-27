@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
@@ -847,47 +848,70 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppColors.darkPageGradient : AppColors.lightPageGradient,
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  _buildHeader(isDark),
-                  const SizedBox(height: 12),
-                  _buildAddressCard(isDark),
-                  const SizedBox(height: 20),
-                  Expanded(child: _buildBentoGrid()),
-                  const SizedBox(height: 100),
-                ],
-              ),
-              if (_activeOrders.isNotEmpty)
-                ActiveOrderTracker(
-                  activeOrders: _activeOrders,
-                  userLat: _userLat,
-                  userLng: _userLng,
-                  onRefresh: _loadActiveOrders,
-                  onDismiss: _dismissTracker,
-                ),
-              Positioned.fill(
-                child: AiAssistantFab(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ChatbotPage()),
-                  ),
-                ),
-              ),
-            ],
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppColors.darkPageGradient
+                  : AppColors.lightPageGradient,
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.home),
+        Scaffold(
+          extendBody: true,
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            bottom: false,
+            child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 200),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(isDark),
+                        const SizedBox(height: 16),
+                        _buildAddressCard(isDark),
+                        const SizedBox(height: 18),
+                        _buildBentoGrid(isDark),
+                      ],
+                    ),
+                  ),
+                  if (_activeOrders.isNotEmpty)
+                    ActiveOrderTracker(
+                      activeOrders: _activeOrders,
+                      userLat: _userLat,
+                      userLng: _userLng,
+                      onRefresh: _loadActiveOrders,
+                      onDismiss: _dismissTracker,
+                    ),
+                ],
+              ),
+          ),
+          bottomNavigationBar:
+              const HealzyBottomNav(current: HealzyNavTab.home),
+        ),
+        Positioned.fill(
+          child: AiAssistantFab(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatbotPage()),
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  String _greetingText() {
+    final h = DateTime.now().hour;
+    if (h < 6) return "İyi geceler 🌙";
+    if (h < 12) return "Günaydın ☀️";
+    if (h < 18) return "İyi günler 🌞";
+    return "İyi akşamlar 🌆";
   }
 
   // ================= HEADER =================
@@ -898,28 +922,36 @@ class _HomePageState extends State<HomePage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Merhaba 👋",
+                  _greetingText(),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: subColor,
                     letterSpacing: 0.2,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  _userName.isNotEmpty ? _userName : "Healzy",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: subColor,
-                    letterSpacing: 0.2,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _userName.isNotEmpty ? _userName : "Healzy",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
+                      letterSpacing: -0.4,
+                      height: 1.05,
+                    ),
                   ),
                 ),
               ],
@@ -927,18 +959,19 @@ class _HomePageState extends State<HomePage> {
           ),
           _iconButton(
             isDark: isDark,
-            icon: Icons.shopping_basket_outlined,
-            badge: _cartCount,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CartPage()),
-            ).then((_) => _refreshCartCount()),
+            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            onTap: () => ThemeController.I.toggle(),
           ),
           const SizedBox(width: 10),
           _iconButton(
             isDark: isDark,
-            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            onTap: () => ThemeController.I.toggle(),
+            icon: Icons.shopping_bag_outlined,
+            badge: _cartCount,
+            badgeColor: AppColors.success,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CartPage()),
+            ).then((_) => _refreshCartCount()),
           ),
         ],
       ),
@@ -950,6 +983,7 @@ class _HomePageState extends State<HomePage> {
     required IconData icon,
     required VoidCallback onTap,
     int? badge,
+    Color? badgeColor,
   }) {
     final bg = isDark
         ? AppColors.darkSurface.withValues(alpha: 0.8)
@@ -989,7 +1023,7 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.error,
+                color: badgeColor ?? AppColors.error,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: bg, width: 2),
               ),
@@ -997,7 +1031,7 @@ class _HomePageState extends State<HomePage> {
                 badge > 9 ? "9+" : "$badge",
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1046,26 +1080,39 @@ class _HomePageState extends State<HomePage> {
 
   // ================= ADDRESS =================
   Widget _buildAddressCard(bool isDark) {
+    final mutedColor = isDark ? AppColors.darkTextTertiary : AppColors.textTertiary;
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         borderRadius: AppRadius.lg,
         onTap: _openAddressPicker,
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                gradient: isDark
-                    ? AppColors.pearlGradient
-                    : AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                ),
+                borderRadius: BorderRadius.circular(11),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.location_on_rounded,
-                color: isDark ? AppColors.midnight : AppColors.pearl,
-                size: 18,
+                color: Colors.white,
+                size: 20,
               ),
             ),
             const SizedBox(width: 12),
@@ -1074,14 +1121,12 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Teslimat adresi",
+                    "TESLİMAT ADRESİ",
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.darkTextTertiary
-                          : AppColors.textTertiary,
-                      letterSpacing: 0.4,
+                      color: mutedColor,
+                      letterSpacing: 0.6,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1092,9 +1137,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.midnight,
+                      color: titleColor,
                     ),
                   ),
                 ],
@@ -1108,7 +1151,7 @@ class _HomePageState extends State<HomePage> {
               )
             else
               Icon(
-                Icons.chevron_right_rounded,
+                Icons.expand_more_rounded,
                 color: isDark
                     ? AppColors.darkTextSecondary
                     : AppColors.textSecondary,
@@ -1120,32 +1163,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ================= BENTO GRID =================
-  Widget _buildBentoGrid() {
+  Widget _buildBentoGrid(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
+          // Row 1: Eczaneler — büyük, full width, mavi gradient
+          _buildEczanelerHeroCard(isDark),
+          const SizedBox(height: 12),
+          // Row 2: Nöbetçi + Evde Bakım
           Row(
             children: [
               Expanded(
-                child: BentoTile(
-                  icon: Icons.storefront_rounded,
-                  customIcon: const EczaneIcon(size: 64),
-                  title: "Eczaneler",
-                  height: 160,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PharmaciesPage()),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: BentoTile(
-                  icon: Icons.local_pharmacy_rounded,
-                  customIcon: const NobetciIcon(size: 64),
+                child: _buildColorBentoCard(
+                  isDark: isDark,
+                  baseColor: AppColors.error,
                   title: "Nöbetçi Eczaneler",
-                  height: 160,
+                  subtitle: _dutyMarkers.isEmpty
+                      ? "7/24 açık"
+                      : "7/24 açık · ${_dutyMarkers.length} eczane",
+                  iconWidget: const NobetciIcon(size: 46),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1154,20 +1191,18 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
+              const SizedBox(width: 12),
               Expanded(
-                child: BentoTile(
-                  icon: Icons.vaccines_rounded,
-                  customIcon: const ModernIcon(
-                    icon: Icons.vaccines_rounded,
-                    size: 56,
+                child: _buildColorBentoCard(
+                  isDark: isDark,
+                  baseColor: AppColors.success,
+                  title: "Eve Serum Hizmeti",
+                  subtitle: "Talep oluştur",
+                  iconWidget: SvgPicture.asset(
+                    'assets/icons/ic_homecare.svg',
+                    width: 50,
+                    height: 50,
                   ),
-                  title: "Serum",
-                  height: 128,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1176,29 +1211,38 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Row 3: Reçete + Ürün Ara
+          Row(
+            children: [
               Expanded(
-                child: BentoTile(
-                  icon: Icons.qr_code_rounded,
-                  customIcon: const ModernIcon(
-                    icon: Icons.qr_code_rounded,
-                    size: 56,
+                child: _buildColorBentoCard(
+                  isDark: isDark,
+                  baseColor: AppColors.info,
+                  title: "Reçete",
+                  subtitle: "Numara ile ara",
+                  iconWidget: SvgPicture.asset(
+                    'assets/icons/ic_prescription.svg',
+                    width: 50,
+                    height: 50,
                   ),
-                  title: "Reçete Gir",
-                  height: 128,
                   onTap: _openPrescriptionSearch,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: BentoTile(
-                  icon: Icons.medication_rounded,
-                  customIcon: const ModernIcon(
-                    icon: Icons.medication_rounded,
-                    size: 56,
-                  ),
+                child: _buildColorBentoCard(
+                  isDark: isDark,
+                  baseColor: AppColors.purple,
                   title: "Ürün Ara",
-                  height: 128,
+                  subtitle: "Karşılaştır, sipariş ver",
+                  iconWidget: SvgPicture.asset(
+                    'assets/icons/ic_product_search.svg',
+                    width: 50,
+                    height: 50,
+                  ),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1214,5 +1258,314 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildEczanelerHeroCard(bool isDark) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PharmaciesPage()),
+      ),
+      child: Container(
+        height: 132,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? const [Color(0xFF102E4A), Color(0xFF1B4965)]
+                : [
+                    AppColors.info.withValues(alpha: 0.18),
+                    AppColors.info.withValues(alpha: 0.10),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: isDark
+              ? null
+              : Border.all(
+                  color: AppColors.info.withValues(alpha: 0.22),
+                  width: 1,
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.midnight.withValues(alpha: isDark ? 0.25 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Positioned(
+              right: -30,
+              bottom: -30,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      (isDark ? Colors.white : AppColors.info)
+                          .withValues(alpha: 0.14),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "YAKINDAKİ",
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : AppColors.midnight.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Eczaneler",
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.midnight,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _pharmacyHeroSubtitle(),
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : AppColors.midnight.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : AppColors.info)
+                          .withValues(alpha: isDark ? 0.1 : 0.14),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    alignment: Alignment.center,
+                    child: const EczaneIcon(size: 60),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _pharmacyHeroSubtitle() {
+    final cnt = _registeredMarkers.length;
+    final district = _selectedAddress?.district.trim();
+    if (cnt == 0) {
+      return district == null || district.isEmpty
+          ? "Çevrendeki eczaneleri keşfet"
+          : "$district çevresi";
+    }
+    return district == null || district.isEmpty
+        ? "$cnt eczane"
+        : "$district çevresi · $cnt eczane";
+  }
+
+  Widget _buildColorBentoCard({
+    required bool isDark,
+    required Color baseColor,
+    required String title,
+    required String subtitle,
+    required Widget iconWidget,
+    required VoidCallback onTap,
+  }) {
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final subColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final bgAlpha = isDark ? 0.18 : 0.10;
+    final borderColor = baseColor.withValues(alpha: isDark ? 0.25 : 0.18);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 132,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: baseColor.withValues(alpha: bgAlpha),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: borderColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? Colors.black : AppColors.midnight)
+                  .withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: iconWidget,
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                    letterSpacing: -0.2,
+                    height: 1.15,
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: subColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= CATEGORIES =================
+  Widget _buildCategoriesRow(bool isDark) {
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
+    final categories = <_CategoryChipData>[
+      _CategoryChipData("Ağrı Kesici", Icons.medication_rounded, AppColors.info),
+      _CategoryChipData("Vitamin", Icons.auto_awesome_rounded, AppColors.warning),
+      _CategoryChipData("Soğuk Algınlığı", Icons.healing_rounded, AppColors.success),
+      _CategoryChipData("Bebek", Icons.child_friendly_rounded, AppColors.pink),
+      _CategoryChipData("Diyet", Icons.eco_rounded, AppColors.purple),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            "Kategoriler",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 52,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            physics: const BouncingScrollPhysics(),
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final c = categories[i];
+              return _buildCategoryChip(isDark, c, titleColor);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryChip(bool isDark, _CategoryChipData c, Color titleColor) {
+    final bg = isDark
+        ? AppColors.darkSurface.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.85);
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.5)
+        : AppColors.border.withValues(alpha: 0.8);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MedicineSearchPage()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: c.color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(c.icon, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              c.label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: titleColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChipData {
+  final String label;
+  final IconData icon;
+  final Color color;
+  _CategoryChipData(this.label, this.icon, this.color);
 }
 

@@ -25,7 +25,8 @@ class _AiAssistantFabState extends State<AiAssistantFab>
     with TickerProviderStateMixin {
   static const double _fabSize = 84;
   static const double _edgeMargin = 8;
-  static const double _defaultBottomInset = 96;
+  static const double _defaultBottomInset = 200;
+  static const double _navBarSafeZone = 110;
 
   late final AnimationController _pulseCtrl;
   late final AnimationController _bubbleCtrl;
@@ -36,6 +37,9 @@ class _AiAssistantFabState extends State<AiAssistantFab>
   Offset? _pos;
   Offset _dragStart = Offset.zero;
   bool _dragging = false;
+  bool _hidden = false;
+  bool _hiddenOnRight = true;
+  double _hiddenY = 0;
 
   @override
   void initState() {
@@ -98,18 +102,62 @@ class _AiAssistantFabState extends State<AiAssistantFab>
 
   Offset _clamp(Offset p, Size size) {
     final dx = p.dx.clamp(_edgeMargin, size.width - _fabSize - _edgeMargin);
-    final dy = p.dy.clamp(_edgeMargin, size.height - _fabSize - _edgeMargin);
+    final dy = p.dy.clamp(_edgeMargin, size.height - _fabSize - _navBarSafeZone);
     return Offset(dx, dy);
   }
 
-  void _snapToEdge(Size size) {
+  Offset _clampForDrag(Offset p, Size size) {
+    // Allow horizontal drag fully off-screen so user can throw the FAB away.
+    final dx = p.dx.clamp(-_fabSize, size.width.toDouble());
+    final dy = p.dy.clamp(_edgeMargin, size.height - _fabSize - _navBarSafeZone);
+    return Offset(dx, dy);
+  }
+
+  void _snapOrHide(Size size) {
     if (_pos == null) return;
-    final center = _pos!.dx + _fabSize / 2;
-    final snappedX = center < size.width / 2
+    final centerX = _pos!.dx + _fabSize / 2;
+    // If user dragged FAB far past the edge, hide it.
+    if (centerX > size.width - _fabSize * 0.25) {
+      setState(() {
+        _hidden = true;
+        _hiddenOnRight = true;
+        _hiddenY = (_pos!.dy + _fabSize / 2).clamp(
+          _fabSize,
+          size.height - _fabSize - _navBarSafeZone,
+        );
+      });
+      return;
+    }
+    if (centerX < _fabSize * 0.25) {
+      setState(() {
+        _hidden = true;
+        _hiddenOnRight = false;
+        _hiddenY = (_pos!.dy + _fabSize / 2).clamp(
+          _fabSize,
+          size.height - _fabSize - _navBarSafeZone,
+        );
+      });
+      return;
+    }
+    final snappedX = centerX < size.width / 2
         ? _edgeMargin
         : size.width - _fabSize - _edgeMargin;
     setState(() {
       _pos = _clamp(Offset(snappedX, _pos!.dy), size);
+    });
+  }
+
+  void _restoreFab(Size size) {
+    final defX = _hiddenOnRight
+        ? size.width - _fabSize - _edgeMargin
+        : _edgeMargin;
+    final defY = (_hiddenY - _fabSize / 2).clamp(
+      _edgeMargin,
+      size.height - _fabSize - _navBarSafeZone,
+    );
+    setState(() {
+      _hidden = false;
+      _pos = Offset(defX, defY);
     });
   }
 
@@ -120,7 +168,17 @@ class _AiAssistantFabState extends State<AiAssistantFab>
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
-        final pos = _pos == null ? _defaultPos(size) : _clamp(_pos!, size);
+
+        if (_hidden) {
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [_buildPeekHandle(size, isDark)],
+          );
+        }
+
+        final pos = _pos == null
+            ? _defaultPos(size)
+            : (_dragging ? _clampForDrag(_pos!, size) : _clamp(_pos!, size));
         final bubbleOnLeft = pos.dx + _fabSize / 2 > size.width / 2;
 
         return Stack(
@@ -144,15 +202,15 @@ class _AiAssistantFabState extends State<AiAssistantFab>
                 },
                 onLongPressMoveUpdate: (d) {
                   final next = _dragStart + d.offsetFromOrigin;
-                  setState(() => _pos = _clamp(next, size));
+                  setState(() => _pos = _clampForDrag(next, size));
                 },
                 onLongPressEnd: (_) {
                   setState(() => _dragging = false);
-                  _snapToEdge(size);
+                  _snapOrHide(size);
                 },
                 onLongPressCancel: () {
                   setState(() => _dragging = false);
-                  _snapToEdge(size);
+                  _snapOrHide(size);
                 },
                 child: _buildFabContent(isDark, bubbleOnLeft),
               ),
@@ -160,6 +218,61 @@ class _AiAssistantFabState extends State<AiAssistantFab>
           ],
         );
       },
+    );
+  }
+
+  Widget _buildPeekHandle(Size size, bool isDark) {
+    const handleW = 22.0;
+    const handleH = 56.0;
+    final top = (_hiddenY - handleH / 2).clamp(
+      _fabSize,
+      size.height - handleH - _navBarSafeZone,
+    );
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      left: _hiddenOnRight ? null : 0,
+      right: _hiddenOnRight ? 0 : null,
+      top: top,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _restoreFab(size),
+        child: Container(
+          width: handleW,
+          height: handleH,
+          decoration: BoxDecoration(
+            color: (isDark ? AppColors.darkSurfaceElevated : Colors.white)
+                .withValues(alpha: 0.92),
+            borderRadius: _hiddenOnRight
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(14),
+                    bottomLeft: Radius.circular(14),
+                  )
+                : const BorderRadius.only(
+                    topRight: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+            border: Border.all(
+              color: (isDark ? Colors.white : AppColors.midnight)
+                  .withValues(alpha: 0.15),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isDark ? Colors.black : AppColors.midnight)
+                    .withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            _hiddenOnRight ? Icons.chevron_left : Icons.chevron_right,
+            size: 18,
+            color: isDark ? Colors.white : AppColors.midnight,
+          ),
+        ),
+      ),
     );
   }
 
@@ -298,6 +411,7 @@ class _AiAssistantFabState extends State<AiAssistantFab>
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   height: 1.3,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ),

@@ -328,19 +328,28 @@ class _ProfilePageState extends State<ProfilePage> {
             colors: [Color(0xFF0A1A2B), Color(0xFF132B44), Color(0xFF1B3A5C)],
           )
         : AppColors.lightPageGradient;
-    return Scaffold(
-      bottomNavigationBar:
-          const HealzyBottomNav(current: HealzyNavTab.profile),
-      body: Container(
-        decoration: BoxDecoration(gradient: bgGradient),
-        child: SafeArea(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : (_error != null)
-                  ? _buildErrorWidget()
-                  : _buildProfileContent(),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(gradient: bgGradient),
+          ),
         ),
-      ),
+        Scaffold(
+          extendBody: true,
+          backgroundColor: Colors.transparent,
+          bottomNavigationBar:
+              const HealzyBottomNav(current: HealzyNavTab.profile),
+          body: SafeArea(
+            bottom: false,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : (_error != null)
+                    ? _buildErrorWidget()
+                    : _buildProfileContent(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -354,7 +363,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileContent() {
     final me = _me!;
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 200),
       child: Column(
         children: [
           const SizedBox(height: 10),

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 import 'email_verify_page.dart';
 import 'forgot_password_page.dart';
 import 'pharmacist_register_page.dart';
@@ -106,6 +109,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           if (refreshToken != null && refreshToken.isNotEmpty) {
             await TokenStore.setRefreshToken(refreshToken);
           }
+          // Login sonrasi FCM cihaz token'ini backend'e kaydet
+          unawaited(PushNotificationService.I.tryRegisterToken());
           final decoded = JwtDecoder.decode(token);
           final role = (decoded["role"] ?? decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])?.toString();
           if (!mounted) return;

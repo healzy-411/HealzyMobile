@@ -51,6 +51,10 @@ class SessionGuard {
     }
   }
 
+  /// Hesap silinmiş, deaktif edilmiş veya token tamamen geçersiz olduğunda
+  /// dışarıdan zorla logout tetiklemek için kullanılır.
+  static Future<void> forceLogout() => _forceLogoutAndRedirect();
+
   static Future<void> _forceLogoutAndRedirect() async {
     if (_redirecting) return;
     _redirecting = true;

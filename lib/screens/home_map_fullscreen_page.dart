@@ -172,6 +172,8 @@ class _HomeMapFullscreenPageState extends State<HomeMapFullscreenPage> {
     final appBarFg = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
 
     return Scaffold(
+      extendBody: true,
+      backgroundColor: isDark ? AppColors.darkBg : Colors.white,
       bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.map),
       appBar: AppBar(
         backgroundColor: appBarBg,

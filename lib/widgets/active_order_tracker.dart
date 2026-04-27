@@ -73,7 +73,7 @@ class _ActiveOrderTrackerState extends State<ActiveOrderTracker>
     final order = widget.activeOrders.first;
 
     return Positioned(
-      bottom: 8,
+      bottom: 90,
       left: 12,
       right: 12,
       child: GestureDetector(
@@ -128,7 +128,9 @@ class AnimatedBuilder extends StatelessWidget {
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
-      color: statusInfo.color.withValues(alpha: 0.35),
+      color: expanded
+          ? (isDark ? const Color(0xFF132B44) : Colors.white)
+          : statusInfo.color.withValues(alpha: 0.35),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -136,9 +138,11 @@ class AnimatedBuilder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.white.withValues(alpha: 0.85),
+              color: expanded
+                  ? (isDark ? const Color(0xFF132B44) : Colors.white)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.white.withValues(alpha: 0.85)),
               borderRadius: expanded
                   ? const BorderRadius.vertical(top: Radius.circular(16))
                   : BorderRadius.circular(16),
@@ -221,15 +225,13 @@ class AnimatedBuilder extends StatelessWidget {
             sizeFactor: animation,
             child: Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.white.withValues(alpha: 0.85),
+                color: isDark ? const Color(0xFF132B44) : Colors.white,
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               ),
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Column(
                 children: [
-                  _buildProgressBar(order.status),
+                  _buildProgressBar(context, order.status),
                   const SizedBox(height: 16),
 
                   // Mesafe ve sure detayi
@@ -399,12 +401,14 @@ class AnimatedBuilder extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressBar(String status) {
+  Widget _buildProgressBar(BuildContext context, String status) {
     final steps = ["Pending", "Preparing", "Ready", "Dispatched", "Delivered"];
     final labels = ["Siparis\nAlindi", "Hazirlaniyor", "Hazirlandi", "Yolda", "Teslim\nEdildi"];
     final currentIndex = steps.indexOf(status).clamp(0, steps.length - 1);
-    const Color doneColor = AppColors.midnight;
-    final Color idleColor = Colors.grey.shade300;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color doneColor = isDark ? Colors.white : AppColors.midnight;
+    final Color idleColor =
+        isDark ? Colors.white.withValues(alpha: 0.25) : Colors.grey.shade300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

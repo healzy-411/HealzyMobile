@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EDE9FE"></stop>
+      <stop offset="100%" stop-color="#DDD6FE"></stop>
+    </linearGradient>
+    <linearGradient id="bag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FCD34D"></stop>
+      <stop offset="100%" stop-color="#F59E0B"></stop>
+    </linearGradient>
+    <linearGradient id="tube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FB7185"></stop>
+      <stop offset="100%" stop-color="#E11D48"></stop>
+    </linearGradient>
+    <linearGradient id="vit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34D399"></stop>
+      <stop offset="100%" stop-color="#059669"></stop>
+    </linearGradient>
+    <radialGradient id="lens" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.65"></stop>
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.15"></stop>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#bg)"></rect>
+  <path d="M22 22 c 0 -6 4 -10 10 -10 s 10 4 10 10" fill="none" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"></path>
+  <path d="M14 24 H50 L46 54 a2 2 0 0 1 -2 2 H20 a2 2 0 0 1 -2 -2 Z" fill="url(#bag)" stroke="#92400E" stroke-width="0.7"></path>
+  <path d="M14 24 H50" stroke="#FBBF24" stroke-width="1.2" opacity="0.7"></path>
+  <path d="M22 30 L20 52" stroke="#FFFFFF" stroke-width="1" opacity="0.4"></path>
+  <g transform="translate(32 42)">
+    <circle r="6" fill="#FFFFFF" stroke="#7C3AED" stroke-width="0.8"></circle>
+    <rect x="-3" y="-1" width="6" height="2" rx="0.6" fill="#7C3AED"></rect>
+    <rect x="-1" y="-3" width="2" height="6" rx="0.6" fill="#7C3AED"></rect>
+  </g>
+  <g transform="translate(20 18) rotate(-22)">
+    <rect x="-8" y="-3" width="16" height="6" rx="2" fill="url(#tube)" stroke="#9F1239" stroke-width="0.5"></rect>
+    <rect x="-8" y="-3" width="3" height="6" rx="1.2" fill="#9F1239"></rect>
+    <rect x="5" y="-1.5" width="2" height="3" rx="0.4" fill="#FFFFFF" opacity="0.6"></rect>
+  </g>
+  <g transform="translate(44 16) rotate(15)">
+    <rect x="-3.5" y="-7" width="7" height="2.5" rx="0.8" fill="#047857"></rect>
+    <rect x="-4" y="-4.5" width="8" height="9" rx="1.2" fill="url(#vit)" stroke="#064E3B" stroke-width="0.4"></rect>
+    <rect x="-3" y="-1.5" width="6" height="3.5" rx="0.6" fill="#FFFFFF"></rect>
+    <rect x="-2" y="-0.4" width="4" height="0.8" rx="0.3" fill="#059669"></rect>
+    <rect x="-2" y="0.8" width="3" height="0.6" rx="0.3" fill="#A7F3D0"></rect>
+  </g>
+  <g transform="translate(46 46)">
+    <circle r="9" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.2"></circle>
+    <circle r="6.5" fill="url(#lens)" stroke="#7C3AED" stroke-width="1.6"></circle>
+    <line x1="4.6" y1="4.6" x2="9" y2="9" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"></line>
+    <line x1="4.6" y1="4.6" x2="9" y2="9" stroke="#FBBF24" stroke-width="1" stroke-linecap="round"></line>
+    <path d="M-3 -2 a 4 4 0 0 1 2 -2" stroke="#FFFFFF" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.7"></path>
+  </g>
+  <circle cx="12" cy="14" r="1.4" fill="#FBBF24"></circle>
+  <circle cx="54" cy="10" r="1" fill="#FBBF24" opacity="0.7"></circle>
+</svg>

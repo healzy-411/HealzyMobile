@@ -57,4 +57,25 @@ class NotificationApiService {
     }
     return 0;
   }
+
+  Future<void> registerDeviceToken({
+    required String token,
+    required String platform,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/notifications/device-token'),
+      headers: _headers,
+      body: jsonEncode({'token': token, 'platform': platform}),
+    );
+    await _check401(res);
+  }
+
+  Future<void> unregisterDeviceToken({required String token}) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/api/notifications/device-token'),
+      headers: _headers,
+      body: jsonEncode({'token': token, 'platform': ''}),
+    );
+    await _check401(res);
+  }
 }

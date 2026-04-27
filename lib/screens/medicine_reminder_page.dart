@@ -1320,6 +1320,8 @@ Widget build(BuildContext context) {
 
     return Scaffold(
       bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true, // AppBar'ın arkasına gradient geçmesi için
       appBar: AppBar(
         title: Text(

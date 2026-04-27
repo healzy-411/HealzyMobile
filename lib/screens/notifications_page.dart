@@ -197,10 +197,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
         : AppColors.lightBlueSoft.withValues(alpha: 0.5);
 
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       bottomNavigationBar: _hideBottomNav
           ? null
           : const HealzyBottomNav(current: HealzyNavTab.notifications),
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: titleColor,
         title: const Text("Bildirimler"),
         actions: [
           if (_notifications.any((n) => !n.isRead))
@@ -240,8 +246,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: ListView.separated(
-                      padding: const EdgeInsets.only(
-                        top: 4,
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
                         left: 16,
                         right: 16,
                         bottom: 24,

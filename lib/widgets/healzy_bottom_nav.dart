@@ -12,7 +12,12 @@ enum HealzyNavTab { home, reminder, map, notifications, profile }
 
 class HealzyBottomNav extends StatelessWidget {
   final HealzyNavTab? current;
-  const HealzyBottomNav({super.key, this.current});
+  final int notificationBadge;
+  const HealzyBottomNav({
+    super.key,
+    this.current,
+    this.notificationBadge = 0,
+  });
 
   void _go(BuildContext ctx, HealzyNavTab tab) {
     if (current == tab) return;
@@ -49,101 +54,117 @@ class HealzyBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final border = isDark ? AppColors.darkBorder : AppColors.border;
-    final inactive =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-    final active = isDark ? AppColors.pearl : AppColors.midnight;
-
-    const double barHeight = 72;
-    const double mapSize = 70;
-    final double mapOverflow = (mapSize - barHeight) / 2 + 8;
+    final activeColor = isDark ? AppColors.pearl : AppColors.midnight;
+    final idleColor = isDark
+        ? Colors.white.withValues(alpha: 0.5)
+        : AppColors.midnight.withValues(alpha: 0.45);
 
     return SafeArea(
       top: false,
-      child: SizedBox(
-        height: barHeight,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              decoration: BoxDecoration(
-                color: (isDark ? AppColors.darkSurface : AppColors.lightBlueSoft)
-                    .withValues(alpha: 0.75),
-                border: Border(
-                  top: BorderSide(
-                    color: border.withValues(alpha: 0.3),
-                    width: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        child: SizedBox(
+          height: 78,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              // Glass bar
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                    child: Container(
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.white.withValues(alpha: 0.78),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.14)
+                              : AppColors.midnight.withValues(alpha: 0.08),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDark
+                                    ? Colors.black
+                                    : AppColors.midnight)
+                                .withValues(alpha: isDark ? 0.4 : 0.16),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          _NavItem(
+                            icon: Icons.home_outlined,
+                            activeIcon: Icons.home_rounded,
+                            label: 'Ana Sayfa',
+                            selected: current == HealzyNavTab.home,
+                            activeColor: activeColor,
+                            inactiveColor: idleColor,
+                            onTap: () => _go(context, HealzyNavTab.home),
+                          ),
+                          _NavItem(
+                            icon: Icons.access_alarm_outlined,
+                            activeIcon: Icons.access_alarm_rounded,
+                            label: 'Hatırlatıcı',
+                            selected: current == HealzyNavTab.reminder,
+                            activeColor: activeColor,
+                            inactiveColor: idleColor,
+                            onTap: () => _go(context, HealzyNavTab.reminder),
+                          ),
+                          // FAB için boşluk
+                          const SizedBox(width: 76),
+                          _NavItem(
+                            icon: Icons.notifications_outlined,
+                            activeIcon: Icons.notifications_rounded,
+                            label: 'Bildirim',
+                            selected: current == HealzyNavTab.notifications,
+                            activeColor: activeColor,
+                            inactiveColor: idleColor,
+                            badge: notificationBadge,
+                            onTap: () =>
+                                _go(context, HealzyNavTab.notifications),
+                          ),
+                          _NavItem(
+                            icon: Icons.person_outline_rounded,
+                            activeIcon: Icons.person_rounded,
+                            label: 'Profil',
+                            selected: current == HealzyNavTab.profile,
+                            activeColor: activeColor,
+                            inactiveColor: idleColor,
+                            onTap: () => _go(context, HealzyNavTab.profile),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              child: Row(
-                children: [
-                  _NavItem(
-                    icon: Icons.home_outlined,
-                    activeIcon: Icons.home_rounded,
-                    label: 'Ana Sayfa',
-                    selected: current == HealzyNavTab.home,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _go(context, HealzyNavTab.home),
-                  ),
-                  _NavItem(
-                    icon: Icons.access_alarm_outlined,
-                    activeIcon: Icons.access_alarm_rounded,
-                    label: 'Hatırlatıcı',
-                    selected: current == HealzyNavTab.reminder,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _go(context, HealzyNavTab.reminder),
-                  ),
-                  const Expanded(child: SizedBox()),
-                  _NavItem(
-                    icon: Icons.notifications_outlined,
-                    activeIcon: Icons.notifications_rounded,
-                    label: 'Bildirim',
-                    selected: current == HealzyNavTab.notifications,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _go(context, HealzyNavTab.notifications),
-                  ),
-                  _NavItem(
-                    icon: Icons.person_outline_rounded,
-                    activeIcon: Icons.person_rounded,
-                    label: 'Profil',
-                    selected: current == HealzyNavTab.profile,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _go(context, HealzyNavTab.profile),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          ),
-            // Map button — tasan
-            Positioned(
-              top: -mapOverflow,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _MapButton(
-                  size: mapSize,
+              // FAB — merkez, yukarı taşmış
+              Positioned(
+                top: 0,
+                child: _MapFab(
                   selected: current == HealzyNavTab.map,
-                  isDark: isDark,
                   onTap: () => _go(context, HealzyNavTab.map),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 
 class _NavItem extends StatelessWidget {
   final IconData icon;
@@ -153,6 +174,7 @@ class _NavItem extends StatelessWidget {
   final Color activeColor;
   final Color inactiveColor;
   final VoidCallback onTap;
+  final int badge;
 
   const _NavItem({
     required this.icon,
@@ -162,6 +184,7 @@ class _NavItem extends StatelessWidget {
     required this.activeColor,
     required this.inactiveColor,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
@@ -169,57 +192,99 @@ class _NavItem extends StatelessWidget {
     final color = selected ? activeColor : inactiveColor;
     return Expanded(
       child: InkWell(
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: Center(
-          child: Icon(selected ? activeIcon : icon, size: 30, color: color),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(selected ? activeIcon : icon, size: 22, color: color),
+                  if (badge > 0)
+                    Positioned(
+                      right: -6,
+                      top: -4,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          badge > 9 ? '9+' : '$badge',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _MapButton extends StatelessWidget {
-  final double size;
+class _MapFab extends StatelessWidget {
   final bool selected;
-  final bool isDark;
   final VoidCallback onTap;
-
-  const _MapButton({
-    required this.size,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
+  const _MapFab({required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final accent = isDark ? AppColors.pearl : AppColors.midnight;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: size,
-        height: size,
+        width: 68,
+        height: 68,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+          color: AppColors.midnight,
           border: Border.all(
-            color: accent.withValues(alpha: selected ? 0.8 : 0.3),
-            width: selected ? 3 : 2,
+            color: selected
+                ? Colors.white.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.18),
+            width: selected ? 2.5 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: accent.withValues(alpha: selected ? 0.45 : 0.25),
-              blurRadius: 16,
-              spreadRadius: 0,
-              offset: const Offset(0, 4),
+              color: AppColors.midnight.withValues(alpha: 0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: ClipOval(
           child: Image.asset(
             'assets/images/map-icon.jpg',
-            width: size,
-            height: size,
+            width: 68,
+            height: 68,
             fit: BoxFit.cover,
           ),
         ),

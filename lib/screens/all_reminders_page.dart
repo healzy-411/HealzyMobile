@@ -180,6 +180,8 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     }
 
     return Scaffold(
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
       appBar: AppBar(
         title: const Text(
@@ -637,7 +639,16 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
             ],
           );
 
-    return Scaffold(
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(gradient: bgGradient),
+          ),
+        ),
+        Scaffold(
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       bottomNavigationBar: const HealzyBottomNav(current: HealzyNavTab.reminder),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -650,11 +661,8 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
         foregroundColor: fgColor,
         iconTheme: IconThemeData(color: fgColor),
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(gradient: bgGradient),
-        child: SafeArea(
+      body: SafeArea(
+            bottom: false,
           child: _loading
               ? Center(child: CircularProgressIndicator(color: fgColor))
               : _error != null
@@ -691,7 +699,8 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
                       ),
                     ),
         ),
-      ),
+        ),
+      ],
     );
   }
 

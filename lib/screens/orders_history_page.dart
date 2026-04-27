@@ -51,9 +51,16 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.darkTextPrimary : AppColors.midnight;
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       bottomNavigationBar: const HealzyBottomNav(),
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: titleColor,
         title: const Text("Geçmiş Siparişlerim"),
         centerTitle: true,
       ),
@@ -67,7 +74,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
           onRefresh: _load,
           child: _loading
               ? ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(16, kToolbarHeight + 8, 16, 16),
                   children: const [
                     OrderCardSkeleton(),
                     OrderCardSkeleton(),
@@ -78,7 +85,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
               : (_error != null)
                   ? ListView(
                       children: [
-                        const SizedBox(height: 40),
+                        SizedBox(height: kToolbarHeight + 40),
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -104,7 +111,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                   : (_orders.isEmpty)
                       ? ListView(
                           children: [
-                            const SizedBox(height: 80),
+                            SizedBox(height: kToolbarHeight + 80),
                             Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -118,7 +125,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                           ],
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.fromLTRB(16, kToolbarHeight + 8, 16, 16),
                           itemCount: _orders.length,
                           itemBuilder: (_, i) {
                             final o = _orders[i];
