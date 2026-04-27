@@ -277,7 +277,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
         : AppColors.lightPageGradient;
 
     return Scaffold(
-      bottomNavigationBar: const HealzyBottomNav(),
+      bottomNavigationBar: _showMap ? null : const HealzyBottomNav(),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: IconButton(
@@ -314,6 +314,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
 
   Widget _buildBody(bool isDark) {
     return SafeArea(
+      bottom: !_showMap,
       child: FutureBuilder<List<DutyPharmacyModel>>(
           future: futureDuty,
           builder: (context, snapshot) {

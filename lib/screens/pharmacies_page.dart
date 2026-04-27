@@ -118,7 +118,7 @@ class _PharmaciesPageState extends State<PharmaciesPage> {
     final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Scaffold(
-      bottomNavigationBar: const HealzyBottomNav(),
+      bottomNavigationBar: _showMap ? null : const HealzyBottomNav(),
 
       // ================= FILTER DRAWER =================
       endDrawer: Drawer(
