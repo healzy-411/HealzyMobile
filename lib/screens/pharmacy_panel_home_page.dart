@@ -19,6 +19,7 @@ import '../services/auth_service.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_controller.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyPanelHomePage extends StatefulWidget {
   const PharmacyPanelHomePage({super.key});
@@ -56,7 +57,16 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     _loadUnreadCount();
     _loadRejectionStatus();
     _sendHeartbeat();
-    _notifTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadUnreadCount());
+    _notifTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _loadUnreadCount();
+      // Onaylanmamis eczane icin: admin tarafindaki onay/red durumu
+      // ve yeni feedback turu degisirse mobilde otomatik yansisin.
+      final isApproved = (_profile?["isApproved"] ?? false) as bool;
+      if (!isApproved || _isRejected) {
+        _loadRejectionStatus();
+        _refreshProfileSilently();
+      }
+    });
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) => _sendHeartbeat());
     _openCloseTimer = Timer.periodic(const Duration(minutes: 1), (_) => _autoSyncOpenStatus());
   }
@@ -132,7 +142,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     } finally {
       if (mounted) setState(() => _sendingFeedback = false);
@@ -157,9 +167,18 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
+  }
+
+  // Loading spinner'i tetiklemeden profile'i yeniler — onay/red status otomatik yansisin diye.
+  Future<void> _refreshProfileSilently() async {
+    try {
+      final profile = await _api.getProfile();
+      if (!mounted) return;
+      setState(() => _profile = profile);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -184,7 +203,7 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
       _autoSyncOpenStatus();
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -289,7 +308,9 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: _buildRejectionBanner(),
             ),
-          _buildStatusToggleCard(isDark, isOpen, isOnDuty, workingHours),
+          // Acma/kapama toggle'i sadece onaylanmis + red durumunda olmayan eczanelere gosterilir.
+          if (isApproved && !_isRejected)
+            _buildStatusToggleCard(isDark, isOpen, isOnDuty, workingHours),
           if (!isApproved && !_isRejected) _buildApprovalBanner(isDark),
           _buildKpiGrid(isDark, todayOrders, pendingOrders, todayRevenue, totalProducts),
           _buildBentoTiles(isDark, pendingOrders, lowStock, isApproved),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/order_model.dart';
 import '../services/order_api_service.dart';
@@ -41,7 +42,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
       setState(() => _orders = list);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);

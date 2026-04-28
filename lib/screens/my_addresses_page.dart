@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/address_model.dart';
 import '../services/address_api_service.dart';
@@ -49,7 +50,7 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
       setState(() => _addresses = _sorted(list));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -71,7 +72,7 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -128,7 +129,7 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

@@ -2,6 +2,7 @@
 
 import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
+import '../utils/error_messages.dart';
 
 class AllRemindersPage extends StatefulWidget {
   final MedicineReminderApiService api;
@@ -45,7 +46,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
       setState(() => _all = list);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -83,7 +84,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Silme başarısız: ${e.toString().replaceFirst('Exception: ', '')}')),
+        SnackBar(content: Text('Silme başarısız: ${friendlyError(e)}')),
       );
     }
   }
@@ -120,7 +121,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Silme başarısız: ${e.toString().replaceFirst('Exception: ', '')}')),
+        SnackBar(content: Text('Silme başarısız: ${friendlyError(e)}')),
       );
     }
   }
@@ -425,6 +426,7 @@ import 'dart:ui'; // Cam efekti (blur) için gerekli
 import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
 import '../widgets/healzy_bottom_nav.dart';
+import '../utils/error_messages.dart';
 
 class AllRemindersPage extends StatefulWidget {
   final MedicineReminderApiService api;
@@ -481,7 +483,7 @@ class _AllRemindersPageState extends State<AllRemindersPage> {
       setState(() => _all = list);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

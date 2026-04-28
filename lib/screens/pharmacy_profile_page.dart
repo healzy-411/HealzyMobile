@@ -9,6 +9,7 @@ import '../services/pharmacy_panel_api_service.dart';
 import '../services/upload_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 // Web tarafindaki utils/ankara.js ile birebir ayni
 class _AnkaraBounds {
@@ -227,7 +228,7 @@ class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
         (res['longitude'] as num).toDouble(),
       );
     } catch (e) {
-      setState(() => _geocodeError = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _geocodeError = friendlyError(e));
     } finally {
       if (mounted) setState(() => _geocoding = false);
     }
@@ -298,7 +299,7 @@ class _PharmacyProfilePageState extends State<PharmacyProfilePage> {
       setState(() {
         _saving = false;
         _uploading = false;
-        _err = e.toString().replaceFirst('Exception: ', '');
+        _err = friendlyError(e);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_err!), backgroundColor: Colors.red),

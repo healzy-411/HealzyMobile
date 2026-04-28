@@ -73,7 +73,7 @@ class _EmailVerifyPageState extends State<EmailVerifyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Email Verification")),
+      appBar: AppBar(title: const Text("Email Doğrulama")),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
@@ -93,7 +93,7 @@ class _EmailVerifyPageState extends State<EmailVerifyPage> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: loading ? null : _verify,
-                  child: Text(loading ? "Bekle..." : "Verify"),
+                  child: Text(loading ? "Bekle..." : "Doğrula"),
                 ),
                 TextButton(
                   onPressed: loading ? null : _resend,

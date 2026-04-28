@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import 'email_verify_page.dart';
+import '../utils/error_messages.dart';
 
 class PharmacistRegisterPage extends StatefulWidget {
   final AuthService authService;
@@ -93,7 +94,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
         Navigator.pop(context, verifyResult);
       }
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

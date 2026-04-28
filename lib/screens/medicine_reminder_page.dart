@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/medicine_reminder_model.dart';
 import '../services/medicine_reminder_api_service.dart';
@@ -148,7 +149,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     } finally {
       if (mounted) {
@@ -173,7 +174,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -411,7 +412,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Silme başarısız: ${e.toString().replaceFirst('Exception: ', '')}',
+            'Silme başarısız: ${friendlyError(e)}',
           ),
         ),
       );
@@ -978,7 +979,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                   Navigator.pop(context);
                 } catch (e) {
                   setDialogState(() {
-                    popupError = e.toString().replaceFirst('Exception: ', '');
+                    popupError = friendlyError(e);
                   });
                 }*/
                 if (Navigator.of(context, rootNavigator: true).canPop()) {
@@ -987,7 +988,7 @@ class _MedicineReminderPageState extends State<MedicineReminderPage> {
                 } catch (e) {
                   // Hata durumunda diyagram kapanmaz, hata mesajı kullanıcıya gösterilir
                   setDialogState(() {
-                  popupError = e.toString().replaceFirst('Exception: ', '');
+                  popupError = friendlyError(e);
                 });
               }
 

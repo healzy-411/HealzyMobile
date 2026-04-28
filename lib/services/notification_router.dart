@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/api_config.dart';
 import '../main.dart' show navigatorKey;
+import '../screens/home_care_page.dart';
 import '../screens/home_care_provider_requests_page.dart';
 import '../screens/order_detail_page.dart';
 import '../screens/pharmacy_orders_page.dart';
@@ -35,8 +36,14 @@ class NotificationRouter {
         ));
         break;
       case 'HomeCareRequestStatusChanged':
-        // Customer tarafı: ev bakım istek detayına yönlendirme şu an mobilde
-        // ayrı bir ekran olmadığı için ana akışla bırakıyoruz.
+        // Müşteri tarafı: serum talebi onay/red/tamamlandı bildirimine basınca
+        // Eve Serum Hizmeti ekraninin "Taleplerim" sekmesine yonlendir.
+        nav.push(MaterialPageRoute(
+          builder: (_) => HomeCarePage(
+            baseUrl: ApiConfig.baseUrl,
+            initialTabIndex: 1,
+          ),
+        ));
         break;
     }
   }

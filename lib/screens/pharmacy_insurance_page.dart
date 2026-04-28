@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyInsurancePage extends StatefulWidget {
   const PharmacyInsurancePage({super.key});
@@ -37,7 +38,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -104,7 +105,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(e.toString().replaceFirst("Exception: ", "")),
+                          content: Text(friendlyError(e)),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -149,7 +150,7 @@ class _PharmacyInsurancePageState extends State<PharmacyInsurancePage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
+            content: Text(friendlyError(e)),
             backgroundColor: Colors.red,
           ),
         );

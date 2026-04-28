@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../utils/error_messages.dart';
 
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
@@ -56,7 +57,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -167,6 +168,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   onPressed: _loading
                       ? null
                       : () {
+                          // Email alani bos gecilirse ResetPassword backend'e bos email
+                          // gidiyor ve "kod gecersiz" donuyor — once dogrula.
+                          if (!_formKey.currentState!.validate()) {
+                            setState(() => _error = 'Devam etmek için önce mail adresini gir.');
+                            return;
+                          }
+                          setState(() => _error = null);
                           Navigator.push(
                             context,
                             MaterialPageRoute(

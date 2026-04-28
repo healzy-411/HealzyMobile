@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/home_care_models.dart';
 import '../Models/address_model.dart';
@@ -15,8 +16,13 @@ import '../widgets/healzy_bottom_nav.dart';
 
 class HomeCarePage extends StatefulWidget {
   final String baseUrl;
+  final int initialTabIndex;
 
-  const HomeCarePage({super.key, required this.baseUrl});
+  const HomeCarePage({
+    super.key,
+    required this.baseUrl,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<HomeCarePage> createState() => _HomeCarePageState();
@@ -29,8 +35,11 @@ class _HomeCarePageState extends State<HomeCarePage>
   late final AddressApiService _addressApi =
       AddressApiService(baseUrl: widget.baseUrl);
 
-  late final TabController _tabController =
-      TabController(length: 2, vsync: this);
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+    initialIndex: widget.initialTabIndex.clamp(0, 1),
+  );
 
   bool _loadingProviders = true;
   bool _loadingRequests = true;
@@ -78,7 +87,7 @@ class _HomeCarePageState extends State<HomeCarePage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorAddresses = e.toString().replaceFirst('Exception: ', '');
+        _errorAddresses = friendlyError(e);
       });
     } finally {
       if (!mounted) return;
@@ -103,7 +112,7 @@ class _HomeCarePageState extends State<HomeCarePage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorProviders = e.toString().replaceFirst('Exception: ', '');
+        _errorProviders = friendlyError(e);
       });
     } finally {
       if (!mounted) return;
@@ -128,7 +137,7 @@ class _HomeCarePageState extends State<HomeCarePage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorRequests = e.toString().replaceFirst('Exception: ', '');
+        _errorRequests = friendlyError(e);
       });
     } finally {
       if (!mounted) return;
@@ -495,7 +504,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                           await _loadRequests();
                         } catch (e) {
                           final msg =
-                              e.toString().replaceFirst('Exception: ', '');
+                              friendlyError(e);
 
                           setModalState(() {
                             error = msg;

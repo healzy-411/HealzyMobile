@@ -125,10 +125,22 @@ class AnimatedBuilder extends StatelessWidget {
     final estimate = _estimateDelivery(order, userLat, userLng);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Acikken arkadaki ana sayfa yazilariyla karismasin diye mat (opak) zemin kullan.
+    // Kapaliyken eski yariseffaf gorunum korunur.
+    final solidBg = isDark ? AppColors.darkSurface : AppColors.pearl;
+    final headerBg = expanded
+        ? solidBg
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.85));
+    final materialBg = expanded
+        ? solidBg
+        : statusInfo.color.withValues(alpha: 0.35);
+
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
-      color: statusInfo.color.withValues(alpha: 0.35),
+      color: materialBg,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -136,9 +148,7 @@ class AnimatedBuilder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.white.withValues(alpha: 0.85),
+              color: headerBg,
               borderRadius: expanded
                   ? const BorderRadius.vertical(top: Radius.circular(16))
                   : BorderRadius.circular(16),
@@ -161,7 +171,10 @@ class AnimatedBuilder extends StatelessWidget {
                       ),
                       Text(
                         order.pharmacyName,
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF8A97A8)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white.withValues(alpha: 0.75) : const Color(0xFF8A97A8),
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -216,20 +229,18 @@ class AnimatedBuilder extends StatelessWidget {
             ),
           ),
 
-          // Expandable content
+          // Expandable content — sadece acikken gorunur, mat zemin kullan
           SizeTransition(
             sizeFactor: animation,
             child: Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.white.withValues(alpha: 0.85),
+                color: solidBg,
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               ),
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Column(
                 children: [
-                  _buildProgressBar(order.status),
+                  _buildProgressBar(order.status, isDark),
                   const SizedBox(height: 16),
 
                   // Mesafe ve sure detayi
@@ -283,13 +294,17 @@ class AnimatedBuilder extends StatelessWidget {
                     children: [
                       Text(
                         "Siparis #${order.orderId}",
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF8A97A8)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF8A97A8),
+                        ),
                       ),
                       Text(
                         "${order.total.toStringAsFixed(2)} TL",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF102E4A),
                         ),
                       ),
                     ],
@@ -299,7 +314,10 @@ class AnimatedBuilder extends StatelessWidget {
                     children: [
                       Text(
                         "${order.items.length} urun",
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF9AA7B8)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white.withValues(alpha: 0.65) : const Color(0xFF9AA7B8),
+                        ),
                       ),
                       const Spacer(),
                       if (onDismiss != null)
@@ -308,15 +326,19 @@ class AnimatedBuilder extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.grey[200],
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               "Gizle",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF8A97A8),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.8)
+                                    : const Color(0xFF8A97A8),
                               ),
                             ),
                           ),
@@ -399,12 +421,12 @@ class AnimatedBuilder extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressBar(String status) {
+  Widget _buildProgressBar(String status, bool isDark) {
     final steps = ["Pending", "Preparing", "Ready", "Dispatched", "Delivered"];
     final labels = ["Sipariş\nAlındı", "Hazırlanıyor", "Hazırlandı", "Yolda", "Teslim\nEdildi"];
     final currentIndex = steps.indexOf(status).clamp(0, steps.length - 1);
-    const Color doneColor = AppColors.midnight;
-    final Color idleColor = Colors.grey.shade300;
+    final Color doneColor = isDark ? Colors.white : AppColors.midnight;
+    final Color idleColor = isDark ? Colors.white.withValues(alpha: 0.25) : Colors.grey.shade300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

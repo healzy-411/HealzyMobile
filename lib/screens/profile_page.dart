@@ -5,6 +5,7 @@ import '../Models/me_model.dart';
 import 'orders_history_page.dart';
 import 'saved_cards_page.dart';
 import 'auth_page.dart';
+import '../utils/error_messages.dart';
 
 class ProfilePage extends StatefulWidget {
   final String baseUrl;
@@ -39,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() => _me = me);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -273,6 +274,7 @@ import 'auth_page.dart';
 import 'home_page.dart';
 import '../widgets/healzy_bottom_nav.dart';
 import '../theme/app_colors.dart';
+import '../utils/error_messages.dart';
 
 class ProfilePage extends StatefulWidget {
   final String baseUrl;
@@ -311,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() => _me = me);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -814,7 +816,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             SnackBar(
                               content: Text(
-                                  e.toString().replaceFirst("Exception: ", "")),
+                                  friendlyError(e)),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -985,7 +987,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           setDialog(() {
                             saving = false;
                             err =
-                                e.toString().replaceFirst("Exception: ", "");
+                                friendlyError(e);
                           });
                         }
                       },
@@ -1110,7 +1112,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           } catch (e) {
                             setDialogState(() {
                               saving = false;
-                              formError = e.toString().replaceFirst("Exception: ", "");
+                              formError = friendlyError(e);
                             });
                           }
                         },
@@ -1223,7 +1225,7 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }

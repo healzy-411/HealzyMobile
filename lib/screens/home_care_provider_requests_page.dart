@@ -4,6 +4,7 @@ import '../Models/home_care_models.dart';
 import '../theme/app_colors.dart';
 import '../widgets/accept_with_employee_dialog.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class HomeCareProviderRequestsPage extends StatefulWidget {
   final int initialTabIndex;
@@ -60,7 +61,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -171,7 +172,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -735,7 +736,7 @@ class _HomeCareProviderRequestsPageState extends State<HomeCareProviderRequestsP
                           } catch (e) {
                             setDialogState(() {
                               saving = false;
-                              err = e.toString().replaceFirst('Exception: ', '');
+                              err = friendlyError(e);
                             });
                           }
                         },

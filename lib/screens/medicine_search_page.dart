@@ -10,6 +10,7 @@ import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
 import '../theme/app_colors.dart';
+import '../utils/error_messages.dart';
 
 class MedicineSearchPage extends StatefulWidget {
   const MedicineSearchPage({super.key});
@@ -73,7 +74,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
       setState(() => _loadingMedicines = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -139,7 +140,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -190,7 +191,7 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -279,9 +280,6 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
                                 title: Text(med.name, style: TextStyle(
                                   color: isDark ? AppColors.darkTextPrimary : AppColors.midnight,
                                   fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                )),
-                                subtitle: Text("${med.price.toStringAsFixed(2)} TL", style: TextStyle(
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 )),
                                 secondary: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),

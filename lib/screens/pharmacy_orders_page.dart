@@ -4,6 +4,7 @@ import '../services/pharmacy_panel_api_service.dart';
 import '../Models/order_model.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyOrdersPage extends StatefulWidget {
   final int initialTabIndex;
@@ -52,7 +53,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -74,7 +75,7 @@ class _PharmacyOrdersPageState extends State<PharmacyOrdersPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/error_messages.dart';
 
 import '../services/api_service.dart';
 import '../Models/duty_pharmacy_model.dart';
@@ -89,7 +90,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _locError = e.toString().replaceFirst('Exception: ', '');
+        _locError = friendlyError(e);
         _locLoading = false;
         _currentPos = null;
       });
@@ -577,7 +578,7 @@ class _DutyPharmaciesPageState extends State<DutyPharmaciesPage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            e.toString().replaceFirst('Exception: ', ''),
+                            friendlyError(e),
                           ),
                         ),
                       );

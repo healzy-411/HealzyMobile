@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyDashboardPage extends StatefulWidget {
   const PharmacyDashboardPage({super.key});
@@ -63,7 +64,7 @@ class _PharmacyDashboardPageState extends State<PharmacyDashboardPage> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }

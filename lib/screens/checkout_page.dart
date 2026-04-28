@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../utils/error_messages.dart';
 
 import '../Models/cart_model.dart';
 import '../Models/address_model.dart';
@@ -108,7 +109,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -228,7 +229,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       await _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

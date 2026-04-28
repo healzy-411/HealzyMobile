@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConfig {
   // Lokal backend test için false yap.
-  static const bool useProd = true;
+  static const bool useProd = false;
 
   // Lokal makinenin LAN IP'si (telefon fiziksel cihazda test ederken).
   // Aynı wifi'ye bağlı olmalı. Terminalde: ipconfig getifaddr en0
-  static const String _lanIp = '10.205.122.115';
+  static const String _lanIp = '172.20.10.2';
   static const int _port = 5009;
 
   static String get baseUrl {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/prescription_models.dart';
 import '../services/prescription_api_service.dart';
@@ -90,7 +91,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
       setState(() => _result = result);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -364,7 +365,7 @@ class _PrescriptionPageState extends State<PrescriptionPage> {
                       } catch (e) {
                         if (!mounted) return;
                         setState(() => _error =
-                            e.toString().replaceFirst("Exception: ", ""));
+                            friendlyError(e));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(_error!),

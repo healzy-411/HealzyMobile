@@ -7,6 +7,7 @@ import 'categories_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
 import '../theme/app_colors.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyDetailPage extends StatefulWidget {
   final int pharmacyId;
@@ -45,7 +46,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }

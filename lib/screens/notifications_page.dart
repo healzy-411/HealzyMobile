@@ -11,6 +11,7 @@ import '../theme/app_shadows.dart';
 import 'order_detail_page.dart';
 import 'pharmacy_orders_page.dart';
 import 'home_care_provider_requests_page.dart';
+import 'home_care_page.dart';
 import 'package:healzy_app/config/api_config.dart';
 import '../widgets/healzy_bottom_nav.dart';
 
@@ -128,10 +129,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
 
     if (n.type == 'HomeCareRequestStatusChanged') {
-      // Bu bildirim musteriye gelir -> sadece okundu isaretle
-      // (home_care_page icine yonlendirme icin baseUrl lazim, simdilik snackbar)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(n.body)),
+      // Bu bildirim musteriye gelir -> Eve Serum Hizmeti ekraninin
+      // "Taleplerim" sekmesine yonlendir.
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomeCarePage(
+            baseUrl: ApiConfig.baseUrl,
+            initialTabIndex: 1,
+          ),
+        ),
       );
       _load();
       return;

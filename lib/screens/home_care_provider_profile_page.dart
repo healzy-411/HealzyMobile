@@ -5,6 +5,7 @@ import '../services/home_care_panel_api_service.dart';
 import '../services/upload_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class HomeCareProviderProfilePage extends StatefulWidget {
   final Map<String, dynamic> profile;
@@ -95,7 +96,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -159,7 +160,7 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );

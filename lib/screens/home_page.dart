@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import '../utils/error_messages.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -207,7 +208,7 @@ class _HomePageState extends State<HomePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceFirst("Exception: ", "");
+      final msg = friendlyError(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Reçete yüklenemedi: $msg")),
       );
@@ -521,7 +522,7 @@ class _HomePageState extends State<HomePage> {
       throw Exception("Adresler alınamadı (${res.statusCode})");
     } catch (e) {
       if (!mounted) return;
-      setState(() => _addrError = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _addrError = friendlyError(e));
       _refreshSheet();
     } finally {
       if (!mounted) return;
@@ -567,7 +568,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (!mounted) return;
 
-      final msg = e.toString().replaceFirst("Exception: ", "");
+      final msg = friendlyError(e);
       setState(() => _addrError = msg);
       _refreshSheet();
 
@@ -611,7 +612,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (!mounted) return;
 
-      final msg = e.toString().replaceFirst("Exception: ", "");
+      final msg = friendlyError(e);
       setState(() => _addrError = msg);
       _refreshSheet();
 

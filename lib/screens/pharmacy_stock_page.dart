@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/pharmacy_panel_api_service.dart';
 import '../theme/app_colors.dart';
 import 'package:healzy_app/config/api_config.dart';
+import '../utils/error_messages.dart';
 
 class PharmacyStockPage extends StatefulWidget {
   const PharmacyStockPage({super.key});
@@ -48,7 +49,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -631,7 +632,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                             );
                           } catch (e) {
                             setSheetState(() => addError =
-                                e.toString().replaceFirst("Exception: ", ""));
+                                friendlyError(e));
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -717,7 +718,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text(
-                            e.toString().replaceFirst("Exception: ", "")),
+                            friendlyError(e)),
                         backgroundColor: Colors.red),
                   );
                 }
@@ -769,7 +770,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text(e.toString().replaceFirst("Exception: ", "")),
+                  Text(friendlyError(e)),
               backgroundColor: Colors.red),
         );
       }

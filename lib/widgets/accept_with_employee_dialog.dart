@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/home_care_panel_api_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/error_messages.dart';
 
 /// Web paneldeki "Çalışan atayarak kabul et" akışının mobil karşılığı.
 /// Talep ID'si alır, başarılı olunca true döner.
@@ -16,7 +17,7 @@ Future<bool> showAcceptWithEmployeeDialog({
   try {
     employees = await api.getAvailableEmployees(requestId);
   } catch (e) {
-    loadError = e.toString().replaceFirst('Exception: ', '');
+    loadError = friendlyError(e);
   }
 
   if (!context.mounted) return false;

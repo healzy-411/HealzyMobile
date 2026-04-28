@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/saved_card_model.dart';
 import '../services/saved_card_api_service.dart';
@@ -42,7 +43,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst("Exception: ", "");
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -55,7 +56,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -67,7 +68,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+        SnackBar(content: Text(friendlyError(e))),
       );
     }
   }
@@ -308,7 +309,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
                           } catch (e) {
                             setSheetState(() {
                               saving = false;
-                              formError = e.toString().replaceFirst("Exception: ", "");
+                              formError = friendlyError(e);
                             });
                           }
                         },

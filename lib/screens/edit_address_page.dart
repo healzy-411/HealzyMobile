@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../utils/error_messages.dart';
 
 import '../Models/address_model.dart';
 import '../services/token_store.dart';
@@ -300,7 +301,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
       Navigator.pop(context, updated);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

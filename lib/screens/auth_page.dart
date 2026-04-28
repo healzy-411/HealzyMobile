@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../utils/error_messages.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -146,7 +147,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         }
       }
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst("Exception: ", ""));
+      setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => loading = false);
     }

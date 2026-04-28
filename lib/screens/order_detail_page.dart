@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/error_messages.dart';
 
 import '../Models/order_model.dart';
 import '../services/order_api_service.dart';
@@ -62,7 +63,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceFirst("Exception: ", "");
+      final msg = friendlyError(e);
       setState(() => _error = msg);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
@@ -194,7 +195,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst("Exception: ", "")),
+          content: Text(friendlyError(e)),
           backgroundColor: Colors.red,
         ),
       );
