@@ -272,14 +272,35 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
   }
 
   Widget _buildErrorState() {
+    final raw = _error ?? '';
+    final isMissing = raw.toLowerCase().contains('pharmacy not found') ||
+        raw.toLowerCase().contains('eczane bulunamad');
+    final display = isMissing ? 'Eczaneye ulaşılamıyor.' : raw;
+
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(_error!, style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 12),
-          ElevatedButton(onPressed: _loadData, child: const Text("Tekrar Dene")),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              display,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            if (isMissing)
+              ElevatedButton(
+                onPressed: _logout,
+                child: const Text('Giriş Ekranına Dön'),
+              )
+            else
+              ElevatedButton(
+                onPressed: _loadData,
+                child: const Text('Tekrar Dene'),
+              ),
+          ],
+        ),
       ),
     );
   }
