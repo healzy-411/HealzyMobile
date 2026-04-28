@@ -794,10 +794,16 @@ class _PharmacyPanelHomePageState extends State<PharmacyPanelHomePage> {
         icon: Icons.person_outline,
         color: const Color(0xFFF59E0B),
         sub: 'Düzenle',
-        onTap: () {
+        onTap: () async {
           if (_profile == null) return;
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => PharmacyProfilePage(profile: _profile!)));
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PharmacyProfilePage(profile: _profile!)),
+          );
+          if (!mounted) return;
+          if (result is Map && result['deleted'] == true) {
+            await _logout();
+          }
         },
       ),
       _BentoTileData(

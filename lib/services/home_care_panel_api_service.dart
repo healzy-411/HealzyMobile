@@ -15,6 +15,19 @@ class HomeCarePanelApiService {
 
   Future<void> _check401(http.Response res) => SessionGuard.handle401(res);
 
+  // DELETE /api/home-care-panel/account — saglayici hesabini ve saglayiciyi siler
+  Future<void> deleteAccount(String confirmation) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/api/home-care-panel/account'),
+      headers: _headers,
+      body: jsonEncode({'confirmation': confirmation}),
+    );
+    await _check401(res);
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception(body['message'] ?? 'Hesap silinemedi (${res.statusCode})');
+  }
+
   // GET /api/home-care-panel/profile
   Future<Map<String, dynamic>> getProfile() async {
     final res = await http.get(

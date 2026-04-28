@@ -16,6 +16,19 @@ class PharmacyPanelApiService {
 
   Future<void> _check401(http.Response res) => SessionGuard.handle401(res);
 
+  // DELETE /api/pharmacy-panel/account — eczane hesabini ve eczaneyi siler
+  Future<void> deleteAccount(String confirmation) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/api/pharmacy-panel/account'),
+      headers: _headers,
+      body: jsonEncode({'confirmation': confirmation}),
+    );
+    await _check401(res);
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception(body['message'] ?? 'Hesap silinemedi (${res.statusCode})');
+  }
+
   // GET /api/pharmacy-panel/profile
   Future<Map<String, dynamic>> getProfile() async {
     final res = await http.get(

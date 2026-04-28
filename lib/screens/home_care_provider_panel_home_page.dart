@@ -654,12 +654,16 @@ class _HomeCareProviderPanelHomePageState extends State<HomeCareProviderPanelHom
         icon: Icons.person_outline,
         color: const Color(0xFF3B82F6),
         sub: 'Düzenle',
-        onTap: () {
+        onTap: () async {
           if (_profile == null) return;
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => HomeCareProviderProfilePage(profile: _profile!)),
           );
+          if (!mounted) return;
+          if (result is Map && result['deleted'] == true) {
+            await _logout();
+          }
         },
       ),
     ];

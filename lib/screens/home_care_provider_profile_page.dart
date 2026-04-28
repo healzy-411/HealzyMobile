@@ -304,10 +304,108 @@ class _HomeCareProviderProfilePageState extends State<HomeCareProviderProfilePag
                         ..._buildEditForm(isDark, titleC, muted, accent)
                       else
                         ..._buildReadOnlyView(isDark),
+                      if (!_editing) ...[
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _handleDeleteAccount,
+                            icon: const Icon(Icons.delete_forever, color: Colors.red),
+                            label: const Text(
+                              'Hesabımı Sil',
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
       ),
     );
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final confirmController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF132B44) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Sağlayıcı Hesabını Sil',
+          style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sağlayıcınızı ve hesabınızı kalıcı olarak silmek istiyorsanız aşağıya "onaylıyorum" yazın.',
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bu işlem geri alınamaz. Çalışan atamaları, geçmiş talepler ve tüm veriler silinecektir.',
+              style: TextStyle(color: Colors.red.shade400, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmController,
+              decoration: InputDecoration(
+                hintText: 'onaylıyorum',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('İptal', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Hesabımı Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    final confirmation = confirmController.text.trim();
+    if (confirmation != 'onaylıyorum') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Onay metni hatalı. 'onaylıyorum' yazmalısınız.")),
+      );
+      return;
+    }
+
+    try {
+      await _api.deleteAccount(confirmation);
+      if (!mounted) return;
+      Navigator.of(context).pop({'deleted': true});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(friendlyError(e))),
+      );
+    }
   }
 
   List<Widget> _buildEditForm(bool isDark, Color titleC, Color muted, Color accent) {
