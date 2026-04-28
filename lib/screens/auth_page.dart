@@ -109,8 +109,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           if (refreshToken != null && refreshToken.isNotEmpty) {
             await TokenStore.setRefreshToken(refreshToken);
           }
-          // Login sonrasi FCM cihaz token'ini backend'e kaydet
-          unawaited(PushNotificationService.I.tryRegisterToken());
+          // Login sonrasi FCM cihaz token'ini backend'e kaydet.
+          // force: true → onceki kullanicidan kalan _registeredOnBackend bayragini sifirla.
+          unawaited(PushNotificationService.I.tryRegisterToken(force: true));
           final decoded = JwtDecoder.decode(token);
           final role = (decoded["role"] ?? decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"])?.toString();
           if (!mounted) return;

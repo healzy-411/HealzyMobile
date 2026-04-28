@@ -82,19 +82,28 @@ class PushNotificationService {
 
   /// JWT token mevcutsa cihaz token'ini backend'e kaydeder.
   /// Login sonrasi ve resume'da cagrilabilir.
-  Future<void> tryRegisterToken() async {
+  /// iOS'ta APNs token henuz hazir degilse arka planda yeniden dener.
+  Future<void> tryRegisterToken({bool force = false}) async {
+    if (force) _registeredOnBackend = false;
     if (_registeredOnBackend) return;
     final jwt = TokenStore.get();
     if (jwt == null || jwt.isEmpty) return;
 
-    var token = _currentToken;
-    if (token == null) {
+    // FCM token hazir olana kadar dene (iOS'ta APNs bekleyebilir).
+    String? token = _currentToken;
+    for (int attempt = 0; attempt < 8 && (token == null || token.isEmpty); attempt++) {
       try {
         token = await _fm.getToken();
         _currentToken = token;
       } catch (_) {}
+      if (token == null || token.isEmpty) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
     }
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      if (kDebugMode) print('FCM token not available after retries');
+      return;
+    }
 
     try {
       await _api.registerDeviceToken(
@@ -102,6 +111,7 @@ class PushNotificationService {
         platform: Platform.isIOS ? 'ios' : 'android',
       );
       _registeredOnBackend = true;
+      if (kDebugMode) print('Device token registered for current user');
     } catch (e) {
       if (kDebugMode) print('Device token register failed: $e');
     }
