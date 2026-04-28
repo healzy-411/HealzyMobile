@@ -53,8 +53,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   final _loginFormKey = GlobalKey<FormState>();
   final _regFormKey = GlobalKey<FormState>();
 
-  String? _error;
-
   @override
   void initState() {
     super.initState();
@@ -94,7 +92,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
   // --- AUTH LOGIC ---
   Future<void> _handleAuth({required bool isLogin}) async {
-    setState(() => _error = null);
     final formOk = isLogin ? _loginFormKey.currentState!.validate() : _regFormKey.currentState!.validate();
     if (!formOk) return;
     setState(() => loading = true);
@@ -147,10 +144,113 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         }
       }
     } catch (e) {
-      setState(() => _error = friendlyError(e));
+      if (mounted) {
+        _showAuthErrorDialog(
+          title: isLogin ? 'Giriş Yapılamadı' : 'Kayıt Oluşturulamadı',
+          message: friendlyError(e),
+        );
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> _showAuthErrorDialog({
+    required String title,
+    required String message,
+  }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF132B44) : Colors.white;
+    final fg = isDark ? Colors.white : AppColors.midnight;
+    final sub = isDark ? Colors.white.withValues(alpha: 0.75) : Colors.grey[700]!;
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : AppColors.midnight.withValues(alpha: 0.08),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.error,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: fg,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: sub,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.midnight,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Tamam',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -277,7 +377,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           ),
           const SizedBox(height: 20),
           _buildMainButton("Giriş Yap", () => _handleAuth(isLogin: true), isDark: isDark),
-          if (_error != null) _debugArea(isDark),
         ],
       ),
     );
@@ -330,7 +429,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           _buildSmallButton("Serum Sağlayıcı Olarak Kaydol", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => HomeCareProviderRegisterPage(authService: widget.authService)));
           }, isDark: isDark),
-          if (_error != null) _debugArea(isDark),
         ],
         ),
       ),
@@ -428,12 +526,4 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _debugArea(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-      child: Text(_error ?? "", style: const TextStyle(color: AppColors.error, fontSize: 14)),
-    );
-  }
 }
