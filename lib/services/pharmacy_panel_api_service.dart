@@ -139,10 +139,10 @@ class PharmacyPanelApiService {
     throw Exception(body["message"] ?? "Remove stock failed (${res.statusCode})");
   }
 
-  // GET /api/medicines/all (tüm ilaçlar - stok ekleme için)
+  // GET /api/medicines/all?includeRx=true (tüm ilaçlar - stok ekleme için, reçeteliler dahil)
   Future<List<Map<String, dynamic>>> getAllMedicines() async {
     final res = await http.get(
-      Uri.parse('$baseUrl/api/medicines/all'),
+      Uri.parse('$baseUrl/api/medicines/all?includeRx=true'),
       headers: _headers,
     );
     await _check401(res);
