@@ -206,12 +206,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                   gradient: bodyGradient,
                   borderRadius: const BorderRadius.only(topRight: Radius.circular(60)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [_buildLoginForm(isDark), _buildRegisterForm(isDark)],
-                  ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [_buildLoginForm(isDark), _buildRegisterForm(isDark)],
                 ),
               ),
             ),
@@ -226,7 +223,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       key: _loginFormKey,
       child: ListView(
         controller: _loginScrollController,
-        padding: const EdgeInsets.only(top: 40),
+        padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
         children: [
           _buildInput(_loginEmail, "Email", Icons.email, isDark: isDark, validator: _emailValidate),
           const SizedBox(height: 15),
@@ -294,7 +291,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         radius: const Radius.circular(10),
         child: ListView(
           controller: _registerScrollController,
-          padding: const EdgeInsets.only(top: 25, bottom: 50),
+          padding: const EdgeInsets.fromLTRB(30, 25, 30, 50),
           children: [
           _buildInput(_regFirstName, "Ad", Icons.person, isDark: isDark, validator: _req),
           const SizedBox(height: 12),

@@ -346,12 +346,10 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
           )
         : _defaultCenter;
 
-    final useSimple = _simpleStyle;
-    final tileUrl = useSimple
-        ? 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'
-        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-    final subdomains = useSimple ? ['a', 'b', 'c', 'd'] : <String>[];
+    // CartoCDN sık 502 atıyor; OSM her iki modda da kullanılıyor.
+    // _simpleStyle flag'i ileride farklı tile provider eklenirse korunsun diye duruyor.
+    const tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const subdomains = <String>[];
 
     return Stack(
       children: [
@@ -668,7 +666,7 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                         Icon(Icons.info_outline, size: 16, color: Colors.white),
                         SizedBox(width: 6),
                         Text(
-                          "Eczane Detaylari",
+                          "Eczane Bilgileri",
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

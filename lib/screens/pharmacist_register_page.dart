@@ -176,7 +176,7 @@ class _PharmacistRegisterPageState extends State<PharmacistRegisterPage> {
                         key: _formKey,
                         child: ListView(
                           controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                          padding: const EdgeInsets.fromLTRB(30, 30, 42, 30),
                           children: [
                             _sectionHeader("Kişisel Bilgiler", isDark),
                             _buildInput(_firstName, "Ad", Icons.person, isDark: isDark, validator: (v) => (v == null || v.trim().length < 2) ? "En az 2 karakter" : null),

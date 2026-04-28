@@ -51,9 +51,21 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
     try {
       final medicines = await _api.getAllMedicines();
       if (!mounted) return;
+      // Aynı isimli ilaçlar farklı eczanelerde farklı id ile kayıtlı olabiliyor.
+      // Listede her isim için tek satır göster (temsilci olarak en küçük id'liyi seç).
+      final byName = <String, OtcMedicine>{};
+      for (final m in medicines) {
+        final key = m.name.trim().toLowerCase();
+        final existing = byName[key];
+        if (existing == null || m.id < existing.id) {
+          byName[key] = m;
+        }
+      }
+      final unique = byName.values.toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       setState(() {
-        _allMedicines = medicines;
-        _filteredMedicines = medicines;
+        _allMedicines = unique;
+        _filteredMedicines = unique;
         _loadingMedicines = false;
       });
     } catch (e) {

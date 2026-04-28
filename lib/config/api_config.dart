@@ -7,7 +7,7 @@ class ApiConfig {
 
   // Lokal makinenin LAN IP'si (telefon fiziksel cihazda test ederken).
   // Aynı wifi'ye bağlı olmalı. Terminalde: ipconfig getifaddr en0
-  static const String _lanIp = '192.168.88.146';
+  static const String _lanIp = '10.205.122.115';
   static const int _port = 5009;
 
   static String get baseUrl {
