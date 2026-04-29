@@ -1004,7 +1004,7 @@ class _HomeCarePageState extends State<HomeCarePage>
                     const SizedBox(height: 40),
                     Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade400),
                     const SizedBox(height: 12),
-                    Text("Henuz bir talebiniz yok.", style: TextStyle(color: Colors.grey.shade600)),
+                    Text("Henüz bir talebiniz yok.", style: TextStyle(color: Colors.grey.shade600)),
                   ],
                 ),
               );

@@ -399,7 +399,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       )
                     : Text(
                         o.isPrescriptionOrder
-                            ? "Receteli siparis tekrar edilemez"
+                            ? "Reçeteli sipariş tekrar edilemez"
                             : "Siparişi Tekrarla",
                         style: const TextStyle(
                           color: Colors.white,

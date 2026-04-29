@@ -83,9 +83,6 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
   List<LatLng>? _routePoints;
   String? _lastRouteKey;
 
-  // Harita stili toggle
-  late bool _simpleStyle;
-
   LatLng get _defaultCenter {
     if (widget.userLat != null && widget.userLng != null) {
       return LatLng(widget.userLat!, widget.userLng!);
@@ -100,9 +97,6 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
   @override
   void didUpdateWidget(covariant PharmacyMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.simpleStyle != oldWidget.simpleStyle) {
-      _simpleStyle = widget.simpleStyle;
-    }
     if (widget.activeRoute != null) {
       final key = "${widget.activeRoute!.pharmacyLat},${widget.activeRoute!.pharmacyLng}"
           "-${widget.activeRoute!.deliveryLat},${widget.activeRoute!.deliveryLng}";
@@ -118,7 +112,6 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
   @override
   void initState() {
     super.initState();
-    _simpleStyle = widget.simpleStyle;
     if (widget.activeRoute != null) {
       _fetchRoute(widget.activeRoute!);
     }
@@ -420,16 +413,6 @@ class _PharmacyMapViewState extends State<PharmacyMapView> {
                   icon: Icons.remove,
                   color: Colors.black87,
                   onPressed: _zoomOut,
-                ),
-                const SizedBox(height: 8),
-                _mapButton(
-                  heroTag: 'toggleStyle',
-                  icon: _simpleStyle ? Icons.map_outlined : Icons.layers_outlined,
-                  color: _simpleStyle ? Colors.teal : Colors.black87,
-                  onPressed: () {
-                    setState(() => _simpleStyle = !_simpleStyle);
-                    widget.onStyleChanged?.call(_simpleStyle);
-                  },
                 ),
               ],
             ),

@@ -161,7 +161,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
           _miniCard(
               "Toplam Stok", "$_totalQuantity", Icons.inventory, AppColors.midnight),
           const SizedBox(width: 8),
-          _miniCard("Dusuk Stok", "$_lowStockCount", Icons.warning_amber,
+          _miniCard("Düşük Stok", "$_lowStockCount", Icons.warning_amber,
               Colors.orange),
         ],
       ),
@@ -411,7 +411,7 @@ class _PharmacyStockPageState extends State<PharmacyStockPage> {
                   children: [
                     Icon(Icons.warning_amber, size: 14, color: Colors.orange.shade700),
                     const SizedBox(width: 4),
-                    Text("Dusuk stok!",
+                    Text("Düşük stok!",
                         style: TextStyle(
                             fontSize: 14,
                             color: Colors.orange.shade700,

@@ -657,12 +657,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // 8. Ödeme Özeti
   Widget _buildPaymentSummarySection() {
+    final cart = widget.cart;
+    final hasDiscount = cart.hasInsuranceDiscount && cart.discountAmount > 0;
+    final subtotal = cart.subtotal > 0 ? cart.subtotal : cart.total;
+
     return _sectionCard(
       title: "Ödeme Özeti",
       icon: Icons.receipt_long,
       child: Column(
         children: [
-          ...widget.cart.items.map((item) => Padding(
+          ...cart.items.map((item) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -676,12 +680,45 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
               )),
           const Divider(),
+          if (hasDiscount) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Ara Toplam",
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                Text("${subtotal.toStringAsFixed(2)} TL",
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Sigorta İndirimi (%${(cart.insuranceDiscountRate * 100).toStringAsFixed(0)})",
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF00B894),
+                      fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  "-${cart.discountAmount.toStringAsFixed(2)} TL",
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF00B894),
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("Toplam",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text("${widget.cart.total.toStringAsFixed(2)} TL",
+              Text("${cart.total.toStringAsFixed(2)} TL",
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
             ],

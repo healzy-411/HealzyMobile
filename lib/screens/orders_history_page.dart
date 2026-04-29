@@ -119,7 +119,7 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                 children: [
                                   Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade400),
                                   const SizedBox(height: 12),
-                                  Text("Henuz siparis yok", style: TextStyle(color: Colors.grey.shade600)),
+                                  Text("Henüz sipariş yok", style: TextStyle(color: Colors.grey.shade600)),
                                 ],
                               ),
                             ),

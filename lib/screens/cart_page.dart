@@ -50,7 +50,22 @@ class _CartPageState extends State<CartPage> {
     });
 
     try {
-      final data = await cartApi.getMyCart();
+      var data = await cartApi.getMyCart();
+
+      // Reçete akışı dışında (sepet ikonundan / eczaneden) açıldıysak ve
+      // sepet bir önceki yarım kalan reçete siparişine ait indirimli ürünler
+      // içeriyorsa otomatik olarak temizle. Reçete tek seferlik bir akış —
+      // ödeme tamamlanmadan çıkıldıysa kullanıcı tekrar reçete numarasından
+      // başlamak zorunda.
+      final isPrescriptionContext =
+          widget.prescriptionItemIds != null && widget.prescriptionItemIds!.isNotEmpty;
+      if (!isPrescriptionContext && data.hasInsuranceDiscount) {
+        try {
+          await cartApi.clearCart();
+          data = await cartApi.getMyCart();
+        } catch (_) {}
+      }
+
       if (!mounted) return;
       setState(() => cart = data);
     } catch (e) {
@@ -63,6 +78,10 @@ class _CartPageState extends State<CartPage> {
   }
 
   double get totalPrice => cart?.total ?? 0;
+  double get subtotalPrice => cart?.subtotal ?? totalPrice;
+  double get discountAmount => cart?.discountAmount ?? 0;
+  double get discountRate => cart?.insuranceDiscountRate ?? 0;
+  bool get hasDiscount => (cart?.hasInsuranceDiscount ?? false) && discountAmount > 0;
   List<CartItem> get items => cart?.items ?? [];
 
   Future<void> _cleanupPrescriptionItemsIfNeeded() async {
@@ -288,6 +307,61 @@ class _CartPageState extends State<CartPage> {
                 ),
                 child: Column(
                   children: [
+                    if (hasDiscount) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Ara Toplam",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey.shade700,
+                            ),
+                          ),
+                          Text(
+                            "${subtotalPrice.toStringAsFixed(2)} TL",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Sigorta İndirimi (%${(discountRate * 100).toStringAsFixed(0)})",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF00B894),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            "-${discountAmount.toStringAsFixed(2)} TL",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF00B894),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Divider(
+                        height: 1,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.10)
+                            : Colors.black.withValues(alpha: 0.08),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

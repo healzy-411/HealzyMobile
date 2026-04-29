@@ -54,6 +54,12 @@ class OrderDto {
 
   final List<OrderItemDto> items;
 
+  final double subtotal;
+  final double insuranceDiscountRate;
+  final double discountAmount;
+
+  bool get hasInsuranceDiscount => discountAmount > 0;
+
   OrderDto({
     required this.orderId,
     required this.pharmacyId,
@@ -77,6 +83,9 @@ class OrderDto {
     this.deliveryLatitude,
     this.deliveryLongitude,
     required this.items,
+    this.subtotal = 0,
+    this.insuranceDiscountRate = 0,
+    this.discountAmount = 0,
   });
 
   factory OrderDto.fromJson(Map<String, dynamic> j) {
@@ -109,6 +118,10 @@ class OrderDto {
       items: itemsJson
           .map((x) => OrderItemDto.fromJson(x as Map<String, dynamic>))
           .toList(),
+
+      subtotal: (j['subtotal'] as num? ?? 0).toDouble(),
+      insuranceDiscountRate: (j['insuranceDiscountRate'] as num? ?? 0).toDouble(),
+      discountAmount: (j['discountAmount'] as num? ?? 0).toDouble(),
     );
   }
 }

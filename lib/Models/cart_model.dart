@@ -3,21 +3,34 @@ class CartResponse {
   final String status;
   final double total;
   final List<CartItem> items;
+  final double subtotal;
+  final double insuranceDiscountRate;
+  final double discountAmount;
 
   CartResponse({
     required this.cartId,
     required this.status,
     required this.total,
     required this.items,
+    this.subtotal = 0,
+    this.insuranceDiscountRate = 0,
+    this.discountAmount = 0,
   });
+
+  bool get hasInsuranceDiscount => discountAmount > 0;
 
   factory CartResponse.fromJson(Map<String, dynamic> json) {
     final itemsJson = (json['items'] as List<dynamic>? ?? []);
+    final total = (json['total'] as num? ?? 0).toDouble();
+    final subtotal = (json['subtotal'] as num? ?? 0).toDouble();
     return CartResponse(
       cartId: (json['cartId'] as num).toInt(),
       status: (json['status'] ?? '').toString(),
-      total: (json['total'] as num? ?? 0).toDouble(),
+      total: total,
       items: itemsJson.map((e) => CartItem.fromJson(e as Map<String, dynamic>)).toList(),
+      subtotal: subtotal > 0 ? subtotal : total,
+      insuranceDiscountRate: (json['insuranceDiscountRate'] as num? ?? 0).toDouble(),
+      discountAmount: (json['discountAmount'] as num? ?? 0).toDouble(),
     );
   }
 }
